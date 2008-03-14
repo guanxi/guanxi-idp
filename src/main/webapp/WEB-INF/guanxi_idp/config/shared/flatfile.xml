@@ -1,0 +1,27 @@
+<!-- flatfile.xml
+     This file is used by FlatFileAuthenticator and FlatFileAttributor
+-->
+<FlatFileAuthenticatorConfig xmlns="urn:guanxi:idp">
+  <!-- The domain to use for scoped attributes -->
+  <Domain>uni.ac.uk</Domain>
+
+  <!-- Each User has Username, Password and multiple UserAttribute nodes -->
+  <User>
+    <!-- Harry McDesperate. The world's most violent programmer! -->
+    <Username>harrymcd</Username>
+    <Password>growl</Password>
+    <UserAttribute name="id" value="harrymcd" />
+    <UserAttribute name="firstName" value="Harry" />
+    <UserAttribute name="surname" value="McDesperate" />
+    <UserAttribute name="email" value="HarryMcD@jumpingupanddown.net" />
+    <UserAttribute name="role" value="CheifHeidbanger" />
+    <UserAttribute name="group" value="heidbangers" />
+  </User>
+
+  <!-- This is a user who has no attributes -->
+  <User>
+    <!-- Luvvly McJubbly. The world's most gorgeous Scotsman! -->
+    <Username>luvmcjub</Username>
+    <Password>smile</Password>
+  </User>
+</FlatFileAuthenticatorConfig>

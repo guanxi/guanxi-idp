@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+  <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+    <property name="basenames">
+      <list>
+        <value>messages.common</value>
+        <value>messages.idp</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="registerSPFormValidator" class="org.guanxi.idp.form.RegisterSPFormValidator"/>
+  <bean id="registerSPForm" class="org.guanxi.idp.form.RegisterSPFormController">
+    <property name="sessionForm"><value>true</value></property>
+    <!-- commandName is the form object that is used in <sping:bind> and will hold all the form variables -->
+    <property name="commandName"><value>registerSP</value></property>
+    <property name="commandClass"><value>org.guanxi.idp.form.RegisterSP</value></property>
+    <property name="validator"><ref bean="registerSPFormValidator"/></property>
+    <!-- formView uses prefix and suffix from InternalResourceViewResolver.
+         This is what we'll see after ControlPanelController::formBackingObject() has been called -->
+    <property name="formView"><value>register_sp</value></property>
+    <!-- ControlPanelController will send us here if everything is ok after form submission and processing -->
+    <property name="successView"><value>message</value></property>
+    <!-- The controller will send localised messages to the view -->
+    <property name="messageSource"><ref bean="messageSource"/></property>
+  </bean>
+
+  <bean id="urlFilenameViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
+
+  <bean id="cookieAuthenticator" class="org.guanxi.idp.farm.authcookiehandlers.ApplicationCookieAuthenticator" />
+
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="interceptors">
+      <list>
+        <ref bean="cookieAuthenticator" />
+        <ref bean="authHandler" />
+      </list>
+    </property>
+
+    <property name="urlMap">
+      <map>
+        <entry key="/sso.gxIdP"><ref bean="ssoService"/></entry>
+      </map>
+    </property>
+  </bean>
+
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="interceptors">
+      <list>
+        <ref bean="aaService" />
+      </list>
+    </property>
+    
+    <property name="urlMap">
+      <map>
+        <entry key="/aa.gxIdP"><ref bean="aaService"/></entry>
+      </map>
+    </property>
+  </bean>
+
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="interceptors">
+      <list>
+        <ref bean="logoutService" />
+      </list>
+    </property>
+
+    <property name="urlMap">
+      <map>
+        <entry key="/logout.gxIdP"><ref bean="logoutService"/></entry>
+      </map>
+    </property>
+  </bean>
+
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="mappings">
+      <props>
+        <prop key="registerSP.gxIdP">registerSPForm</prop>
+      </props>
+    </property>
+  </bean>
+
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="interceptors">
+      <list>
+        <ref bean="urlRewriter" />
+      </list>
+    </property>
+
+    <property name="mappings">
+      <props>
+        <prop key="SSO">urlRewriter</prop>
+        <prop key="AA">urlRewriter</prop>
+      </props>
+    </property>
+  </bean>
+
+  <bean id="staticViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController" />
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="urlMap">
+      <map>
+        <entry key="/*.gxAuth"><ref local="staticViewController"/></entry>
+        <entry key="/*.gxError"><ref local="staticViewController"/></entry>
+      </map>
+    </property>
+  </bean>
+
+  <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <property name="viewClass">
+      <value>org.springframework.web.servlet.view.JstlView</value>
+    </property>
+    <property name="prefix">
+      <value>/WEB-INF/guanxi_idp/jsp/</value>
+    </property>
+    <property name="suffix">
+      <value>.jsp</value>
+    </property>
+  </bean>
+</beans>

@@ -1,0 +1,16 @@
+<!-- arp-providers.xml
+     This file lists all the service providers the Guanxi IdP recongnises. You don't have to
+     list all the service providers in the same file. Feel free to define your own and then
+     include them in the root arp.xml file. -->
+<arp xmlns="urn:guanxi:idp">
+  <!-- This entry tells the IdP that it's ok to release the attributes
+       defined in the "MappedFlatFileAttributesForProtectedApp" and
+       "memberMapping" bags. These are defined in the arp-bags.xml file.
+       Note that both bags contain mapped attributes, not the originally
+       generated attributes from the FlatFileAttributor. -->
+  <provider name="protectedapp-guard">
+    <allow>MappedFlatFileAttributesForProtectedApp</allow>
+    <allow>memberMapping</allow>
+    <deny>global</deny>
+  </provider>
+</arp>

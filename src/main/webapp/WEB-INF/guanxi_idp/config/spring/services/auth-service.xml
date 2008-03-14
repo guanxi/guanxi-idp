@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="authHandler" class="org.guanxi.idp.service.shibboleth.AuthHandler" init-method="init">
+    <property name="logger"><ref bean="idpLogger"/></property>
+    <property name="loggerConfig"><ref bean="authHandlerLoggerConfig"/></property>
+    <property name="errorPage"><value>message.gxError</value></property>
+    <property name="authenticator"><ref bean="flatFileAuthenticator" /></property>
+    <property name="messageSource"><ref bean="messageSource"/></property>
+  </bean>
+
+  <bean id="authHandlerLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
+    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/auth-handler.log</value></property>
+    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
+    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
+    <property name="logMaxFileSize"><value>5MB</value></property>
+    <property name="logMaxBackupIndex"><value>5</value></property>
+  </bean>
+
+</beans>

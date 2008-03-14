@@ -1,0 +1,124 @@
+<project name="Guanx::IdP" default="all">
+  <!-- Initialise TODAY, DSTAMP and TSTAMP -->
+  <tstamp>
+    <format property="TODAY" pattern="d MMMM yyyy" locale="en"/>
+    <format property="TSTAMP" pattern="hh:mm:ss" locale="en"/>
+  </tstamp>
+  
+  <property file="build.properties" />
+
+  <!-- CLASSPATH files -->
+  <property name="guanxi-common.lib.dir" value="${guanxi-common.home}/dist/jar" />
+  <property name="gx_lib.dir" value="${gx_lib.home}" />
+
+  <!-- Source files -->
+  <property name="src.dir" value="src" />
+  <property name="jsp.dir" value="src/main/webapp" />
+  <property name="xsd.dest.dir" value="xsd" />
+  <property name="messages.dest.dir" value="messages" />
+
+  <!-- JAR file to build -->
+  <property name="jar.file" value="guanxi-idp-${version}.jar" />
+
+  <!-- Distribution directories -->
+  <property name="dist.dir" value="dist" />
+  <property name="webapp.dir" value="${dist.dir}/webapp" />
+  <property name="classes.dir" value="classes" />
+
+  <!-- CLASSPATH -->
+  <path id="classpath">
+    <fileset dir="${guanxi-common.lib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${gx_lib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+  </path>
+
+  <!-- Prepare the directories for building and distribution -->
+  <target name="clean" description="Prepares directory structure for the build">
+    <delete dir="${dist.dir}"/>
+  </target>
+
+  <!-- Creates the directories required for building and distribution -->
+  <target name="initDistDirs">
+    <mkdir dir="${dist.dir}"/>
+    <mkdir dir="${webapp.dir}"/>
+    <mkdir dir="${classes.dir}"/>
+  </target>
+
+  <!-- Compile -->
+  <target name="compile" description="Compiles the classes">
+    <javac srcdir="${src.dir}" destdir="${classes.dir}" deprecation="on"
+           source="${javac.source}" target="${javac.target}">
+      <classpath refid="classpath"/>
+    </javac>
+    <copy todir="${classes.dir}/${xsd.dest.dir}">
+      <fileset dir="${xsd.dir}"/>
+    </copy>
+    <copy todir="${classes.dir}/${messages.dest.dir}">
+      <fileset dir="${messages.dir}"/>
+    </copy>
+  </target>
+
+  <!-- JAR -->
+  <target name="jar" depends="compile" description="Builds a JAR file">
+    <jar jarfile="${webapp.dir}/WEB-INF/lib/${jar.file}" basedir="${classes.dir}">
+      <manifest>
+        <attribute name="Implementation-Vendor" value="${implementation-vendor}"/>
+        <attribute name="Implementation-Title" value="${module.name}"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+        <attribute name="Implementation-Date" value="${TODAY} ${TSTAMP}"/>
+        <attribute name="Built-By" value="${user.name}"/>
+      </manifest>
+    </jar>
+    <delete dir="${classes.dir}"/>
+  </target>
+
+  <!-- Build a webapp -->
+  <target name="webapp" description="Builds a webapp tree">
+    <!-- web.xml -->
+    <copy todir="${webapp.dir}/WEB-INF">
+      <fileset dir="src/main/webapp/WEB-INF">
+        <include name="**/*.*"/>
+      </fileset>
+    </copy>
+
+    <!-- JSP -->
+    <copy todir="${webapp.dir}">
+      <fileset dir="${jsp.dir}">
+        <include name="**/*.*"/>
+      </fileset>
+    </copy>
+
+    <!-- Required jars -->
+    <copy todir="${webapp.dir}/WEB-INF/lib">
+      <fileset dir="${guanxi-common.lib.dir}"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/guanxi"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/bouncycastle"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/xmlbeans"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/ldap"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/log4j"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/xalan"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/xerces"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/xmlsec"><include name="**/*.*"/></fileset>
+      <fileset dir="${gx_lib.dir}/spring"><include name="**/*.*"/></fileset>
+    </copy>
+
+    <mkdir dir="${webapp.dir}/WEB-INF/classes"/>
+    <copy todir="${webapp.dir}/WEB-INF/classes/messages">
+      <fileset dir="${messages.dir}">
+        <include name="common.properties"/>
+        <include name="idp.properties"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <!-- Builds the Guanxi components that the IdP requires -->
+  <target name="buildDependencies">
+    <ant antfile="build.xml" dir="${guanxi-common.home}" target="all" inheritall="false" />
+  </target>
+
+  <!-- Default target - builds everything -->
+  <target name="all" depends="clean,initDistDirs,buildDependencies,compile,webapp,jar" description="Builds everything into the distribution directory"/>
+</project>
