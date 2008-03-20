@@ -9,6 +9,7 @@
     <property name="loggerConfig"><ref bean="logoutServiceLoggerConfig"/></property>
     <property name="logoutPage"><value>/WEB-INF/guanxi_idp/jsp/logout.jsp</value></property>
     <property name="passive"><value>false</value></property>
+    <property name="gxPrincipalFactory"><ref bean="shibbolethGuanxiPrincipalFactory" /></property>
   </bean>
 
   <bean id="logoutServiceLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
