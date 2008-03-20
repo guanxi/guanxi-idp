@@ -18,20 +18,6 @@
 
   <!-- ******************************************************************************************** -->
   <!-- Guanxi IdP core mappings. Common to all profiles -->
-  <!-- The Logout service -->
-  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
-    <property name="interceptors">
-      <list>
-        <ref bean="logoutService" />
-      </list>
-    </property>
-
-    <property name="urlMap">
-      <map>
-        <entry key="/logout.gxIdP"><ref bean="logoutService"/></entry>
-      </map>
-    </property>
-  </bean>
 
   <!-- Convenience service for publishing friendly URLs. They get mapped here -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
