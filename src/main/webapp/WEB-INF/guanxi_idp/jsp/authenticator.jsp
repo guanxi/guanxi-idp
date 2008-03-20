@@ -1,3 +1,5 @@
+<%@ page import="org.guanxi.idp.service.shibboleth.AuthHandler" %>
+<%@ page import="java.util.Enumeration" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -30,15 +32,24 @@
   <div style="border:1px solid black; width:30%; height:125px; background-image:url(guanxi_idp/images/formback.gif); background-repeat:repeat-x repeat-y; margin: 0 auto;">
   	<div style="padding:20px; margin: 0 auto;">
 
-     <form method="post" action="shibb/sso">
+     <form method="post" action="<%= request.getAttribute(AuthHandler.FORM_ACTION_ATTRIBUTE)%>">
       <input type="text" name="userid">&nbsp;<fmt:message key="authenticator.label.username"/><br>
       <input type="password" name="password">&nbsp;<fmt:message key="authenticator.label.password"/><br>
       <input type="hidden" name="guanxi:mode" value="authenticate"><br>
       <input type="submit" name="submit" value="<fmt:message key="authenticator.login.button.text"/>">
-      <input type="hidden" name="providerId" value="<%= request.getParameter("providerId")%>">
-      <input type="hidden" name="shire" value="<%= request.getParameter("shire")%>">
-      <input type="hidden" name="target" value="<%= request.getParameter("target")%>">
-      <input type="hidden" name="time" value="<%= request.getParameter("time")%>">
+
+      <%
+        Enumeration atts = request.getAttributeNames();
+        while (atts.hasMoreElements()) {
+          String name = (String)atts.nextElement();
+          if (name.startsWith(AuthHandler.REQUIRED_PARAM_PREFIX)) {
+            %>
+              <input type="hidden" name="<%= name.replaceAll(AuthHandler.REQUIRED_PARAM_PREFIX, "") %>" value="<%= request.getAttribute(name) %>">
+            <%
+          }
+
+        }
+      %>
     </form>
     
    </div>
