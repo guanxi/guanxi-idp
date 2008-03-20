@@ -131,7 +131,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     }
 
     // Look for our cookie. This is after any application cookie handler has authenticated the user
-    String cookieName = getCookieName(idpConfig);
+    String cookieName = getCookieName();
     Cookie[] cookies = request.getCookies();
       if (cookies != null) {
         for (int c=0; c < cookies.length; c++) {
@@ -169,7 +169,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
           servletContext.setAttribute(principal.getID(), principal);
 
           // Get a new cookie ready to reference the principal in the servlet context
-          Cookie cookie = new Cookie(getCookieName(idpConfig), principal.getID());
+          Cookie cookie = new Cookie(getCookieName(), principal.getID());
           cookie.setDomain((String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_DOMAIN));
           cookie.setPath(idpConfig.getCookie().getPath());
           if (((Integer)(servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE))).intValue() != -1)
@@ -248,11 +248,10 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
   /**
    * Works out the profile specific cookie name
    *
-   * @param idpConfig IdP config
    * @return profile specific cookie name
    */
-  private String getCookieName(IdpDocument.Idp idpConfig) {
-    return idpConfig.getCookie().getPrefix() + idpConfig.getID() + "_" + gxPrincipalFactory.getCookieName();
+  private String getCookieName() {
+    return (String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_NAME) + "_" + gxPrincipalFactory.getCookieName();
   }
 
   // Called by Spring as we are ServletContextAware
