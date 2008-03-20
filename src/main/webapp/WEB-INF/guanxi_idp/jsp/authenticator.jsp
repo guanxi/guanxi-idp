@@ -30,7 +30,7 @@
   <div style="border:1px solid black; width:30%; height:125px; background-image:url(guanxi_idp/images/formback.gif); background-repeat:repeat-x repeat-y; margin: 0 auto;">
   	<div style="padding:20px; margin: 0 auto;">
 
-     <form method="post" action="sso.gxIdP">
+     <form method="post" action="shibb/sso">
       <input type="text" name="userid">&nbsp;<fmt:message key="authenticator.label.username"/><br>
       <input type="password" name="password">&nbsp;<fmt:message key="authenticator.label.password"/><br>
       <input type="hidden" name="guanxi:mode" value="authenticate"><br>
