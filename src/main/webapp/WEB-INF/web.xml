@@ -57,6 +57,10 @@
 
   <servlet-mapping>
     <servlet-name>Guanxi Identity Provider</servlet-name>
+    <url-pattern>/shibb/*</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>Guanxi Identity Provider</servlet-name>
     <url-pattern>*.gxIdP</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
@@ -67,6 +71,7 @@
     <servlet-name>Guanxi Identity Provider</servlet-name>
     <url-pattern>*.gxError</url-pattern>
   </servlet-mapping>
+  <!-- Aliases to be mapped by the UrlRewriter -->
   <servlet-mapping>
     <servlet-name>Guanxi Identity Provider</servlet-name>
     <url-pattern>/SSO</url-pattern>
