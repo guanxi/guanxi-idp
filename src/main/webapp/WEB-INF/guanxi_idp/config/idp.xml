@@ -117,7 +117,7 @@
   </creds>
 
   <authenticator-pages>
-    <auth-page providerId="__DEFAULT__" url="authenticator.gxAuth" />
+    <auth-page providerId="__DEFAULT__" url="authenticator.gxIdP" />
   </authenticator-pages>
 
   <Debug>
