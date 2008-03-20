@@ -40,8 +40,7 @@
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="urlMap">
       <map>
-        <entry key="/*.gxAuth"><ref local="staticViewController"/></entry>
-        <entry key="/*.gxError"><ref local="staticViewController"/></entry>
+        <entry key="/*.gxIdP"><ref local="staticViewController"/></entry>
       </map>
     </property>
   </bean>
