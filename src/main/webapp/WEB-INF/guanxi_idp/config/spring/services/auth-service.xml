@@ -7,7 +7,7 @@
   <bean id="authHandler" class="org.guanxi.idp.service.shibboleth.AuthHandler" init-method="init">
     <property name="logger"><ref bean="idpLogger"/></property>
     <property name="loggerConfig"><ref bean="authHandlerLoggerConfig"/></property>
-    <property name="errorPage"><value>message.gxError</value></property>
+    <property name="errorPage"><value>/message.gxError</value></property>
     <property name="authenticator"><ref bean="flatFileAuthenticator" /></property>
     <property name="messageSource"><ref bean="messageSource"/></property>
   </bean>
