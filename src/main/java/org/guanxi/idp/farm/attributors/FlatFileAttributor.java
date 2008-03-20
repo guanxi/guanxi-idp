@@ -51,7 +51,7 @@ public class FlatFileAttributor extends SimpleAttributor {
 
   public void getAttributes(GuanxiPrincipal principal, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     // GuanxiPrincipal is storing their username, put there by the authenticator
-    String username = (String)principal.getUserData();
+    String username = (String)principal.getPrivateProfileDataEntry("username");
 
     // Look for the user in the config file
     User[] users = ffConfig.getUserArray();
@@ -65,7 +65,7 @@ public class FlatFileAttributor extends SimpleAttributor {
           String attrValue = attrs[cc].getValue();
 
           // Can we release the original attributes without mapping?
-          if (arpEngine.release(principal.getProviderID(), attrName, attrValue)) {
+          if (arpEngine.release(principal.getRelyingPartyID(), attrName, attrValue)) {
             AttributorAttribute attribute = attributes.addNewAttribute();
             attribute.setName(attrName);
             attribute.setValue(attrValue);
@@ -74,7 +74,7 @@ public class FlatFileAttributor extends SimpleAttributor {
           }
           else {
             // Sort out any mappings. This will change the default name/value if necessary...
-            if (mapper.map(principal.getProviderID(), attrName, attrValue)) {
+            if (mapper.map(principal.getRelyingPartyID(), attrName, attrValue)) {
               for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                 log.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
 
@@ -84,7 +84,7 @@ public class FlatFileAttributor extends SimpleAttributor {
                 if (attrValue.endsWith("@")) attrValue += ffConfig.getDomain();
 
                 // ...then run the original or mapped attribute through the ARP
-                if (arpEngine.release(principal.getProviderID(), attrName, attrValue)) {
+                if (arpEngine.release(principal.getRelyingPartyID(), attrName, attrValue)) {
                   AttributorAttribute attribute = attributes.addNewAttribute();
                   attribute.setName(attrName);
                   attribute.setValue(attrValue);

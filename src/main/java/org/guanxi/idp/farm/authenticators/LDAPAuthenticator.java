@@ -130,7 +130,7 @@ public class LDAPAuthenticator extends SimpleAuthenticator {
           lc.disconnect();
 
           // Store the user's DN to get their attributes later
-          principal.setUserData(userDN);
+          principal.addPrivateProfileDataEntry("dn", userDN);
 
           log.info("Authenticated user");
 

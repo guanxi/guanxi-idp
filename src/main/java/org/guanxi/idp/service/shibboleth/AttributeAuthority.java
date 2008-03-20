@@ -140,7 +140,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     String issuer = null;
     ServiceProvider[] spList = idpConfig.getServiceProviderArray();
     for (int c=0; c < spList.length; c++) {
-      if (spList[c].getName().equals(principal.getProviderID())) {
+      if (spList[c].getName().equals(principal.getRelyingPartyID())) {
         String identity = spList[c].getIdentity();
         // We've found the <service-provider> node so look for the corresponding <identity> node
         Identity[] ids = idpConfig.getIdentityArray();
@@ -248,7 +248,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
         if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
           log.info("=======================================================");
-          log.info("Response to AttributeQuery by " + principal.getProviderID());
+          log.info("Response to AttributeQuery by " + principal.getRelyingPartyID());
           log.info("");
           StringWriter sw = new StringWriter();
           soapResponseDoc.save(sw, xmlOptions);

@@ -166,10 +166,10 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
           // ...store it in the request for the SSO to use...
           request.setAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL, principal);
           // ...and store it in application scope for the rest of the profile to use
-          servletContext.setAttribute(principal.getID(), principal);
+          servletContext.setAttribute(principal.getUniqueId(), principal);
 
           // Get a new cookie ready to reference the principal in the servlet context
-          Cookie cookie = new Cookie(getCookieName(), principal.getID());
+          Cookie cookie = new Cookie(getCookieName(), principal.getUniqueId());
           cookie.setDomain((String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_DOMAIN));
           cookie.setPath(idpConfig.getCookie().getPath());
           if (((Integer)(servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE))).intValue() != -1)

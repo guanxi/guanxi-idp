@@ -98,7 +98,7 @@ public class LDAPAttributor extends SimpleAttributor {
         // Leeds AGB: This will throw a NullPointerException if the principal has not been authenticated
         // (quite possible if multiple authenticators/attributors are being used sequentially)
         // so catch the NullPointerException below
-        LDAPEntry attrGroup = lc.read((String)principal.getUserData());
+        LDAPEntry attrGroup = lc.read((String)principal.getPrivateProfileDataEntry("dn"));
 
         lc.disconnect();
 
@@ -149,20 +149,20 @@ public class LDAPAttributor extends SimpleAttributor {
                   log.debug("Obtained attribute " + attr.getName());
 
                   // Can we release the original attributes without mapping?
-                  if (arpEngine.release(principal.getProviderID(), attrName, attrValue)) {
+                  if (arpEngine.release(principal.getRelyingPartyID(), attrName, attrValue)) {
                     log.debug("Released attribute " + attrName);
                     AttributorAttribute attribute = attributes.addNewAttribute();
                     attribute.setName(attrName);
                     attribute.setValue(attrValue);
                   }
                   else {
-                    log.debug("Attribute release blocked by ARP : " + attrName + " to " + principal.getProviderID());
+                    log.debug("Attribute release blocked by ARP : " + attrName + " to " + principal.getRelyingPartyID());
 
                     // Sort out any mappings. This will change the default name/value if necessary...
-                    if (mapper.map(principal.getProviderID(), attr.getName(), attrValue)) {
+                    if (mapper.map(principal.getRelyingPartyID(), attr.getName(), attrValue)) {
                       for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                         // Release the mapped attribute if appropriate
-                        if (arpEngine.release(principal.getProviderID(), mapper.getMappedNames()[mapCount],
+                        if (arpEngine.release(principal.getRelyingPartyID(), mapper.getMappedNames()[mapCount],
                                               mapper.getMappedValues()[mapCount])) {
                           String mappedValue = mapper.getMappedValues()[mapCount];
                           if (mappedValue.endsWith("@")) mappedValue += ldapConfig.getDomain();
@@ -172,11 +172,11 @@ public class LDAPAttributor extends SimpleAttributor {
                           attribute.setValue(mappedValue);
 
                           log.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
-                                    " -> " + mappedValue + " to " + principal.getProviderID());
+                                    " -> " + mappedValue + " to " + principal.getRelyingPartyID());
                         }
                         else {
                           log.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
-                                    " to " + principal.getProviderID());
+                                    " to " + principal.getRelyingPartyID());
                         }
                       } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                     }

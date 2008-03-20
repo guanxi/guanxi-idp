@@ -66,7 +66,7 @@ public class FlatFileAuthenticator extends SimpleAuthenticator {
       if (users[c].getUsername().equals(username)) {
         if (users[c].getPassword().equals(password)) {
           // Use this later to get their attributes
-          principal.setUserData(users[c].getUsername());
+          principal.addPrivateProfileDataEntry("username", users[c].getUsername());
           return true;
         }
       }

@@ -186,7 +186,7 @@ public class SSO extends AbstractController implements ServletContextAware {
     // Now load the appropriate identity and creds from the config file
     ServiceProvider[] spList = idpConfig.getServiceProviderArray();
     for (int c=0; c < spList.length; c++) {
-      if (spList[c].getName().equals(principal.getProviderID())) {
+      if (spList[c].getName().equals(principal.getRelyingPartyID())) {
         String identityToUse = spList[c].getIdentity();
         String credsToUse = spList[c].getCreds();
 
@@ -285,7 +285,7 @@ public class SSO extends AbstractController implements ServletContextAware {
     NameIdentifierDocument nameIDDoc = NameIdentifierDocument.Factory.newInstance();
     NameIdentifierType nameID = nameIDDoc.addNewNameIdentifier();
     nameID.setNameQualifier(nameQualifier);
-    nameID.setStringValue(principal.getID());
+    nameID.setStringValue(principal.getUniqueId());
 
     // Add the NameIdentifier to the Subject
     subject.setNameIdentifier(nameID);
@@ -353,7 +353,7 @@ public class SSO extends AbstractController implements ServletContextAware {
       if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
         if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
           log.info("=======================================================");
-          log.info("IdP response to Shire with providerId " + principal.getProviderID());
+          log.info("IdP response to Shire with providerId " + principal.getRelyingPartyID());
           log.info("");
           sw = new StringWriter();
           samlResponseDoc.save(sw, xmlOptions);

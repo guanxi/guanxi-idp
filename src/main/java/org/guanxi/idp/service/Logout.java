@@ -143,7 +143,7 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
 
           // ...and get rid of it
           if (principal != null) {
-            servletContext.setAttribute(principal.getID(), null);
+            servletContext.setAttribute(principal.getUniqueId(), null);
           }
 
           loggedOut = true;
