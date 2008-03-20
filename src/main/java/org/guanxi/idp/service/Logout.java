@@ -19,11 +19,13 @@ package org.guanxi.idp.service;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.GuanxiPrincipalFactory;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.apache.log4j.Logger;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.context.ServletContextAware;
+import org.springframework.context.MessageSource;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -58,6 +60,10 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
   private String logoutPage = null;
   /** Whether the IdP is embedded in another application */
   private boolean passive;
+  /** The factory to use to locate GuanxiPrincipal objects */
+  private GuanxiPrincipalFactory gxPrincipalFactory = null;
+  /** The localised messages */
+  private MessageSource messageSource = null;
 
   /**
    * Initialise the interceptor
@@ -126,7 +132,7 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
    * @throws IOException if an error occurrs
    */
   public void processLogout(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    String cookieName = (String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_NAME);
+    String cookieName = getCookieName();
     boolean loggedOut = false;
     Cookie[] cookies = request.getCookies();
     if (cookies != null) {
@@ -152,12 +158,21 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
      */
     if (!passive) {
       if (loggedOut)
-        request.setAttribute("LOGOUT_MESSAGE", "You have successfully logged out of the IdP");
+        request.setAttribute("LOGOUT_MESSAGE", messageSource.getMessage("idp.logout.successful", null, request.getLocale()));
       else
-        request.setAttribute("LOGOUT_MESSAGE", "You have not successfully logged out of the IdP");
+        request.setAttribute("LOGOUT_MESSAGE", messageSource.getMessage("idp.logout.unsuccessful", null, request.getLocale()));
 
       request.getRequestDispatcher(logoutPage).forward(request, response);
     }
+  }
+
+  /**
+   * Works out the profile specific cookie name
+   *
+   * @return profile specific cookie name
+   */
+  private String getCookieName() {
+    return (String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_NAME) + "_" + gxPrincipalFactory.getCookieName();
   }
 
   // Called by Spring as we are ServletContextAware
@@ -175,4 +190,8 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
   public void setLogoutPage(String logoutPage) { this.logoutPage = logoutPage; }
 
   public void setPassive(boolean passive) { this.passive = passive; }
+
+  public void setGxPrincipalFactory(GuanxiPrincipalFactory gxPrincipalFactory) { this.gxPrincipalFactory = gxPrincipalFactory; }
+
+  public void setMessageSource(MessageSource messageSource) { this.messageSource = messageSource; }
 }
