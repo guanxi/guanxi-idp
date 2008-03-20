@@ -32,7 +32,11 @@
 
   <bean id="cookieAuthenticator" class="org.guanxi.idp.farm.authcookiehandlers.ApplicationCookieAuthenticator" />
 
+  <!-- ******************************************************************************************** -->
+  <!-- Shibboleth mappings -->
+  <!-- SSO endpoint -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="alwaysUseFullPath"><value>true</value></property>
     <property name="interceptors">
       <list>
         <ref bean="cookieAuthenticator" />
@@ -42,12 +46,14 @@
 
     <property name="urlMap">
       <map>
-        <entry key="/sso.gxIdP"><ref bean="ssoService"/></entry>
+        <entry key="/shibb/sso"><ref bean="ssoService"/></entry>
       </map>
     </property>
   </bean>
 
+  <!-- Attribute Authority endpoint -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="alwaysUseFullPath"><value>true</value></property>
     <property name="interceptors">
       <list>
         <ref bean="aaService" />
@@ -56,11 +62,24 @@
     
     <property name="urlMap">
       <map>
-        <entry key="/aa.gxIdP"><ref bean="aaService"/></entry>
+        <entry key="/shibb/aa"><ref bean="aaService"/></entry>
       </map>
     </property>
   </bean>
 
+  <!-- Convenience service for registering a one-off Service Provider not in any metadata -->
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="mappings">
+      <props>
+        <prop key="/shibb/register-sp">registerSPForm</prop>
+      </props>
+    </property>
+  </bean>
+  <!-- ******************************************************************************************** -->
+
+  <!-- ******************************************************************************************** -->
+  <!-- Guanxi IdP core mappings. Common to all profiles -->
+  <!-- The Logout service -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="interceptors">
       <list>
@@ -75,14 +94,7 @@
     </property>
   </bean>
 
-  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
-    <property name="mappings">
-      <props>
-        <prop key="registerSP.gxIdP">registerSPForm</prop>
-      </props>
-    </property>
-  </bean>
-
+  <!-- Convenience service for publishing friendly URLs. They get mapped here -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="interceptors">
       <list>
@@ -98,6 +110,7 @@
     </property>
   </bean>
 
+  <!-- IdP authentication and error pages. -->
   <bean id="staticViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController" />
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="urlMap">
@@ -107,6 +120,7 @@
       </map>
     </property>
   </bean>
+  <!-- ******************************************************************************************** -->
 
   <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
     <property name="viewClass">
