@@ -43,6 +43,22 @@
     </property>
   </bean>
 
+  <!-- The Logout service -->
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="alwaysUseFullPath"><value>true</value></property>
+    <property name="interceptors">
+      <list>
+        <ref bean="logoutService" />
+      </list>
+    </property>
+
+    <property name="urlMap">
+      <map>
+        <entry key="/shibb/logout"><ref bean="logoutService"/></entry>
+      </map>
+    </property>
+  </bean>
+
   <!-- Convenience service for registering a one-off Service Provider not in any metadata -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="alwaysUseFullPath"><value>true</value></property>
