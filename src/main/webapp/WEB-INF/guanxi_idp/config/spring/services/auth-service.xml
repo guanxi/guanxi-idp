@@ -10,7 +10,9 @@
     <property name="errorPage"><value>/message.gxError</value></property>
     <property name="authenticator"><ref bean="flatFileAuthenticator" /></property>
     <property name="messageSource"><ref bean="messageSource"/></property>
+    <property name="gxPrincipalFactory"><ref bean="shibbolethGuanxiPrincipalFactory" /></property>
     <property name="authFormAction"><value>shibb/sso</value></property>
+    <property name="spIDRequestParam"><value>providerId</value></property>
     <property name="requiredRequestParams">
       <list>
         <value>providerId</value>
