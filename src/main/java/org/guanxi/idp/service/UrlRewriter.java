@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.idp.service.shibboleth.AuthHandler;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
