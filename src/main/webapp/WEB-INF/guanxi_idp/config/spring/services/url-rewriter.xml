@@ -9,8 +9,8 @@
     <property name="loggerConfig"><ref bean="urlRewriterLoggerConfig"/></property>
     <property name="urlMaps">
       <map>
-        <entry key="SSO" value="sso.gxIdP" />
-        <entry key="AA" value="aa.gxIdP" />
+        <entry key="SSO" value="/shibb/sso" />
+        <entry key="AA" value="/shibb/aa" />
       </map>
     </property>
   </bean>
