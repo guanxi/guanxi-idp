@@ -10,6 +10,15 @@
     <property name="errorPage"><value>/message.gxError</value></property>
     <property name="authenticator"><ref bean="flatFileAuthenticator" /></property>
     <property name="messageSource"><ref bean="messageSource"/></property>
+    <property name="authFormAction"><value>shibb/sso</value></property>
+    <property name="requiredRequestParams">
+      <list>
+        <value>providerId</value>
+        <value>shire</value>
+        <value>target</value>
+        <value>time</value>
+      </list>
+    </property>
   </bean>
 
   <bean id="authHandlerLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
