@@ -18,11 +18,10 @@ package org.guanxi.idp.service.shibboleth;
 
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.Utils;
+import org.guanxi.common.GuanxiPrincipalFactory;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.xal.idp.AuthPage;
 import org.guanxi.xal.idp.IdpDocument;
 import org.guanxi.xal.idp.ServiceProvider;
@@ -59,8 +58,12 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
   private Authenticator authenticator = null;
   /** The localised messages */
   private MessageSource messageSource = null;
+  /** The factory to use to create new GuanxiPrincipal objects */
+  private GuanxiPrincipalFactory gxPrincipalFactory = null;
   /** The URL for the authentication form\s action */
   private String authFormAction = null;
+  /** The request parameter that holds the ID of the service provider */
+  private String spIDRequestParam = null;
   /** The list of required request parameters for the particular instance */
   private List<String> requiredRequestParams = null;
 
@@ -86,6 +89,8 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
    * Looks for an existing GuanxiPrincipal referenced by a request cookie. When a cookie is created after
    * a successful authentication at the IdP, either via the login page or an application cookie handler,
    * the corresponding GuanxiPrincipal is stored in the servlet context against the cookie value.
+   * The new GuanxiPrincipal that is created after successful authentication is stored in the servlet
+   * context under GuanxiPrincipal.id
    *
    * @param request Standard HttpServletRequest
    * @param response Standard HttpServletResponse
@@ -110,23 +115,23 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     boolean spSupported = false;
     ServiceProvider[] spList = idpConfig.getServiceProviderArray();
     for (int c=0; c < spList.length; c++) {
-      if (spList[c].getName().equals(request.getParameter("providerId"))) {
+      if (spList[c].getName().equals(request.getParameter(spIDRequestParam))) {
         spSupported = true;
       }
     }
 
     // Did we find the service provider?
     if (!spSupported) {
-      log.error("Service Provider providerId " + request.getParameter("providerId") + " not supported");
+      log.error("Service Provider providerId " + request.getParameter(spIDRequestParam) + " not supported");
       request.setAttribute("message", messageSource.getMessage("sp.not.supported",
-                                                               new Object[]{request.getParameter("providerId")},
+                                                               new Object[]{request.getParameter(spIDRequestParam)},
                                                                request.getLocale()));
       request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
     }
 
     // Look for our cookie. This is after any application cookie handler has authenticated the user
-    String cookieName = (String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_NAME);
+    String cookieName = getCookieName(idpConfig);
     Cookie[] cookies = request.getCookies();
       if (cookies != null) {
         for (int c=0; c < cookies.length; c++) {
@@ -150,21 +155,21 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     // Are we getting an authentication request from the login page?
     if (request.getParameter("guanxi:mode") != null) {
       if (request.getParameter("guanxi:mode").equalsIgnoreCase("authenticate")) {
-        GuanxiPrincipal principal = new GuanxiPrincipal();
+        // Get a new GuanxiPrincipal...
+        GuanxiPrincipal principal = gxPrincipalFactory.createNewGuanxiPrincipal(request);
         if (authenticator.authenticate(principal, request.getParameter("userid"), request.getParameter("password"))) {
-          if (principal.getName() == null)
+          // ...associate it with a login name...
+          if (principal.getName() == null) {
+            //The login name from the authenticator page
             principal.setName(request.getParameter("userid"));
-          // ...and their session ID... This will be their NameIdentifier
-          principal.setID(Utils.getUniqueID());
-          // ...only allow the current SP to access it...
-          principal.setProviderID(request.getParameter(Shibboleth.PROVIDER_ID));
+          }
           // ...store it in the request for the SSO to use...
           request.setAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL, principal);
-          // ...and store it in application scope for the AA to use
+          // ...and store it in application scope for the rest of the profile to use
           servletContext.setAttribute(principal.getID(), principal);
 
           // Get a new cookie ready to reference the principal in the servlet context
-          Cookie cookie = new Cookie(idpConfig.getCookie().getPrefix() + idpConfig.getID(), principal.getID());
+          Cookie cookie = new Cookie(getCookieName(idpConfig), principal.getID());
           cookie.setDomain((String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_DOMAIN));
           cookie.setPath(idpConfig.getCookie().getPath());
           if (((Integer)(servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE))).intValue() != -1)
@@ -194,7 +199,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
       }
 
       // Customised auth page for this service provider
-      if (authPages[c].getProviderId().equals(request.getParameter("providerId"))) {
+      if (authPages[c].getProviderId().equals(request.getParameter(spIDRequestParam))) {
         authPage = authPages[c].getUrl();
       }
     }
@@ -240,6 +245,16 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     }
   }
 
+  /**
+   * Works out the profile specific cookie name
+   *
+   * @param idpConfig IdP config
+   * @return profile specific cookie name
+   */
+  private String getCookieName(IdpDocument.Idp idpConfig) {
+    return idpConfig.getCookie().getPrefix() + idpConfig.getID() + "_" + gxPrincipalFactory.getCookieName();
+  }
+
   // Called by Spring as we are ServletContextAware
   public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
 
@@ -258,7 +273,11 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
 
   public void setMessageSource(MessageSource messageSource) { this.messageSource = messageSource; }
 
+  public void setGxPrincipalFactory(GuanxiPrincipalFactory gxPrincipalFactory) { this.gxPrincipalFactory = gxPrincipalFactory; }
+
   public void setAuthFormAction(String authFormAction) { this.authFormAction = authFormAction; }
+
+  public void setSpIDRequestParam(String spIDRequestParam) { this.spIDRequestParam = spIDRequestParam; }
 
   public void setRequiredRequestParams(List<String> requiredRequestParams) { this.requiredRequestParams = requiredRequestParams; }
 }
