@@ -61,9 +61,9 @@ public class UrlRewriter extends HandlerInterceptorAdapter implements ServletCon
 
   /**
    * Rewrites an incoming URL based on the rules defined in services/url-rewriter.xml
-   * If you want to map /SSO to sso.gxIdP, do this:
+   * If you want to map /SSO to /shibb/sso, do this:
    * -- in web.xml, add a servlet-mapping for /SSO to the Guanxi Identity Provider servlet
-   * -- in services/url-rewriter.xml, add <entry key="SSO" value="sso.gxIdP" />, omit the leading /
+   * -- in services/url-rewriter.xml, add <entry key="SSO" value="/shibb/sso" />, omit the leading /
    *
    * @param request Standard HttpServletRequest
    * @param response Standard HttpServletResponse
