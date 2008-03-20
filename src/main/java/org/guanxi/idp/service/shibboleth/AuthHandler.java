@@ -36,8 +36,15 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletContext;
+import java.util.List;
 
 public class AuthHandler extends HandlerInterceptorAdapter implements ServletContextAware {
+  /** The name of the request attribute that the form action will be stored under */
+  public static final String FORM_ACTION_ATTRIBUTE = "FORM_ACTION_ATTRIBUTE";
+  /** When passing required parameters to the authenticator page, the request attributes
+   *  will be prefixed by this.
+   */
+  public static final String REQUIRED_PARAM_PREFIX = "REQUIRED_PARAM_";
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our logger */
@@ -52,6 +59,10 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
   private Authenticator authenticator = null;
   /** The localised messages */
   private MessageSource messageSource = null;
+  /** The URL for the authentication form\s action */
+  private String authFormAction = null;
+  /** The list of required request parameters for the particular instance */
+  private List<String> requiredRequestParams = null;
 
   /**
    * Initialise the interceptor
@@ -83,10 +94,11 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
    * @throws Exception if an error occurs
    */
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
-    if (request.getParameter("providerId") == null) {
-      log.info("Service Provider providerId is null");
-      request.setAttribute("message", messageSource.getMessage("sp.providerid.missing",
-                                                               null,
+    String missingParams = checkRequestParameters(request);
+    if (missingParams != null) {
+      log.info("Missing param(s)");
+      request.setAttribute("message", messageSource.getMessage("missing.param",
+                                                               new Object[] {missingParams},
                                                                request.getLocale()));
       request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
@@ -187,9 +199,45 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
       }
     }
 
+    addRequiredParamsAsPrefixedAttributes(request);
     request.getRequestDispatcher(authPage).forward(request, response);
 
     return false;
+  }
+
+  /**
+   * Checks the request for miussing parameters
+   *
+   * @param request Standard HttpServletRequest
+   * @return null if no parameters are missing, otherwise a comma separated list of the missing parameters
+   */
+  private String checkRequestParameters(HttpServletRequest request) {
+    String missingParams = "";
+
+    if (requiredRequestParams == null) return null;
+
+    for (String param : requiredRequestParams) {
+      if (request.getParameter(param) == null) {
+        missingParams += " " + param;
+      }
+    }
+
+    if (missingParams.equals(""))
+      return null;
+    else
+      return missingParams;
+  }
+
+  /**
+   * Copies required request parameters to prefixed request attributes to pass to the
+   * authenticator page.
+   * @param request Standard HttpServletRequest
+   */
+  private void addRequiredParamsAsPrefixedAttributes(HttpServletRequest request) {
+    request.setAttribute(FORM_ACTION_ATTRIBUTE, authFormAction);
+    for (String param : requiredRequestParams) {
+      request.setAttribute(REQUIRED_PARAM_PREFIX + param, request.getParameter(param));
+    }
   }
 
   // Called by Spring as we are ServletContextAware
@@ -209,4 +257,8 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
   public void setAuthenticator(Authenticator authenticator) { this.authenticator = authenticator; }
 
   public void setMessageSource(MessageSource messageSource) { this.messageSource = messageSource; }
+
+  public void setAuthFormAction(String authFormAction) { this.authFormAction = authFormAction; }
+
+  public void setRequiredRequestParams(List<String> requiredRequestParams) { this.requiredRequestParams = requiredRequestParams; }
 }
