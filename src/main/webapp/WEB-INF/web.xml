@@ -49,8 +49,8 @@
         WEB-INF/guanxi_idp/config/spring/ui.xml
         WEB-INF/guanxi_idp/config/spring/common.xml
         WEB-INF/guanxi_idp/config/spring/farm/*.xml
-        WEB-INF/guanxi_idp/config/spring/services/*.xml
-        WEB-INF/guanxi_idp/config/spring/profiles/shibboleth/*.xml
+        WEB-INF/guanxi_idp/config/spring/services/**/*.xml
+        WEB-INF/guanxi_idp/config/spring/profiles/**/*.xml
       </param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
