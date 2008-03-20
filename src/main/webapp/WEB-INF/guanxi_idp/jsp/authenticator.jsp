@@ -1,4 +1,4 @@
-<%@ page import="org.guanxi.idp.service.shibboleth.AuthHandler" %>
+<%@ page import="org.guanxi.idp.service.AuthHandler" %>
 <%@ page import="java.util.Enumeration" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
