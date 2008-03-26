@@ -132,6 +132,16 @@
       <groupId>servletapi</groupId>
       <artifactId>servletapi</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache</groupId>
+      <artifactId>derby</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache</groupId>
+      <artifactId>derbytools</artifactId>
+    </dependency>
     <!-- **************************************************** -->
 
   </dependencies>
