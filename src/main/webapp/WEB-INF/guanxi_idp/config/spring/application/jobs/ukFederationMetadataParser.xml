@@ -36,6 +36,7 @@
     <property name="metadataURL">
       <value>http://metadata.ukfederation.org.uk/ukfederation-metadata.xml</value>
     </property>
+    <property name="who"><value>Guanxi::IdP::MetadataParser</value></property>
     <property name="logger"><ref bean="idpLogger"/></property>
     <!-- The configuration to use with the logging engine -->
     <property name="loggerConfig"><ref bean="ukFederationMetadataParserLoggerConfig"/></property>
