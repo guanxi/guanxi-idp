@@ -18,4 +18,9 @@
   <!-- email attribute mapped twice -->
   <map name="protectedAppFFEmailMapping" attrName="email" attrValue=".*" mappedName="protectedApp_Email" />
   <map name="protectedAppFFEmailMapping2" attrName="email" attrValue=".*" mappedName="mail" mappedValue="alternative email" />
+
+  <!-- Persistent attribute -->
+  <map name="protectedAppFFPersistentIDMapping" attrName="id" attrValue=".*"
+       mappedName="protectedApp_PersistentID" mappedRule="encrypt"
+       persistent="true"/>
 </AttributeMap>

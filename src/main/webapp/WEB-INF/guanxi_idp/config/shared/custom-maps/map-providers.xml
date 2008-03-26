@@ -26,6 +26,7 @@
     <mapRef name="protectedAppFFSurnameMapping" />
     <mapRef name="protectedAppFFEmailMapping" />
     <mapRef name="protectedAppFFEmailMapping2" />
+    <mapRef name="protectedAppFFPersistentIDMapping" />
     <mapRef name="eduPersonScopedAffiliation" />
   </provider>
 </AttributeMap>
