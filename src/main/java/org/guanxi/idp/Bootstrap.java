@@ -29,6 +29,7 @@ import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.xal.idp.IdpDocument;
+import org.guanxi.idp.job.GuanxiJobConfig;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -36,6 +37,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.openssl.PEMWriter;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 
 import javax.servlet.ServletContext;
 import java.security.*;
@@ -49,8 +52,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.math.BigInteger;
+import java.text.ParseException;
 
 public class Bootstrap implements ApplicationListener, ApplicationContextAware, ServletContextAware {
+  /** The key in a job's data map where the job's config is stored */
+  public static final String JOB_KEY_JOB_CONFIG = "JOB_KEY_JOB_CONFIG";
+
   /** Our logger */
   private Logger log = null;
   /** The logger config */
@@ -64,6 +71,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private String configFile = null;
   /** If this instance of an Engine loads the BouncyCastle security provider then it should unload it */
   private boolean okToUnloadBCProvider = false;
+  /** The background jobs to start */
+  private GuanxiJobConfig[] gxJobs = null;
 
   public void setLog(Logger log) { this.log = log; }
   public Logger getLog() { return log; }
@@ -76,6 +85,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
 
   public void setConfigFile(String configFile) { this.configFile = configFile; }
   public String getConfigFile() { return configFile; }
+
+  public void setGxJobs(GuanxiJobConfig[] gxJobs) { this.gxJobs = gxJobs; }
 
   /**
    * Initialise the interceptor
@@ -131,6 +142,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE, new Integer(cookieAge));
 
       setup();
+
+      startJobs();
     }
     catch(Exception e) {
     }
@@ -339,5 +352,46 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
 
     servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG_DOC, idpDoc);
     servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG, idpDoc.getIdp());
+  }
+
+  private void startJobs() {
+    try {
+      // Get a new scheduler
+      Scheduler scheduler = new StdSchedulerFactory().getScheduler();
+      // Start it up. This won't start any jobs though.
+      scheduler.start();
+      
+      for (GuanxiJobConfig gxJob : gxJobs) {
+        // Need a new JobDetail to hold custom data to send to the job we're controlling
+        JobDetail jobDetail = new JobDetail(gxJob.getKey(), Scheduler.DEFAULT_GROUP, Class.forName(gxJob.getJobClass()));
+
+        // Create a new JobDataMap for custom data to be sent to the job...
+        JobDataMap jobDataMap = new JobDataMap();
+        // ...and add the job's custom config object
+        jobDataMap.put(JOB_KEY_JOB_CONFIG, gxJob);
+
+        // Put the job's custom data in it's JobDetail
+        jobDetail.setJobDataMap(jobDataMap);
+
+        /* Tell the scheduler when this job will run. Nothing will happen
+         * until the start method is called.
+         */
+        Trigger trigger = new CronTrigger(gxJob.getKey(), Scheduler.DEFAULT_GROUP, gxJob.getCronLine());
+
+        // Start the job
+        scheduler.scheduleJob(jobDetail, trigger);
+      }
+    }
+    catch(ClassNotFoundException cnfe) {
+      log.error("Error locating job class", cnfe);
+    }
+    catch(SchedulerException se) {
+      log.error("Job scheduling error", se);
+    }
+    catch(ParseException pe) {
+      log.error("Error parsing job cronline", pe);
+    }
+
+
   }
 }
