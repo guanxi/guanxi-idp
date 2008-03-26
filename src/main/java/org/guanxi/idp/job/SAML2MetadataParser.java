@@ -24,6 +24,7 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.job.SAML2MetadataParserConfig;
 
 /**
  * Parses the UK Federation metadata

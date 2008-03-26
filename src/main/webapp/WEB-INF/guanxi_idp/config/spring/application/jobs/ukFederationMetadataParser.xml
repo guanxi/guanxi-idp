@@ -29,7 +29,7 @@
             http://www.opensymphony.com/quartz/wikidocs/CronTriggers%20Tutorial.html
   -->
   
-  <bean id="ukFederationMetadataParser" class="org.guanxi.idp.job.SAML2MetadataParserConfig" init-method="init">
+  <bean id="ukFederationMetadataParser" class="org.guanxi.common.job.SAML2MetadataParserConfig" init-method="init">
     <property name="jobClass"><value>org.guanxi.idp.job.SAML2MetadataParser</value></property>
     <property name="key"><value>ukFederationMetadataParser</value></property>
     <property name="cronLine"><value>10 * * * * ?</value></property>
