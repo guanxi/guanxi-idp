@@ -51,6 +51,9 @@
   -->
   <service-provider name="EXAMPLE_SP_PROVIDER_ID" identity="exampleIdentity" creds="exampleCreds"/>
 
+  <!-- This SP points to the default identity and creds to use -->
+  <service-provider name="DEFAULT" identity="exampleIdentity" creds="exampleCreds"/>
+
   <!-- An identity set tells the IdP how to identity itself in assertions when
        talking to a Service Provider.
 
