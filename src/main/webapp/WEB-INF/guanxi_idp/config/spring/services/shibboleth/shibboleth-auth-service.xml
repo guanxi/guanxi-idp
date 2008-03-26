@@ -13,6 +13,7 @@
     <property name="gxPrincipalFactory"><ref bean="shibbolethGuanxiPrincipalFactory" /></property>
     <property name="authFormAction"><value>shibb/sso</value></property>
     <property name="spIDRequestParam"><value>providerId</value></property>
+    <property name="entityVerifier"><ref bean="" /></property>
     <property name="requiredRequestParams">
       <list>
         <value>providerId</value>
@@ -30,5 +31,7 @@
     <property name="logMaxFileSize"><value>5MB</value></property>
     <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
+
+  <bean id="shibbSAML2EntityVerifier" class="org.guanxi.idp.service.shibboleth.ShibbolethSAML2EntityVerifier" />
 
 </beans>
