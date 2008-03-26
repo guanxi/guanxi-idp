@@ -55,9 +55,6 @@ import java.math.BigInteger;
 import java.text.ParseException;
 
 public class Bootstrap implements ApplicationListener, ApplicationContextAware, ServletContextAware {
-  /** The key in a job's data map where the job's config is stored */
-  public static final String JOB_KEY_JOB_CONFIG = "JOB_KEY_JOB_CONFIG";
-
   /** Our logger */
   private Logger log = null;
   /** The logger config */
@@ -368,7 +365,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         // Create a new JobDataMap for custom data to be sent to the job...
         JobDataMap jobDataMap = new JobDataMap();
         // ...and add the job's custom config object
-        jobDataMap.put(JOB_KEY_JOB_CONFIG, gxJob);
+        jobDataMap.put(GuanxiJobConfig.JOB_KEY_JOB_CONFIG, gxJob);
 
         // Put the job's custom data in it's JobDetail
         jobDetail.setJobDataMap(jobDataMap);
