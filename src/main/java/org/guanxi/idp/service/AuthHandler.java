@@ -25,6 +25,7 @@ import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.xal.idp.AuthPage;
 import org.guanxi.xal.idp.IdpDocument;
 import org.guanxi.xal.idp.ServiceProvider;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.idp.farm.authenticators.Authenticator;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.context.ServletContextAware;
@@ -66,6 +67,8 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
   private String spIDRequestParam = null;
   /** The list of required request parameters for the particular instance */
   private List<String> requiredRequestParams = null;
+  /** The verifier instance to use to verify the incoming entity */
+  private SAML2EntityVerifier entityVerifier = null;
 
   /**
    * Initialise the interceptor
@@ -134,6 +137,18 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
                                                                request.getLocale()));
       request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
+    }
+
+    // Verify an SP based on cached SAML2 federation metadata
+    if (servletContext.getAttribute(request.getParameter(spIDRequestParam)) != null) {
+      if (!entityVerifier.verify((EntityDescriptorType)servletContext.getAttribute(request.getParameter(spIDRequestParam)), request)) {
+        log.error("Service Provider providerId " + request.getParameter(spIDRequestParam) + " failed verification");
+        request.setAttribute("message", messageSource.getMessage("sp.failed.verification",
+                                                                 new Object[]{request.getParameter(spIDRequestParam)},
+                                                                 request.getLocale()));
+        request.getRequestDispatcher(errorPage).forward(request, response);
+        return false;
+      }
     }
 
     // Look for our cookie. This is after any application cookie handler has authenticated the user
@@ -285,4 +300,6 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
   public void setSpIDRequestParam(String spIDRequestParam) { this.spIDRequestParam = spIDRequestParam; }
 
   public void setRequiredRequestParams(List<String> requiredRequestParams) { this.requiredRequestParams = requiredRequestParams; }
+
+  public void setEntityVerifier(SAML2EntityVerifier entityVerifier) { this.entityVerifier = entityVerifier; }
 }
