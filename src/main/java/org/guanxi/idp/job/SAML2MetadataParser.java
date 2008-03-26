@@ -22,17 +22,8 @@ import org.quartz.JobExecutionContext;
 import org.guanxi.idp.Bootstrap;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
-import org.guanxi.xal.saml_2_0.metadata.SPSSODescriptorType;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
-import org.apache.xmlbeans.XmlException;
-
-import java.net.URL;
-import java.net.HttpURLConnection;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.InputStream;
-import java.io.IOException;
 
 /**
  * Parses the UK Federation metadata
