@@ -21,6 +21,7 @@ import org.guanxi.common.GuanxiException;
 import org.guanxi.xal.idp.AttributeMapDocument;
 import org.guanxi.xal.idp.Map;
 import org.guanxi.xal.idp.MapProvider;
+import org.guanxi.idp.persistence.PersistenceEngine;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.web.context.ServletContextAware;
 
@@ -50,9 +51,13 @@ public class AttributeMap implements ServletContextAware {
   private Vector mappedValues = null;
   /** The map file to use */
   private String mapFile = null;
+  /** The persistence engine to use */
+  private PersistenceEngine persistenceEngine = null;
 
   public void setMapFile(String mapFile) { this.mapFile = mapFile; }
   public String getMapFile() { return mapFile; }
+
+  public void setPersistenceEngine(PersistenceEngine persistenceEngine) { this.persistenceEngine = persistenceEngine; }
 
   public void init() {
     maps = new Vector();
@@ -116,31 +121,56 @@ public class AttributeMap implements ServletContextAware {
                 if (matcher.find()) {
                   index++;
                   mapped = true;
-                  
-                  // Rename the attribute...
-                  if (map.getMappedName() != null)
-                    mappedNames.add(map.getMappedName());
-                  else
-                    mappedNames.add(attrName);
 
-                  // Attribute value is what it says in the map...
-                  if (map.getMappedValue() != null)
-                    mappedValues.add(map.getMappedValue());
-                  // ...or just use the original attribute value
+                  // Rename the attribute...
+                  String mappedAttrName = null;
+                  if (map.getMappedName() != null)
+                    mappedAttrName = map.getMappedName();
                   else
-                    mappedValues.add(attrValue);
+                    mappedAttrName = attrName;
+                  mappedNames.add(mappedAttrName);
+
+                  // If it's a persistent attribute, see if its value has been persisted already
+                  boolean retrievedPersistentAttribute = false;
+                  String mappedAttrValue = null;
+                  if (map.getPersistent()) {
+                    if (persistenceEngine.attributeExists(mappedAttrName)) {
+                      mappedAttrValue = persistenceEngine.getAttributeValue(mappedAttrName);
+                      retrievedPersistentAttribute = true;
+                    }
+                  }
+                  else {
+                    // Attribute value is what it says in the map...
+                    if (map.getMappedValue() != null)
+                      mappedAttrValue = map.getMappedValue();
+                    // ...or just use the original attribute value
+                    else
+                      mappedAttrValue = attrValue;
+                  }
+                  mappedValues.add(mappedAttrValue);
 
                   // ...and transform the value if required
-                  if (map.getMappedRule() != null) {
-                    // Encrypt the attribute value
-                    if (map.getMappedRule().equals("encrypt"))
-                      mappedValues.set(index, SecUtils.getInstance().encrypt((String)mappedValues.get(index)));
+                  if ((!map.getPersistent()) || ((map.getPersistent()) && (!retrievedPersistentAttribute))) {
+                    if (map.getMappedRule() != null) {
+                      // Encrypt the attribute value
+                      if (map.getMappedRule().equals("encrypt")) {
+                        mappedAttrValue = SecUtils.getInstance().encrypt((String)mappedValues.get(index));
+                        mappedValues.set(index, mappedAttrValue);
+                      }
 
-                    /* Append the domain to the attribute value by signalling to the
-                     * attributor that it needs to add the domain.
-                     */
-                    if (map.getMappedRule().equals("append_domain"))
-                      mappedValues.set(index, mappedValues.get(index) + "@");
+                      /* Append the domain to the attribute value by signalling to the
+                       * attributor that it needs to add the domain.
+                       */
+                      if (map.getMappedRule().equals("append_domain")) {
+                        mappedAttrValue = mappedValues.get(index) + "@";
+                        mappedValues.set(index, mappedAttrValue);
+                      }
+                    }
+                  }
+
+                  // Persist the attribute if required, after all maps and rules have been applied
+                  if ((map.getPersistent()) && (!retrievedPersistentAttribute)) {
+                    persistenceEngine.persistAttribute(mappedAttrName, mappedAttrValue);
                   }
 
                   //return true;

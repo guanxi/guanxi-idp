@@ -26,6 +26,7 @@
 
   <bean id="ffMapper" class="org.guanxi.idp.util.AttributeMap" scope="prototype" init-method="init">
     <property name="mapFile"><value>/WEB-INF/guanxi_idp/config/shared/map.xml</value></property>
+    <property name="persistenceEngine"><ref bean="idpPersistenceEngine"/></property>
   </bean>
 
   <bean id="ffARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">

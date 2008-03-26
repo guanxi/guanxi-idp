@@ -6,4 +6,24 @@
 
   <bean id="idpLogger" class="org.guanxi.common.log.Log4JLogger" />
 
+  <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.JDBCPersistenceEngine"
+        init-method="init" destroy-method="destroy">
+    <property name="logger"><ref bean="idpLogger"/></property>
+    <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
+    <property name="driver"><value>org.apache.derby.jdbc.EmbeddedDriver</value></property>
+    <property name="framework"><value>embedded</value></property>
+    <property name="protocol"><value>jdbc:derby:</value></property>
+    <property name="databaseName"><value>guanxiidp</value></property>
+    <property name="username"><value>user1</value></property>
+    <property name="password"><value>user1</value></property>
+  </bean>
+
+  <bean id="idpPersistenceEngineLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
+    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/jdbc-persistence-engine.log</value></property>
+    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
+    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
+    <property name="logMaxFileSize"><value>5MB</value></property>
+    <property name="logMaxBackupIndex"><value>5</value></property>
+  </bean>
+
 </beans>
