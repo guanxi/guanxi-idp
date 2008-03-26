@@ -10,6 +10,11 @@
     <!-- The configuration to use with the logging engine -->
     <property name="loggerConfig"><ref bean="bootstrapLoggerConfig"/></property>
     <property name="configFile"><value>/WEB-INF/guanxi_idp/config/idp.xml</value></property>
+    <property name="gxJobs">
+      <list>
+        <ref bean="ukFederationMetadataParser" />
+      </list>
+    </property>
   </bean>
 
   <bean id="bootstrapLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
