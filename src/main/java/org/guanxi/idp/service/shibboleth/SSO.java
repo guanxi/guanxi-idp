@@ -127,6 +127,8 @@ public class SSO extends AbstractController implements ServletContextAware {
   private IdPFilter[] filters = null;
   private String errorView = null;
   private String shibView = null;
+  /** The value of the service-provider:name in the config file that points to the default identity and creds */
+  private String defaultSPEntry = null;
 
   public void setLog(Logger log) { this.log = log; }
   public Logger getLog() { return log; }
@@ -143,6 +145,8 @@ public class SSO extends AbstractController implements ServletContextAware {
   public void setErrorView(String errorView) { this.errorView = errorView; }
 
   public void setShibView(String shibView) { this.shibView = shibView; }
+
+  public void setDefaultSPEntry(String defaultSPEntry) { this.defaultSPEntry = defaultSPEntry; }
 
   public void init() {
     try {
@@ -183,10 +187,25 @@ public class SSO extends AbstractController implements ServletContextAware {
     // Need this for signing the Response
     Creds credsConfig = null;
 
-    // Now load the appropriate identity and creds from the config file
+    /* Now load the appropriate identity and creds from the config file.
+     * We'll either use the default or the ones that the particular SP
+     * needs to be sent.
+     */
+    String spID = null;
     ServiceProvider[] spList = idpConfig.getServiceProviderArray();
     for (int c=0; c < spList.length; c++) {
       if (spList[c].getName().equals(principal.getRelyingPartyID())) {
+        spID = principal.getRelyingPartyID();
+      }
+    }
+    if (spID == null) {
+      // No specific requirement for this SP so use the default identity and creds
+      spID = defaultSPEntry;
+    }
+
+    // Now we've sorted the SP id to use, load the identity and creds
+    for (int c=0; c < spList.length; c++) {
+      if (spList[c].getName().equals(spID)) {
         String identityToUse = spList[c].getIdentity();
         String credsToUse = spList[c].getCreds();
 
