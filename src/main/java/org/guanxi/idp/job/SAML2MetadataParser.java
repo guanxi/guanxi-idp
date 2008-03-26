@@ -30,9 +30,7 @@ import org.guanxi.common.job.GuanxiJobConfig;
  * Parses the UK Federation metadata
  */
 public class SAML2MetadataParser implements Job {
-  public SAML2MetadataParser() {
-    super();
-  }
+  public SAML2MetadataParser() {}
 
   public void execute(JobExecutionContext context) throws JobExecutionException {
     // Get our custom config
