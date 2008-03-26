@@ -111,12 +111,18 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
 
     IdpDocument.Idp idpConfig = (IdpDocument.Idp)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
 
-    // Look for the service provider in the metadata
+    // Look for the service provider in the cached federation metadata...
     boolean spSupported = false;
-    ServiceProvider[] spList = idpConfig.getServiceProviderArray();
-    for (int c=0; c < spList.length; c++) {
-      if (spList[c].getName().equals(request.getParameter(spIDRequestParam))) {
-        spSupported = true;
+    if (servletContext.getAttribute(request.getParameter(spIDRequestParam)) != null) {
+      spSupported = true;
+    }
+    else {
+      // ...if we can't find it, it might be in the local metadata
+      ServiceProvider[] spList = idpConfig.getServiceProviderArray();
+      for (int c=0; c < spList.length; c++) {
+        if (spList[c].getName().equals(request.getParameter(spIDRequestParam))) {
+          spSupported = true;
+        }
       }
     }
 
