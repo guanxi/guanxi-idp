@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
 
-  <bean id="authHandler" class="org.guanxi.idp.service.AuthHandler" init-method="init">
+  <bean id="shibbolethAuthHandler" class="org.guanxi.idp.service.AuthHandler" init-method="init">
     <property name="logger"><ref bean="idpLogger"/></property>
     <property name="loggerConfig"><ref bean="authHandlerLoggerConfig"/></property>
     <property name="errorPage"><value>/message.gxIdP</value></property>
@@ -13,7 +13,7 @@
     <property name="gxPrincipalFactory"><ref bean="shibbolethGuanxiPrincipalFactory" /></property>
     <property name="authFormAction"><value>shibb/sso</value></property>
     <property name="spIDRequestParam"><value>providerId</value></property>
-    <property name="entityVerifier"><ref bean="" /></property>
+    <property name="entityVerifier"><ref bean="shibbSAML2EntityVerifier" /></property>
     <property name="requiredRequestParams">
       <list>
         <value>providerId</value>
