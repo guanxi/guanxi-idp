@@ -149,6 +149,8 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
    *  must be set before loading the driver to take effect.
    */
   private void connect() throws GuanxiException {
+    System.setProperty("derby.system.home", databaseDirectory);
+    
     try {
       Class.forName(driver).newInstance();
 
