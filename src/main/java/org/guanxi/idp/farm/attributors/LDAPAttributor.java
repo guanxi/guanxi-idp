@@ -159,7 +159,7 @@ public class LDAPAttributor extends SimpleAttributor {
                     log.debug("Attribute release blocked by ARP : " + attrName + " to " + principal.getRelyingPartyID());
 
                     // Sort out any mappings. This will change the default name/value if necessary...
-                    if (mapper.map(principal.getRelyingPartyID(), attr.getName(), attrValue)) {
+                    if (mapper.map(principal, principal.getRelyingPartyID(), attr.getName(), attrValue)) {
                       for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                         // Release the mapped attribute if appropriate
                         if (arpEngine.release(principal.getRelyingPartyID(), mapper.getMappedNames()[mapCount],

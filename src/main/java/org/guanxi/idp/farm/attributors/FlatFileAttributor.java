@@ -74,7 +74,7 @@ public class FlatFileAttributor extends SimpleAttributor {
           }
           else {
             // Sort out any mappings. This will change the default name/value if necessary...
-            if (mapper.map(principal.getRelyingPartyID(), attrName, attrValue)) {
+            if (mapper.map(principal, principal.getRelyingPartyID(), attrName, attrValue)) {
               for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                 log.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
 
