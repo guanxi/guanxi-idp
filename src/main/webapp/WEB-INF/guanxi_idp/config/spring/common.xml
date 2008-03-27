@@ -6,18 +6,19 @@
 
   <bean id="idpLogger" class="org.guanxi.common.log.Log4JLogger" />
 
-  <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.JDBCPersistenceEngine"
+  <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.DerbyPersistenceEngine"
         init-method="init" destroy-method="destroy">
+    <!-- Logging settings -->
     <property name="logger"><ref bean="idpLogger"/></property>
     <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
 
-    <!-- Apache Derby embedded database -->
+    <!-- JDBC settings -->
     <property name="driver"><value>org.apache.derby.jdbc.EmbeddedDriver</value></property>
-    <property name="framework"><value>embedded</value></property>
-    <property name="protocol"><value>jdbc:derby:</value></property>
-    <property name="username"><value>user1</value></property>
-    <property name="password"><value>user1</value></property>
-    <property name="databaseDirectory"><value>/tmp/derby</value></property>
+    <property name="connectionString"><value>jdbc:derby:guanxiidp</value></property>
+    <property name="usernameProperty"><value>user</value></property>
+    <property name="usernameValue"><value>user1</value></property>
+    <property name="passwordProperty"><value>password</value></property>
+    <property name="passwordValue"><value>user1</value></property>
 
     <!-- Database properties -->
     <property name="databaseName"><value>guanxiidp</value></property>
@@ -27,6 +28,10 @@
     <property name="fieldAttributeName"><value>attribute_name</value></property>
     <property name="fieldAttributeValue"><value>attribute_value</value></property>
     <property name="fieldRelyingParty"><value>relying_party</value></property>
+
+    <!-- Apache Derby embedded database settings -->
+    <property name="framework"><value>embedded</value></property>
+    <property name="databaseDirectory"><value>/tmp/derby</value></property>
   </bean>
 
   <bean id="idpPersistenceEngineLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
