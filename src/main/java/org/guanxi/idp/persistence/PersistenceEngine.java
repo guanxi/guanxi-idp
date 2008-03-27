@@ -16,6 +16,8 @@
 
 package org.guanxi.idp.persistence;
 
+import org.guanxi.common.GuanxiPrincipal;
+
 /**
  * Represents an engine that can persist attribute names and values
  */
@@ -23,33 +25,37 @@ public interface PersistenceEngine {
   /**
    * Checks whether the specified attribute has been persisted
    *
+   * @param principal the principal describing the user the attribute refers to
    * @param attributeName the name of the attribute
    * @return true if the attribute has been persisted otherwise false
    */
-  public boolean attributeExists(String attributeName);
+  public boolean attributeExists(GuanxiPrincipal principal, String attributeName);
 
   /**
    * Gets the value of a persisted attribute
    *
+   * @param principal the principal describing the user the attribute refers to
    * @param attributeName the name of the attribute
    * @return the value of the attribute
    */
-  public String getAttributeValue(String attributeName);
+  public String getAttributeValue(GuanxiPrincipal principal, String attributeName);
 
   /**
    * Persists an attribute name and value
    *
+   * @param principal the principal describing the user the attribute refers to
    * @param attributeName the attribute name
    * @param attributeValue the attribute value
    * @return true if successful otherwise false
    */
-  public boolean persistAttribute(String attributeName, String attributeValue);
+  public boolean persistAttribute(GuanxiPrincipal principal, String attributeName, String attributeValue);
 
   /**
    * Removes a persisted attribute from the persistence store
    *
+   * @param principal the principal describing the user the attribute refers to
    * @param attributeName the name of the attribute to remove. Its value will be removed too
    * @return true if successful otherwise false
    */
-  public boolean unpersistAttribute(String attributeName);
+  public boolean unpersistAttribute(GuanxiPrincipal principal, String attributeName);
 }
