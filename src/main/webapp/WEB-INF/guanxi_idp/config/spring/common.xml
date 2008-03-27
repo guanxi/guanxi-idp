@@ -15,6 +15,11 @@
     <property name="protocol"><value>jdbc:derby:</value></property>
     <property name="databaseName"><value>guanxiidp</value></property>
     <property name="tableName"><value>persistent_user_attributes</value></property>
+    <property name="fieldPrimaryKey"><value>id</value></property>
+    <property name="fieldUserid"><value>userid</value></property>
+    <property name="fieldAttributeName"><value>attribute_name</value></property>
+    <property name="fieldAttributeValue"><value>attribute_value</value></property>
+    <property name="fieldRelyingParty"><value>relying_party</value></property>
     <property name="databaseDirectory"><value>/tmp/derby</value></property>
     <property name="username"><value>user1</value></property>
     <property name="password"><value>user1</value></property>
