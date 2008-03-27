@@ -18,6 +18,7 @@ package org.guanxi.idp.util;
 
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.xal.idp.AttributeMapDocument;
 import org.guanxi.xal.idp.Map;
 import org.guanxi.xal.idp.MapProvider;
@@ -84,6 +85,7 @@ public class AttributeMap implements ServletContextAware {
    *   Attribute value is changed to what is in the mappedValue entry if there is one
    *   Attribute value is further changed by any rule defined in the mappedRule entry if there is one
    *
+   * @param principal the principal describing the user the attribute refers to
    * @param spProviderId This should be the content of a 'providerId' attribute on a map element.
    * If no maps are found that match this value then no attributes will be mapped. If any mapping
    * rules are service provider agnostic, they should have a "providerId" set to "*" on their
@@ -92,7 +94,7 @@ public class AttributeMap implements ServletContextAware {
    * @param attrValue The value to give the mapped attribute
    * @return true if the attribute was mapped otherwise false
    */
-  public boolean map(String spProviderId, String attrName, String attrValue) {
+  public boolean map(GuanxiPrincipal principal, String spProviderId, String attrName, String attrValue) {
     int index = -1;
     boolean mapped = false;
     Pattern pattern = null;
@@ -134,12 +136,13 @@ public class AttributeMap implements ServletContextAware {
                   boolean retrievedPersistentAttribute = false;
                   String mappedAttrValue = null;
                   if (map.getPersistent()) {
-                    if (persistenceEngine.attributeExists(mappedAttrName)) {
-                      mappedAttrValue = persistenceEngine.getAttributeValue(mappedAttrName);
+                    if (persistenceEngine.attributeExists(principal, mappedAttrName)) {
+                      mappedAttrValue = persistenceEngine.getAttributeValue(principal, mappedAttrName);
                       retrievedPersistentAttribute = true;
                     }
                   }
-                  else {
+
+                  if ((!map.getPersistent()) || ((map.getPersistent()) && (!retrievedPersistentAttribute))) {
                     // Attribute value is what it says in the map...
                     if (map.getMappedValue() != null)
                       mappedAttrValue = map.getMappedValue();
@@ -170,7 +173,7 @@ public class AttributeMap implements ServletContextAware {
 
                   // Persist the attribute if required, after all maps and rules have been applied
                   if ((map.getPersistent()) && (!retrievedPersistentAttribute)) {
-                    persistenceEngine.persistAttribute(mappedAttrName, mappedAttrValue);
+                    persistenceEngine.persistAttribute(principal, mappedAttrName, mappedAttrValue);
                   }
 
                   //return true;
