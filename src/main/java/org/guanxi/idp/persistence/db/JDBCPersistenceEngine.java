@@ -25,30 +25,26 @@ import java.util.Properties;
 import java.util.Vector;
 
 /**
- * JDBC implementation of a PersistenceEngine
- *
- * DB schema:
- * id userid attribute_name attribute_value relying_party
+ * JDBC implementation of a PersistenceEngine.
  */
 public class JDBCPersistenceEngine extends SimplePersistenceEngine {
-  private static final String WILDCARD = "__WILDCARD__";
+  protected static final String WILDCARD = "__WILDCARD__";
   
   // Injected
-  private String framework = null;
-  private String driver = null;
-  private String databaseName = null;
-  private String protocol = null;
-  private String username = null;
-  private String password = null;
-  private String databaseDirectory = null;
-  private String tableName = null;
-  private String fieldPrimaryKey = null;
-  private String fieldUserid = null;
-  private String fieldAttributeName = null;
-  private String fieldAttributeValue = null;
-  private String fieldRelyingParty = null;
-
-  private Connection dbConnection = null;
+  protected String driver = null;
+  protected String databaseName = null;
+  protected String usernameProperty = null;
+  protected String usernameValue = null;
+  protected String passwordProperty = null;
+  protected String passwordValue = null;
+  protected String tableName = null;
+  protected String fieldPrimaryKey = null;
+  protected String fieldUserid = null;
+  protected String fieldAttributeName = null;
+  protected String fieldAttributeValue = null;
+  protected String fieldRelyingParty = null;
+  protected String connectionString = null;
+  protected Connection dbConnection = null;
 
   public void init() {
     super.init();
@@ -135,77 +131,22 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  /*
-   *  The JDBC driver is loaded by loading its class.
-   *  If you are using JDBC 4.0 (Java SE 6) or newer, JDBC drivers may
-   *  be automatically loaded, making this code optional.
-   *
-   *  In an embedded environment, this will also start up the Derby
-   *  engine (though not any databases), since it is not already
-   *  running. In a client environment, the Derby engine is being run
-   *  by the network server framework.
-   *
-   *  In an embedded environment, any static Derby system properties
-   *  must be set before loading the driver to take effect.
-   */
-  private void connect() throws GuanxiException {
-    System.setProperty("derby.system.home", databaseDirectory);
-    
+  protected void connect() throws GuanxiException {
     try {
       Class.forName(driver).newInstance();
 
-      Properties props = null;props = new Properties();
-      // Providing a user name and password is optional in the embedded and derbyclient frameworks
-      props.put("user", username);
-      props.put("password", password);
+      Properties props = new Properties();
+      props.put(usernameProperty, usernameValue);
+      props.put(passwordProperty, passwordValue);
 
-      dbConnection = DriverManager.getConnection(protocol + databaseName + ";create=true", props);
+      dbConnection = DriverManager.getConnection(connectionString, props);
     }
     catch (Exception e) {
       throw new GuanxiException(e);
     }
   }
 
-  /*
-   * In embedded mode, an application should shut down the database.
-   * If the application fails to shut down the database,
-   * Derby will not perform a checkpoint when the JVM shuts down.
-   * This means that it will take longer to boot (connect to) the
-   * database the next time, because Derby needs to perform a recovery
-   * operation.
-   *
-   * It is also possible to shut down the Derby system/engine, which
-   * automatically shuts down all booted databases.
-   *
-   * Explicitly shutting down the database or the Derby engine with
-   * the connection URL is preferred. This style of shutdown will
-   * always throw an SQLException.
-   *
-   * Not shutting down when in a client environment, see method
-   * Javadoc.
-   */
-  private void disconnect() throws GuanxiException {
-    if (framework.equals("embedded")) {
-      try {
-        DriverManager.getConnection("jdbc:derby:;shutdown=true");
-      }
-      catch (SQLException sqle) {
-        if (((sqle.getErrorCode() == 50000) && ("XJ015".equals(sqle.getSQLState())))) {
-          /* We got the expected exception.
-           * Note that for single database shutdown, the expected SQL state is "08006"
-           * and the error code is 45000.
-           */
-          log.info("Derby shut down normally");
-        }
-        else {
-          /* if the error code or SQLState is different, we have an unexpected exception
-           * (shutdown failed)
-           */
-          log.error("Derby did not shut down normally", sqle);
-        }
-      }
-    }
-
+  protected void disconnect() throws GuanxiException {
     try {
       if (dbConnection != null) {
         if (!dbConnection.isClosed()) dbConnection.close();
@@ -216,7 +157,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  private ResultSet query(String query) throws GuanxiException {
+  protected ResultSet query(String query) throws GuanxiException {
     if (dbConnection == null) {
       throw new GuanxiException("query cannot be performed : Not connected to the database");
     }
@@ -231,7 +172,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  private void insert(String userid, String attributeName, String attributeValue, String relyingParty) throws GuanxiException {
+  protected void insert(String userid, String attributeName, String attributeValue, String relyingParty) throws GuanxiException {
     String insertString = "insert into " + tableName + " (" + fieldUserid + ", " + fieldAttributeName + ", " + fieldAttributeValue + ", " + fieldRelyingParty + ") ";
     insertString += " values(";
     insertString += "'" + userid + "',";
@@ -249,7 +190,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  private void update(String userid, String attributeName, String attributeValue, String relyingParty) throws GuanxiException {
+  protected void update(String userid, String attributeName, String attributeValue, String relyingParty) throws GuanxiException {
     String updateString = "update " + tableName + "set ";
     updateString += fieldAttributeValue + " = '" + attributeValue + "' ";
     updateString += "where ";
@@ -266,7 +207,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  private void delete(String userid, String attributeName, String relyingParty) throws GuanxiException {
+  protected void delete(String userid, String attributeName, String relyingParty) throws GuanxiException {
     String deleteString = "delete from " + tableName + " where ";
     deleteString += fieldUserid + " = '" + userid + "' and ";
     deleteString += fieldAttributeName + " = '" + attributeName + "' and ";
@@ -281,7 +222,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  public String[] getField(String tableName, String[] columnNames, String[] columnValues, String fieldName) throws GuanxiException {
+  protected String[] getField(String tableName, String[] columnNames, String[] columnValues, String fieldName) throws GuanxiException {
     String[] fields = null;
 
     String queryString = "select * from " + tableName + " where ";
@@ -317,7 +258,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     return fields;
   }
 
-  private boolean tableExists() throws GuanxiException {
+  protected boolean tableExists() throws GuanxiException {
     try {
       DatabaseMetaData meta = dbConnection.getMetaData();
       ResultSet tables = meta.getTables(null, null, null, null);
@@ -336,7 +277,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  private void createTable() throws GuanxiException {
+  protected void createTable() throws GuanxiException {
     String createString = "create table " + tableName + " (";
     createString += fieldPrimaryKey + " integer not null primary key generated always as identity (start with 1, increment by 1), ";
     createString += fieldUserid + " varchar(255) not null, ";
@@ -356,15 +297,15 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
 
   public void setDriver(String driver) { this.driver = driver; }
   public void setDatabaseName(String databaseName) { this.databaseName = databaseName; }
-  public void setProtocol(String protocol) { this.protocol = protocol; }
-  public void setUsername(String username) { this.username = username; }
-  public void setPassword(String password) { this.password = password; }
-  public void setFramework(String framework) { this.framework = framework; }
-  public void setDatabaseDirectory(String databaseDirectory) { this.databaseDirectory = databaseDirectory; }
   public void setTableName(String tableName) { this.tableName = tableName; }
   public void setFieldPrimaryKey(String fieldPrimaryKey) { this.fieldPrimaryKey = fieldPrimaryKey; }
   public void setFieldUserid(String fieldUserid) { this.fieldUserid = fieldUserid; }
   public void setFieldAttributeName(String fieldAttributeName) { this.fieldAttributeName = fieldAttributeName; }
   public void setFieldAttributeValue(String fieldAttributeValue) { this.fieldAttributeValue = fieldAttributeValue; }
   public void setFieldRelyingParty(String fieldRelyingParty) { this.fieldRelyingParty = fieldRelyingParty; }
+  public void setConnectionString(String connectionString) { this.connectionString = connectionString; }
+  public void setUsernameProperty(String usernameProperty) { this.usernameProperty = usernameProperty; }
+  public void setUsernameValue(String usernameValue) { this.usernameValue = usernameValue; }
+  public void setPasswordProperty(String passwordProperty) { this.passwordProperty = passwordProperty; }
+  public void setPasswordValue(String passwordValue) { this.passwordValue = passwordValue; }
 }
