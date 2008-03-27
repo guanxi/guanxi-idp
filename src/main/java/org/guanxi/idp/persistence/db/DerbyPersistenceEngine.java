@@ -44,7 +44,7 @@ public class DerbyPersistenceEngine extends JDBCPersistenceEngine {
    */
   protected void connect() throws GuanxiException {
     System.setProperty("derby.system.home", databaseDirectory);
-    connectionString = protocol + databaseName + ";create=true";
+    connectionString += ";create=true";
     super.connect();
   }
 
