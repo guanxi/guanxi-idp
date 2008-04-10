@@ -16,13 +16,13 @@
 
 package org.guanxi.idp.util;
 
-import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.xal.idp.AttributeMapDocument;
 import org.guanxi.xal.idp.Map;
 import org.guanxi.xal.idp.MapProvider;
 import org.guanxi.idp.persistence.PersistenceEngine;
+import org.guanxi.idp.farm.rule.AttributeRule;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.web.context.ServletContextAware;
 
@@ -54,11 +54,8 @@ public class AttributeMap implements ServletContextAware {
   private String mapFile = null;
   /** The persistence engine to use */
   private PersistenceEngine persistenceEngine = null;
-
-  public void setMapFile(String mapFile) { this.mapFile = mapFile; }
-  public String getMapFile() { return mapFile; }
-
-  public void setPersistenceEngine(PersistenceEngine persistenceEngine) { this.persistenceEngine = persistenceEngine; }
+  /** The attribute rules that we have access to */
+  private AttributeRule[] attributeRules = null;
 
   public void init() {
     maps = new Vector();
@@ -155,18 +152,11 @@ public class AttributeMap implements ServletContextAware {
                   // ...and transform the value if required
                   if ((!map.getPersistent()) || ((map.getPersistent()) && (!retrievedPersistentAttribute))) {
                     if (map.getMappedRule() != null) {
-                      // Encrypt the attribute value
-                      if (map.getMappedRule().equals("encrypt")) {
-                        mappedAttrValue = SecUtils.getInstance().encrypt((String)mappedValues.get(index));
-                        mappedValues.set(index, mappedAttrValue);
-                      }
-
-                      /* Append the domain to the attribute value by signalling to the
-                       * attributor that it needs to add the domain.
-                       */
-                      if (map.getMappedRule().equals("append_domain")) {
-                        mappedAttrValue = mappedValues.get(index) + "@";
-                        mappedValues.set(index, mappedAttrValue);
+                      for (AttributeRule attributeRule : attributeRules) {
+                        if (attributeRule.getRuleName().equals(map.getMappedRule())) {
+                          mappedAttrValue = attributeRule.applyRule((String)mappedNames.get(index), (String)mappedValues.get(index));
+                          mappedValues.set(index, mappedAttrValue);
+                        }
                       }
                     }
                   }
@@ -256,4 +246,8 @@ public class AttributeMap implements ServletContextAware {
   }
 
   public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
+  public void setMapFile(String mapFile) { this.mapFile = mapFile; }
+  public String getMapFile() { return mapFile; }
+  public void setPersistenceEngine(PersistenceEngine persistenceEngine) { this.persistenceEngine = persistenceEngine; }
+  public void setAttributeRules(AttributeRule[] attributeRules) { this.attributeRules = attributeRules; }
 }
