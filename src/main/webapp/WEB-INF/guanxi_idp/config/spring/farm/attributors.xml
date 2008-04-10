@@ -12,7 +12,7 @@
     <property name="logger"><ref bean="attributorLogger"/></property>
     <property name="loggerConfig"><ref bean="flatFileAttriubtorLoggerConfig"/></property>
     <property name="attributorConfig"><value>/WEB-INF/guanxi_idp/config/shared/flatfile.xml</value></property>
-    <property name="mapper"><ref bean="ffMapper"/></property>
+    <property name="mapper"><ref bean="attributeMapper"/></property>
     <property name="arpEngine"><ref bean="ffARPEngine"/></property>
   </bean>
 
@@ -22,11 +22,6 @@
     <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
     <property name="logMaxFileSize"><value>5MB</value></property>
     <property name="logMaxBackupIndex"><value>5</value></property>
-  </bean>
-
-  <bean id="ffMapper" class="org.guanxi.idp.util.AttributeMap" scope="prototype" init-method="init">
-    <property name="mapFile"><value>/WEB-INF/guanxi_idp/config/shared/map.xml</value></property>
-    <property name="persistenceEngine"><ref bean="idpPersistenceEngine"/></property>
   </bean>
 
   <bean id="ffARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
@@ -40,7 +35,7 @@
     <property name="logger"><ref bean="attributorLogger"/></property>
     <property name="loggerConfig"><ref bean="ldapAttriubtorLoggerConfig"/></property>
     <property name="attributorConfig"><value>/WEB-INF/guanxi_idp/config/shared/ldap.xml</value></property>
-    <property name="mapper"><ref bean="ldapMapper"/></property>
+    <property name="mapper"><ref bean="attributeMapper"/></property>
     <property name="arpEngine"><ref bean="ldapARPEngine"/></property>
   </bean>
 
@@ -50,10 +45,6 @@
     <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
     <property name="logMaxFileSize"><value>5MB</value></property>
     <property name="logMaxBackupIndex"><value>5</value></property>
-  </bean>
-
-  <bean id="ldapMapper" class="org.guanxi.idp.util.AttributeMap" scope="prototype" init-method="init">
-    <property name="mapFile"><value>/WEB-INF/guanxi_idp/config/shared/map.xml</value></property>
   </bean>
 
   <bean id="ldapARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
