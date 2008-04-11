@@ -31,16 +31,17 @@ public abstract class IdPTest {
   protected static GuanxiPrincipal principal = null;
   protected static ResourceBundle idpProperties = null;
   protected static String idpHome = null;
+  protected static String springCommonFile = null;
 
   protected static final String TEST_USER_NAME = "harrymcd";
   protected static final String TEST_RELYING_PARTY = "protectedapp-guard";
-  protected static final String SPRING_COMMON_FILE = "file:///Users/alistair/dev/Guanxi/guanxi2/IdP2/src/main/webapp/WEB-INF/guanxi_idp/config/spring/common.xml";
 
   @BeforeClass
   public static void init() {
     idpProperties = ResourceBundle.getBundle("test");
     idpHome = "file://" + idpProperties.getString("idp.webapp.home");
     servletContext = new MockServletContext(idpHome);
+    springCommonFile = idpHome + "/WEB-INF/guanxi_idp/config/spring/common.xml";
 
     principal = new GuanxiPrincipal();
     principal.setName(TEST_USER_NAME);
