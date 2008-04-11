@@ -19,8 +19,10 @@ package org.guanxi.idp;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.guanxi.idp.persistence.PersistenceTestSuite;
+import org.guanxi.idp.attribute.AttributeTestSuite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses( { PersistenceTestSuite.class } )
+@Suite.SuiteClasses( { PersistenceTestSuite.class,
+                       AttributeTestSuite.class } )
 public class IdPTestSuite {
 }
