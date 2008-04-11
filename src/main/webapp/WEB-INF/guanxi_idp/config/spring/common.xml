@@ -8,11 +8,9 @@
 
   <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.DerbyPersistenceEngine"
         init-method="init" destroy-method="destroy">
-    <!-- Logging settings -->
     <property name="logger"><ref bean="idpLogger"/></property>
     <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
 
-    <!-- JDBC settings -->
     <property name="driver"><value>org.apache.derby.jdbc.EmbeddedDriver</value></property>
     <property name="connectionString"><value>jdbc:derby:guanxiidp</value></property>
     <property name="usernameProperty"><value>user</value></property>
@@ -20,7 +18,30 @@
     <property name="passwordProperty"><value>password</value></property>
     <property name="passwordValue"><value>user1</value></property>
 
-    <!-- Database properties -->
+    <property name="dbConfig"><ref bean="standardConfig" /></property>
+
+    <property name="framework"><value>embedded</value></property>
+    <property name="databaseDirectory"><value>/tmp/derby</value></property>
+  </bean>
+
+  <!--
+  <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.JDBCPersistenceEngine"
+        init-method="init" destroy-method="destroy">
+    <property name="logger"><ref bean="idpLogger"/></property>
+    <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
+
+    <property name="driver"><value>com.mysql.jdbc.Driver</value></property>
+    <property name="connectionString"><value>jdbc:mysql://localhost/guanxiidp</value></property>
+    <property name="usernameProperty"><value>user</value></property>
+    <property name="usernameValue"><value>guanxiidp</value></property>
+    <property name="passwordProperty"><value>password</value></property>
+    <property name="passwordValue"><value>hohoho</value></property>
+
+    <property name="dbConfig"><ref bean="standardConfig" /></property>
+  </bean>
+  -->
+
+  <bean id="standardConfig" class="org.guanxi.idp.persistence.db.DBConfig">
     <property name="databaseName"><value>guanxiidp</value></property>
     <property name="tableName"><value>persistent_user_attributes</value></property>
     <property name="fieldPrimaryKey"><value>id</value></property>
@@ -28,10 +49,6 @@
     <property name="fieldAttributeName"><value>attribute_name</value></property>
     <property name="fieldAttributeValue"><value>attribute_value</value></property>
     <property name="fieldRelyingParty"><value>relying_party</value></property>
-
-    <!-- Apache Derby embedded database settings -->
-    <property name="framework"><value>embedded</value></property>
-    <property name="databaseDirectory"><value>/tmp/derby</value></property>
   </bean>
 
   <bean id="idpPersistenceEngineLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
