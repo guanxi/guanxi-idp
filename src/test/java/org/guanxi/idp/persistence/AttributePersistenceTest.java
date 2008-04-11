@@ -29,7 +29,7 @@ public class AttributePersistenceTest extends PersistenceTest {
   public void test() {
     XmlWebApplicationContext ctx = new XmlWebApplicationContext();
 
-    ctx.setConfigLocations(new String[] {SPRING_COMMON_FILE});
+    ctx.setConfigLocations(new String[] {springCommonFile});
     ctx.setServletContext(servletContext);
     ctx.refresh();
 
