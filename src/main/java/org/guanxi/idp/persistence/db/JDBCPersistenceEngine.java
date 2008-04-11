@@ -32,19 +32,13 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   
   // Injected
   protected String driver = null;
-  protected String databaseName = null;
   protected String usernameProperty = null;
   protected String usernameValue = null;
   protected String passwordProperty = null;
   protected String passwordValue = null;
-  protected String tableName = null;
-  protected String fieldPrimaryKey = null;
-  protected String fieldUserid = null;
-  protected String fieldAttributeName = null;
-  protected String fieldAttributeValue = null;
-  protected String fieldRelyingParty = null;
   protected String connectionString = null;
   protected Connection dbConnection = null;
+  protected DBConfig dbConfig = null;
 
   public void init() {
     super.init();
@@ -70,11 +64,11 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   }
   
   public boolean attributeExists(GuanxiPrincipal principal, String attributeName) {
-    String[] columnNames = new String[] {fieldUserid, fieldAttributeName, fieldRelyingParty};
+    String[] columnNames = new String[] {dbConfig.getFieldUserid(), dbConfig.getFieldAttributeName(), dbConfig.getFieldRelyingParty()};
     String[] columnValues = new String[] {principal.getName(), attributeName, principal.getRelyingPartyID()};
 
     try {
-      String[] attributes = getField(tableName, columnNames, columnValues, fieldAttributeValue);
+      String[] attributes = getField(dbConfig.getTableName(), columnNames, columnValues, dbConfig.getFieldAttributeValue());
       if (attributes.length > 0)
         return true;
       else
@@ -87,11 +81,11 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   }
 
   public String getAttributeValue(GuanxiPrincipal principal, String attributeName) {
-    String[] columnNames = new String[] {fieldUserid, fieldAttributeName, fieldRelyingParty};
+    String[] columnNames = new String[] {dbConfig.getFieldUserid(), dbConfig.getFieldAttributeName(), dbConfig.getFieldRelyingParty()};
     String[] columnValues = new String[] {principal.getName(), attributeName, principal.getRelyingPartyID()};
 
     try {
-      String[] attributes = getField(tableName, columnNames, columnValues, fieldAttributeValue);
+      String[] attributes = getField(dbConfig.getTableName(), columnNames, columnValues, dbConfig.getFieldAttributeValue());
       if (attributes.length > 0) {
         return attributes[0];
       }
@@ -173,7 +167,10 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   }
 
   protected void insert(String userid, String attributeName, String attributeValue, String relyingParty) throws GuanxiException {
-    String insertString = "insert into " + tableName + " (" + fieldUserid + ", " + fieldAttributeName + ", " + fieldAttributeValue + ", " + fieldRelyingParty + ") ";
+    String insertString = "insert into " +
+                          dbConfig.getTableName() + " (" + dbConfig.getFieldUserid() + ", " +
+                          dbConfig.getFieldAttributeName() + ", " + dbConfig.getFieldAttributeValue() + ", " +
+                          dbConfig.getFieldRelyingParty() + ") ";
     insertString += " values(";
     insertString += "'" + userid + "',";
     insertString += "'" + attributeName + "',";
@@ -191,12 +188,12 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   }
 
   protected void update(String userid, String attributeName, String attributeValue, String relyingParty) throws GuanxiException {
-    String updateString = "update " + tableName + "set ";
-    updateString += fieldAttributeValue + " = '" + attributeValue + "' ";
+    String updateString = "update " + dbConfig.getTableName() + "set ";
+    updateString += dbConfig.getFieldAttributeValue() + " = '" + attributeValue + "' ";
     updateString += "where ";
-    updateString += fieldUserid + " = '" + userid + "' and";
-    updateString += fieldAttributeName + " = '" + attributeName + "' and";
-    updateString += fieldRelyingParty + " = '" + relyingParty + "'";
+    updateString += dbConfig.getFieldUserid() + " = '" + userid + "' and";
+    updateString += dbConfig.getFieldAttributeName() + " = '" + attributeName + "' and";
+    updateString += dbConfig.getFieldRelyingParty() + " = '" + relyingParty + "'";
 
     try {
       Statement statement = dbConnection.createStatement();
@@ -208,10 +205,10 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   }
 
   protected void delete(String userid, String attributeName, String relyingParty) throws GuanxiException {
-    String deleteString = "delete from " + tableName + " where ";
-    deleteString += fieldUserid + " = '" + userid + "' and ";
-    deleteString += fieldAttributeName + " = '" + attributeName + "' and ";
-    deleteString += fieldRelyingParty + " = '" + relyingParty + "'";
+    String deleteString = "delete from " + dbConfig.getTableName() + " where ";
+    deleteString += dbConfig.getFieldUserid() + " = '" + userid + "' and ";
+    deleteString += dbConfig.getFieldAttributeName() + " = '" + attributeName + "' and ";
+    deleteString += dbConfig.getFieldRelyingParty() + " = '" + relyingParty + "'";
 
     try {
       Statement statement = dbConnection.createStatement();
@@ -264,8 +261,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
       ResultSet tables = meta.getTables(null, null, null, null);
       
       while(tables.next()) {
-        // Derby creates tables with uppercase names
-        if (tables.getString("TABLE_NAME").equals(tableName.toUpperCase())) {
+        if (tables.getString("TABLE_NAME").equals(dbConfig.getTableName())) {
           return true;
         }
       }
@@ -278,12 +274,12 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   }
 
   protected void createTable() throws GuanxiException {
-    String createString = "create table " + tableName + " (";
-    createString += fieldPrimaryKey + " integer not null primary key generated always as identity (start with 1, increment by 1), ";
-    createString += fieldUserid + " varchar(255) not null, ";
-    createString += fieldAttributeName + " varchar(255) not null, ";
-    createString += fieldAttributeValue + " varchar(255) not null, ";
-    createString += fieldRelyingParty + " varchar(255) not null";
+    String createString = "create table " + dbConfig.getTableName() + " (";
+    createString += dbConfig.getFieldPrimaryKey() + " INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(" + dbConfig.getFieldPrimaryKey() + "), ";
+    createString += dbConfig.getFieldUserid() + " varchar(255) not null, ";
+    createString += dbConfig.getFieldAttributeName() + " varchar(255) not null, ";
+    createString += dbConfig.getFieldAttributeValue() + " varchar(255) not null, ";
+    createString += dbConfig.getFieldRelyingParty() + " varchar(255) not null";
     createString += ")";
 
     try {
@@ -296,13 +292,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
   }
 
   public void setDriver(String driver) { this.driver = driver; }
-  public void setDatabaseName(String databaseName) { this.databaseName = databaseName; }
-  public void setTableName(String tableName) { this.tableName = tableName; }
-  public void setFieldPrimaryKey(String fieldPrimaryKey) { this.fieldPrimaryKey = fieldPrimaryKey; }
-  public void setFieldUserid(String fieldUserid) { this.fieldUserid = fieldUserid; }
-  public void setFieldAttributeName(String fieldAttributeName) { this.fieldAttributeName = fieldAttributeName; }
-  public void setFieldAttributeValue(String fieldAttributeValue) { this.fieldAttributeValue = fieldAttributeValue; }
-  public void setFieldRelyingParty(String fieldRelyingParty) { this.fieldRelyingParty = fieldRelyingParty; }
+  public void setDbConfig(DBConfig dbConfig) { this.dbConfig = dbConfig; }
   public void setConnectionString(String connectionString) { this.connectionString = connectionString; }
   public void setUsernameProperty(String usernameProperty) { this.usernameProperty = usernameProperty; }
   public void setUsernameValue(String usernameValue) { this.usernameValue = usernameValue; }
