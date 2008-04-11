@@ -41,6 +41,23 @@
   </bean>
   -->
 
+  <!--
+  <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.PostgresPersistenceEngine"
+        init-method="init" destroy-method="destroy">
+    <property name="logger"><ref bean="idpLogger"/></property>
+    <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
+
+    <property name="driver"><value>org.postgresql.Driver</value></property>
+    <property name="connectionString"><value>jdbc:postgresql://localhost:5432/guanxiidp</value></property>
+    <property name="usernameProperty"><value>user</value></property>
+    <property name="usernameValue"><value>alistair</value></property>
+    <property name="passwordProperty"><value>password</value></property>
+    <property name="passwordValue"><value>x</value></property>
+
+    <property name="dbConfig"><ref bean="standardConfig" /></property>
+  </bean>
+  -->
+
   <bean id="standardConfig" class="org.guanxi.idp.persistence.db.DBConfig">
     <property name="databaseName"><value>guanxiidp</value></property>
     <property name="tableName"><value>persistent_user_attributes</value></property>
