@@ -18,8 +18,7 @@ package org.guanxi.idp.persistence.db;
 
 import org.guanxi.common.GuanxiException;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 
 /**
  * Apache Derby specific JDBC persistence engine
@@ -94,6 +93,43 @@ public class DerbyPersistenceEngine extends JDBCPersistenceEngine {
       }
     }
     catch (SQLException sqle) {
+      throw new GuanxiException(sqle);
+    }
+  }
+
+  protected boolean tableExists() throws GuanxiException {
+    try {
+      DatabaseMetaData meta = dbConnection.getMetaData();
+      ResultSet tables = meta.getTables(null, null, null, null);
+
+      while(tables.next()) {
+        // Derby creates tables with uppercase names
+        if (tables.getString("TABLE_NAME").equals(dbConfig.getTableName().toUpperCase())) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+    catch(SQLException sqle) {
+      throw new GuanxiException(sqle);
+    }
+  }
+
+  protected void createTable() throws GuanxiException {
+    String createString = "create table " + dbConfig.getTableName() + " (";
+    createString += dbConfig.getFieldPrimaryKey() + " integer not null primary key generated always as identity (start with 1, increment by 1), ";
+    createString += dbConfig.getFieldUserid() + " varchar(255) not null, ";
+    createString += dbConfig.getFieldAttributeName() + " varchar(255) not null, ";
+    createString += dbConfig.getFieldAttributeValue() + " varchar(255) not null, ";
+    createString += dbConfig.getFieldRelyingParty() + " varchar(255) not null";
+    createString += ")";
+
+    try {
+      Statement statement = dbConnection.createStatement();
+      statement.executeUpdate(createString);
+    }
+    catch(SQLException sqle) {
       throw new GuanxiException(sqle);
     }
   }
