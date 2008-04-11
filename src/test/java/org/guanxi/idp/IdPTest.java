@@ -31,7 +31,7 @@ public abstract class IdPTest {
   protected static GuanxiPrincipal principal = null;
   protected static ResourceBundle idpProperties = null;
   protected static String idpHome = null;
-  protected static String springCommonFile = null;
+  protected static String persistenceFile = null;
 
   protected static final String TEST_USER_NAME = "harrymcd";
   protected static final String TEST_RELYING_PARTY = "protectedapp-guard";
@@ -41,7 +41,7 @@ public abstract class IdPTest {
     idpProperties = ResourceBundle.getBundle("test");
     idpHome = "file://" + idpProperties.getString("idp.webapp.home");
     servletContext = new MockServletContext(idpHome);
-    springCommonFile = idpHome + "/WEB-INF/guanxi_idp/config/spring/common.xml";
+    persistenceFile = idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/persistence.xml";
 
     principal = new GuanxiPrincipal();
     principal.setName(TEST_USER_NAME);
