@@ -250,8 +250,9 @@ public class SSO extends AbstractController implements ServletContextAware {
     samlResponse.setResponseID(Utils.createNCNameID());
     samlResponse.setMajorVersion(new BigInteger("1"));
     samlResponse.setMinorVersion(new BigInteger("1"));
-    samlResponse.setIssueInstant(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
+    samlResponse.setIssueInstant(Calendar.getInstance());
     samlResponse.setRecipient(request.getParameter(Shibboleth.SHIRE));
+    Utils.zuluXmlObject(samlResponse, 0);
 
     // Get a Status ready
     StatusDocument statusDoc = StatusDocument.Factory.newInstance();
@@ -269,15 +270,15 @@ public class SSO extends AbstractController implements ServletContextAware {
     assertion.setMajorVersion(new BigInteger("1"));
     assertion.setMinorVersion(new BigInteger("1"));
     assertion.setIssuer(issuer);
-    assertion.setIssueInstant(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
+    assertion.setIssueInstant(Calendar.getInstance());
+    Utils.zuluXmlObject(assertion, 0);
 
     // Conditions for the Assertion
     ConditionsDocument conditionsDoc = ConditionsDocument.Factory.newInstance();
     ConditionsType conditions = conditionsDoc.addNewConditions();
-    conditions.setNotBefore(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
-    Calendar after = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-    after.add(Calendar.DAY_OF_WEEK, 1);
-    conditions.setNotOnOrAfter(after);
+    conditions.setNotBefore(Calendar.getInstance());
+    conditions.setNotOnOrAfter(Calendar.getInstance());
+    Utils.zuluXmlObject(conditions, 5);
 
     // By attaching an Audience, we're saying that only the current SP can use this Assertion
     AudienceRestrictionConditionDocument audienceDoc = AudienceRestrictionConditionDocument.Factory.newInstance();
@@ -293,8 +294,9 @@ public class SSO extends AbstractController implements ServletContextAware {
     // Get an AuthenticationStatement ready
     AuthenticationStatementDocument authStatementDoc = AuthenticationStatementDocument.Factory.newInstance();
     AuthenticationStatementType authStatement = authStatementDoc.addNewAuthenticationStatement();
-    authStatement.setAuthenticationInstant(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
+    authStatement.setAuthenticationInstant(Calendar.getInstance());
     authStatement.setAuthenticationMethod(SAML.URN_AUTH_METHOD_PASSWORD);
+    Utils.zuluXmlObject(authStatement, 0);
 
     // Get a Subject ready
     SubjectDocument subjectDoc = SubjectDocument.Factory.newInstance();

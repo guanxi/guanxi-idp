@@ -50,7 +50,6 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.PublicKey;
 import java.math.BigInteger;
 import java.util.Calendar;
-import java.util.TimeZone;
 import java.util.HashMap;
 
 /**
@@ -170,8 +169,9 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     samlResponse.setResponseID(Utils.createNCNameID());
     samlResponse.setMajorVersion(new BigInteger("1"));
     samlResponse.setMinorVersion(new BigInteger("1"));
-    samlResponse.setIssueInstant(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
+    samlResponse.setIssueInstant(Calendar.getInstance());
     samlResponse.setInResponseTo(samlRequest.getRequestID());
+    Utils.zuluXmlObject(samlResponse, 0);
 
     // Get a SAML Status ready
     StatusDocument statusDoc = StatusDocument.Factory.newInstance();
@@ -207,15 +207,16 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     assertion.setMajorVersion(new BigInteger("1"));
     assertion.setMinorVersion(new BigInteger("1"));
     assertion.setIssuer(issuer);
-    assertion.setIssueInstant(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
+    assertion.setIssueInstant(Calendar.getInstance());
+    Utils.zuluXmlObject(assertion, 0);
 
     // Conditions for the assertions
     ConditionsDocument conditionsDoc = ConditionsDocument.Factory.newInstance();
     ConditionsType conditions = conditionsDoc.addNewConditions();
-    conditions.setNotBefore(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
-    Calendar after = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-    after.add(Calendar.DAY_OF_WEEK, 1);
-    conditions.setNotOnOrAfter(after);
+    conditions.setNotBefore(Calendar.getInstance());
+    conditions.setNotOnOrAfter(Calendar.getInstance());
+    Utils.zuluXmlObject(assertion, 5);
+
     assertion.setConditions(conditions);
 
     // Add the attributes if there are any
