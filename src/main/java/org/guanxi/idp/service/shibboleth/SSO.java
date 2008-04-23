@@ -181,6 +181,19 @@ public class SSO extends AbstractController implements ServletContextAware {
      */
     GuanxiPrincipal principal = (GuanxiPrincipal)request.getAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL);
 
+
+    /*
+     * We've been given a principal by the auth handler, which means the user has already authenticated.
+     * However, the SP that kicked off that authentication might not be the one that's
+     * currently talking to us. If it isn't, we'll need to create a new principal for use
+     * with that SP, otherwise this SP will get the identity and creds of the previous SP.
+     */
+    if (!principal.getRelyingPartyID().equals(request.getParameter(Shibboleth.PROVIDER_ID))) {
+      principal.setUniqueId(Utils.getUniqueID());
+      principal.setRelyingPartyID(request.getParameter(Shibboleth.PROVIDER_ID));
+      getServletContext().setAttribute(principal.getUniqueId(), principal);
+    }
+
     // Need these for the Response
     String issuer = null;
     String nameQualifier = null;
