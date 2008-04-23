@@ -215,7 +215,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     ConditionsType conditions = conditionsDoc.addNewConditions();
     conditions.setNotBefore(Calendar.getInstance());
     conditions.setNotOnOrAfter(Calendar.getInstance());
-    Utils.zuluXmlObject(assertion, 5);
+    Utils.zuluXmlObject(conditions, 5);
 
     assertion.setConditions(conditions);
 
