@@ -39,9 +39,6 @@ import org.w3c.dom.Document;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.impl.util.Base64;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.springframework.web.servlet.mvc.AbstractController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.context.ServletContextAware;
@@ -248,13 +245,12 @@ public class SSO extends AbstractController implements ServletContextAware {
     HashMap namespaces = new HashMap();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
     namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
-    namespaces.put("http://www.w3.org/2000/09/xmldsig#", "ds");
     XmlOptions xmlOptions = new XmlOptions();
     xmlOptions.setSavePrettyPrint();
     xmlOptions.setSavePrettyPrintIndent(2);
     xmlOptions.setUseDefaultNamespace();
     xmlOptions.setSaveAggressiveNamespaces();
-    xmlOptions.setSaveSuggestedPrefixes(namespaces); // required
+    xmlOptions.setSaveSuggestedPrefixes(namespaces);
     xmlOptions.setSaveNamespacesFirst();
 
     /* No need to set the InResponseTo attribute as SAML1.1 core states that if the
@@ -368,14 +364,6 @@ public class SSO extends AbstractController implements ServletContextAware {
       log.error(ge);
     }
 
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    OutputFormat of = new OutputFormat("XML", "ISO-8859-1", false);
-    XMLSerializer serializer = new XMLSerializer(bos, of);
-    serializer.asDOMSerializer();
-    serializer.serialize(signedDoc.getDocumentElement());
-    String signed = new String(bos.toByteArray());
-    bos.close();
-
     try {
       // ...and go back to XMLBeans land when it's ready
       samlResponseDoc = ResponseDocument.Factory.parse(signedDoc);
@@ -387,26 +375,10 @@ public class SSO extends AbstractController implements ServletContextAware {
     }
 
     // Base 64 encode the SAML Response
-    StringWriter sw = new StringWriter();
-    samlResponseDoc.save(sw, xmlOptions);
     String samlResponseB64 = Utils.base64(signedDoc);
-    //String samlResponseB64 = new String(Base64.encode(signed.getBytes()));
-    //String samlResponseB64 = new String(Base64.encode(sw.toString().getBytes()));
 
     // Bung the encoded Response in the HTML form
     request.setAttribute("saml_response", samlResponseB64);
-
-    bos = new ByteArrayOutputStream();
-    of = new OutputFormat("XML", "ISO-8859-1", true);
-    of.setIndent(2);
-    of.setIndenting(true);
-    serializer = new XMLSerializer(bos, of);
-    serializer.asDOMSerializer();
-    serializer.serialize(signedDoc.getDocumentElement());
-    FileOutputStream saml = new FileOutputStream("/tmp/sam4.xml");
-    saml.write(bos.toByteArray());
-    saml.close();
-    bos.close();
 
     // Debug syphoning?
     if (idpConfig.getDebug() != null) {
@@ -415,9 +387,10 @@ public class SSO extends AbstractController implements ServletContextAware {
           log.info("=======================================================");
           log.info("IdP response to Shire with providerId " + principal.getRelyingPartyID());
           log.info("");
-          sw = new StringWriter();
+          StringWriter sw = new StringWriter();
           samlResponseDoc.save(sw, xmlOptions);
           log.info(sw.toString());
+          sw.close();
           log.info("");
           log.info("=======================================================");
         }
