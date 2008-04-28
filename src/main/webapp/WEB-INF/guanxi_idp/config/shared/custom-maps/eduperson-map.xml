@@ -1,13 +1,72 @@
 <!-- These mapping rules can be used to map existing attributes to eduPerson ones -->
 <AttributeMap xmlns="urn:guanxi:idp">
-	<!-- Take the "role" attribute, if it has a value of "CheifHeidbanger" rename it to
-			 "urn:mace:dir:attribute-def:eduPersonScopedAffiliation", give it a new value of
-			 "staff" and then tell the Attributor that is using this map to append the domain
-			 to the value. If the IdP is installed on a machine with a domain of "uni.ac.uk"
-			 then the value of the new attribute will be "staff@uni.ac.uk". -->
-  <map name="eduPersonScopedAffiliation"
-       attrName="role" attrValue="CheifHeidbanger"
+  <map name="urn:mace:dir:attribute-def:eduPersonTargetID"
+       attrName="dn" attrValue=".*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonTargetedID"
+       mappedRule="encrypt"
+       persistent="true"/>
+  
+  <map name="eduPersonAffiliation-Staff"
+       attrName="cn" attrValue=".*taff.*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonAffiliation"
+       mappedValue="staff" />
+
+  <map name="eduPersonAffiliation-Student"
+       attrName="cn" attrValue=".*tudent.*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonAffiliation"
+       mappedValue="staff" />
+
+  <map name="eduPersonScopedAffiliation-Staff"
+       attrName="cn" attrValue=".*taff.*"
        mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation"
        mappedValue="staff"
+       mappedRule="append_domain" />
+
+  <map name="eduPersonScopedAffiliation-Student"
+       attrName="cn" attrValue=".*tudent.*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation"
+       mappedValue="student"
+       mappedRule="append_domain" />
+
+  <map name="eduPersonEntitlement"
+       attrName="cn" attrValue=".*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonEntitlement"
+       mappedValue="" />
+
+  <map name="eduPersonNickname"
+       attrName="givenName" attrValue=".*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonNickname" />
+
+  <!--
+  <map name="eduPersonOrgDN"
+       attrName="givenName" attrValue=".*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonNickname" />
+  -->
+
+  <!--
+  <map name="eduPersonOrgUnitDN"
+       attrName="givenName" attrValue=".*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonNickname" />
+  -->
+
+  <!--
+  <map name="eduPersonPrimaryOrgUnitDN"
+       attrName="givenName" attrValue=".*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonNickname" />
+  -->
+
+  <map name="eduPersonPrimaryAffiliation-Staff"
+       attrName="cn" attrValue=".*taff.*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonPrimaryAffiliation"
+       mappedValue="staff" />
+
+  <map name="eduPersonPrimaryAffiliation-Student"
+       attrName="cn" attrValue=".*tudent.*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonPrimaryAffiliation"
+       mappedValue="staff" />
+
+  <map name="eduPersonPrincipalName"
+       attrName="cn" attrValue=".*"
+       mappedName="urn:mace:dir:attribute-def:eduPersonPrincipalName"
        mappedRule="append_domain" />
 </AttributeMap>
