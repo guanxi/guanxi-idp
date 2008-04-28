@@ -20,6 +20,8 @@ import org.w3c.dom.*;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
+import org.guanxi.common.security.SecUtils;
+import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.definitions.Guanxi;
@@ -31,6 +33,7 @@ import org.guanxi.xal.soap.EnvelopeDocument;
 import org.guanxi.xal.soap.Envelope;
 import org.guanxi.xal.soap.Body;
 import org.guanxi.xal.idp.*;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlException;
@@ -98,6 +101,9 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
   }
 
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
+    // Load up the config file
+    IdpDocument.Idp idpConfig = (IdpDocument.Idp)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
+    
     isRequesterSupported(request);
 
     String nameIdentifier = null;
@@ -131,9 +137,6 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     nameIdentifier = samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getStringValue();
     // ...and retrieve their SP specific details from the session
     GuanxiPrincipal principal = (GuanxiPrincipal)servletContext.getAttribute(nameIdentifier);
-
-    // Pick up the config from the context. The SSO servlet put it there on startup
-    IdpDocument.Idp idpConfig = (IdpDocument.Idp)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
 
     // Need to work out the identity to use based on the SP's providerId
     String issuer = null;
@@ -234,15 +237,42 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       samlResponse.setAssertionArray(new AssertionType[] {assertion});
     }
 
+    // Get the config ready for signing
+    SecUtilsConfig secUtilsConfig = new SecUtilsConfig();
+    secUtilsConfig.setKeystoreFile(principal.getCredsConfig().getKeystoreFile());
+    secUtilsConfig.setKeystorePass(principal.getCredsConfig().getKeystorePassword());
+    secUtilsConfig.setKeystoreType(principal.getCredsConfig().getKeystoreType());
+    secUtilsConfig.setPrivateKeyAlias(principal.getCredsConfig().getPrivateKeyAlias());
+    secUtilsConfig.setPrivateKeyPass(principal.getCredsConfig().getPrivateKeyPassword());
+    secUtilsConfig.setCertificateAlias(principal.getCredsConfig().getCertificateAlias());
+    secUtilsConfig.setKeyType(principal.getCredsConfig().getKeyType());
+
     response.setContentType("text/xml");
 
     // SOAP message to hold the SAML Response
     EnvelopeDocument soapResponseDoc = EnvelopeDocument.Factory.newInstance();
     Envelope soapEnvelope = soapResponseDoc.addNewEnvelope();
     Body soapBody = soapEnvelope.addNewBody();
-    
-    // Add the SAML Response to the SOAP message
-    soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlResponse.newDomNode(xmlOptions), true));
+
+    // Do we need to sign the assertion?
+    EntityDescriptorType sp = (EntityDescriptorType)servletContext.getAttribute(request.getParameter(samlRequest.getAttributeQuery().getResource()));
+    if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned()) {
+      // Break out to DOM land to get the SAML Response signed...
+      Document signedDoc = null;
+      try {
+        // Need to use newDomNode to preserve namespace information
+        signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)samlResponseDoc.newDomNode(xmlOptions), "");
+        // Add the SAML Response to the SOAP message
+        soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(signedDoc.getDocumentElement(), true));
+      }
+      catch(GuanxiException ge) {
+        log.error(ge);
+      }
+    }
+    else {
+      // Add the SAML Response to the SOAP message
+      soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlResponse.newDomNode(xmlOptions), true));
+    }
 
     // Debug syphoning?
     if (idpConfig.getDebug() != null) {
@@ -329,7 +359,8 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
       // Deal with scoped eduPerson attributes
       if  ((attribute.getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
-          (attribute.getAttributeName().equals(EduPerson.EDUPERSON_PRINCIPAL_NAME))) {
+           (attribute.getAttributeName().equals(EduPerson.EDUPERSON_PRINCIPAL_NAME))     ||
+           (attribute.getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID))) {
         String[] parts = attributorAttr.getValue().split(EduPerson.EDUPERSON_SCOPED_DELIMITER);
         Attr scopeAttribute = attrValue.getDomNode().getOwnerDocument().createAttribute(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE);
         scopeAttribute.setValue(parts[1]);
