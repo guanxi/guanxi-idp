@@ -152,10 +152,22 @@ public class AttributeMap implements ServletContextAware {
                   // ...and transform the value if required
                   if ((!map.getPersistent()) || ((map.getPersistent()) && (!retrievedPersistentAttribute))) {
                     if (map.getMappedRule() != null) {
-                      for (AttributeRule attributeRule : attributeRules) {
-                        if (attributeRule.getRuleName().equals(map.getMappedRule())) {
-                          mappedAttrValue = attributeRule.applyRule((String)mappedNames.get(index), (String)mappedValues.get(index));
-                          mappedValues.set(index, mappedAttrValue);
+                      // Sort out any chained rules
+                      String[] rules = null;
+                      if (map.getMappedRule().contains(";")) {
+                        rules = map.getMappedRule().split(";");
+                      }
+                      else {
+                        rules = new String[] {map.getMappedRule()};
+                      }
+
+                      // Loop through the mapping rules for the attribute
+                      for (String rule : rules) {
+                        for (AttributeRule attributeRule : attributeRules) {
+                          if (attributeRule.getRuleName().equals(rule)) {
+                            mappedAttrValue = attributeRule.applyRule((String)mappedNames.get(index), (String)mappedValues.get(index));
+                            mappedValues.set(index, mappedAttrValue);
+                          }
                         }
                       }
                     }
@@ -164,6 +176,11 @@ public class AttributeMap implements ServletContextAware {
                   // Persist the attribute if required, after all maps and rules have been applied
                   if ((map.getPersistent()) && (!retrievedPersistentAttribute)) {
                     persistenceEngine.persistAttribute(principal, mappedAttrName, mappedAttrValue);
+                  }
+
+                  // Finally, scope the attribute if required
+                  if (map.getScoped()) {
+                    mappedValues.set(index, mappedAttrValue + "@");
                   }
 
                   //return true;
