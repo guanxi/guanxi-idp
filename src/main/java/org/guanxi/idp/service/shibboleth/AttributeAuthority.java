@@ -327,9 +327,11 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
       XmlObject attrValue = attribute.addNewAttributeValue();
 
-      if (attribute.getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) {
-        String[] parts = attributorAttr.getValue().split(EduPerson.EDUPERSON_SCOPED_AFFILIATION_DELIMITER);
-        Attr scopeAttribute = attrValue.getDomNode().getOwnerDocument().createAttribute(EduPerson.EDUPERSON_SCOPED_AFFILIATION_SCOPE_ATTRIBUTE);
+      // Deal with scoped eduPerson attributes
+      if  ((attribute.getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
+          (attribute.getAttributeName().equals(EduPerson.EDUPERSON_PRINCIPAL_NAME))) {
+        String[] parts = attributorAttr.getValue().split(EduPerson.EDUPERSON_SCOPED_DELIMITER);
+        Attr scopeAttribute = attrValue.getDomNode().getOwnerDocument().createAttribute(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE);
         scopeAttribute.setValue(parts[1]);
         attrValue.getDomNode().getAttributes().setNamedItem(scopeAttribute);
         Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(parts[0]);
