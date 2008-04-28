@@ -241,6 +241,9 @@ public class SSO extends AbstractController implements ServletContextAware {
       }
     }
 
+    // Associate the principal with SAML signing credentials
+    principal.setCredsConfig(credsConfig);
+
     // Sort out the namespaces for saving the Response
     HashMap namespaces = new HashMap();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
