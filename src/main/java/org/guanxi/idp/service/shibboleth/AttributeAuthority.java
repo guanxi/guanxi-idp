@@ -255,22 +255,30 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     Body soapBody = soapEnvelope.addNewBody();
 
     // Do we need to sign the assertion?
+    boolean samlAddedToResponse = false;
     EntityDescriptorType sp = (EntityDescriptorType)servletContext.getAttribute(request.getParameter(samlRequest.getAttributeQuery().getResource()));
-    if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned()) {
-      // Break out to DOM land to get the SAML Response signed...
-      Document signedDoc = null;
-      try {
-        // Need to use newDomNode to preserve namespace information
-        signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)samlResponseDoc.newDomNode(xmlOptions), "");
-        // Add the SAML Response to the SOAP message
-        soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(signedDoc.getDocumentElement(), true));
-      }
-      catch(GuanxiException ge) {
-        log.error(ge);
-      }
+    if (sp != null) {
+      if (sp.getSPSSODescriptorArray(0) != null) {
+        if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned()) {
+          // Break out to DOM land to get the SAML Response signed...
+          Document signedDoc = null;
+          try {
+            // Add a signed assertion to the response
+            samlAddedToResponse = true;
+            // Need to use newDomNode to preserve namespace information
+            signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)samlResponseDoc.newDomNode(xmlOptions), "");
+            // Add the SAML Response to the SOAP message
+            soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(signedDoc.getDocumentElement(), true));
+          }
+          catch(GuanxiException ge) {
+            log.error(ge);
+          }
+        } // if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned())
+      } // if (sp.getSPSSODescriptorArray(0) != null)
     }
-    else {
-      // Add the SAML Response to the SOAP message
+
+    if (!samlAddedToResponse) {
+      // Add the unsigned SAML Response to the SOAP message
       soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlResponse.newDomNode(xmlOptions), true));
     }
 
