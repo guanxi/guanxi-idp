@@ -26,6 +26,8 @@ import org.guanxi.xal.idp.AuthPage;
 import org.guanxi.xal.idp.IdpDocument;
 import org.guanxi.xal.idp.ServiceProvider;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.guanxi.xal.saml_2_0.metadata.SPSSODescriptorType;
+import org.guanxi.xal.saml_2_0.metadata.IndexedEndpointType;
 import org.guanxi.idp.farm.authenticators.Authenticator;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.context.ServletContextAware;
@@ -117,13 +119,27 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     // Look for the service provider in the cached federation metadata...
     boolean spSupported = false;
     if (servletContext.getAttribute(request.getParameter(spIDRequestParam)) != null) {
-      spSupported = true;
+      // Verify the SSO endpoint via the metadata : internet2-mace-shibboleth-arch-protocols-200509 : 3.1.1.3 Processing Rules
+      EntityDescriptorType spMetadata = (EntityDescriptorType)servletContext.getAttribute(request.getParameter(spIDRequestParam));
+      SPSSODescriptorType[] descriptors = spMetadata.getSPSSODescriptorArray();
+      for (SPSSODescriptorType descriptor : descriptors) {
+        IndexedEndpointType[] acsEndpoints = descriptor.getAssertionConsumerServiceArray();
+
+        for (IndexedEndpointType acsEndpoint : acsEndpoints) {
+          if (acsEndpoint.getBinding().equals("urn:oasis:names:tc:SAML:1.0:profiles:browser-post")) {
+            if (acsEndpoint.getLocation().equals(request.getParameter("shire"))) {
+              spSupported = true;
+            }
+          }
+        }
+      }
     }
     else {
       // ...if we can't find it, it might be in the local metadata
       ServiceProvider[] spList = idpConfig.getServiceProviderArray();
       for (int c=0; c < spList.length; c++) {
         if (spList[c].getName().equals(request.getParameter(spIDRequestParam))) {
+          // If it's in here, we trust it explicitly
           spSupported = true;
         }
       }
