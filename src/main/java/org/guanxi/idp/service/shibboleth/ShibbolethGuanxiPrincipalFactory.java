@@ -31,8 +31,6 @@ public class ShibbolethGuanxiPrincipalFactory implements GuanxiPrincipalFactory 
 
     // Set the session ID... This will be the NameIdentifier
     gxPrincipal.setUniqueId(Utils.getUniqueID());
-    // ...only allow the current SP to access it...
-    gxPrincipal.setRelyingPartyID(request.getParameter(Shibboleth.PROVIDER_ID));
 
     return gxPrincipal;
   }
