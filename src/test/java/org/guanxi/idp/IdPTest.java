@@ -48,7 +48,6 @@ public abstract class IdPTest {
     principal = new GuanxiPrincipal();
     principal.setName(TEST_USER_NAME);
     principal.getPrivateProfileData().put("username", TEST_USER_NAME);
-    principal.setRelyingPartyID(TEST_RELYING_PARTY);
     principal.setUniqueId(Utils.getUniqueID());
   }
 }
