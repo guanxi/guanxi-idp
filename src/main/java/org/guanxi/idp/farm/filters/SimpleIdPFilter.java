@@ -51,7 +51,7 @@ public abstract class SimpleIdPFilter implements IdPFilter, ServletContextAware 
     }
   }
 
-  public abstract void filter(GuanxiPrincipal principal, ResponseDocument ssoResponseDoc);
+  public abstract void filter(GuanxiPrincipal principal, String relyingParty, ResponseDocument ssoResponseDoc);
 
   public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
 

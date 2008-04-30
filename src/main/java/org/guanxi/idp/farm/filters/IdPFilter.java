@@ -25,5 +25,5 @@ import org.guanxi.idp.farm.Loggable;
  */
 public interface IdPFilter extends Loggable {
   public void init();
-  public void filter(GuanxiPrincipal principal, ResponseDocument ssoResponseDoc);
+  public void filter(GuanxiPrincipal principal, String relyingParty, ResponseDocument ssoResponseDoc);
 }
