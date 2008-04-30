@@ -35,16 +35,16 @@ public class AttributePersistenceTest extends PersistenceTest {
 
     PersistenceEngine engine = (PersistenceEngine)ctx.getBean("idpPersistenceEngine");
 
-    assertFalse(engine.attributeExists(principal, TEST_ATTRIBUTE_NAME));
+    assertFalse(engine.attributeExists(principal, TEST_RELYING_PARTY, TEST_ATTRIBUTE_NAME));
 
-    assertTrue(engine.persistAttribute(principal, TEST_ATTRIBUTE_NAME, TEST_ATTRIBUTE_VALUE));
+    assertTrue(engine.persistAttribute(principal, TEST_RELYING_PARTY, TEST_ATTRIBUTE_NAME, TEST_ATTRIBUTE_VALUE));
 
-    assertTrue(engine.attributeExists(principal, TEST_ATTRIBUTE_NAME));
+    assertTrue(engine.attributeExists(principal, TEST_RELYING_PARTY, TEST_ATTRIBUTE_NAME));
 
-    assertEquals(engine.getAttributeValue(principal, TEST_ATTRIBUTE_NAME), TEST_ATTRIBUTE_VALUE);
+    assertEquals(engine.getAttributeValue(principal, TEST_RELYING_PARTY, TEST_ATTRIBUTE_NAME), TEST_ATTRIBUTE_VALUE);
 
-    assertTrue(engine.unpersistAttribute(principal, TEST_ATTRIBUTE_NAME));
+    assertTrue(engine.unpersistAttribute(principal, TEST_RELYING_PARTY, TEST_ATTRIBUTE_NAME));
 
-    assertFalse(engine.attributeExists(principal, TEST_ATTRIBUTE_NAME));
+    assertFalse(engine.attributeExists(principal, TEST_RELYING_PARTY, TEST_ATTRIBUTE_NAME));
   }
 }
