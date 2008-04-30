@@ -42,7 +42,7 @@ public interface Attributor extends Loggable {
   public void setArpEngine(ARPEngine arpEngine);
   public ARPEngine getArpEngine();
 
-  public void getAttributes(GuanxiPrincipal principal, UserAttributesDocument.UserAttributes attributes) throws GuanxiException;
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty, UserAttributesDocument.UserAttributes attributes) throws GuanxiException;
 
   public String getErrorMessage();
 }

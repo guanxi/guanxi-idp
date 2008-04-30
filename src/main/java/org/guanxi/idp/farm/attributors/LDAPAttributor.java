@@ -69,9 +69,11 @@ public class LDAPAttributor extends SimpleAttributor {
    * Retrieves attributes for a user from all available LDAP servers.
    *
    * @param principal GuanxiPrincipal identifying the previously authenticated user
+   * @param relyingParty The providerId of the relying party the attribute are for
+   * @param attributes The document into whic to put the attributes
    * @throws GuanxiException if an error occurs
    */
-  public void getAttributes(GuanxiPrincipal principal, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     // Try to get the user's attributes from one of the available servers
     LDAPConnection lc = new LDAPConnection();
 
@@ -149,20 +151,20 @@ public class LDAPAttributor extends SimpleAttributor {
                   log.debug("Obtained attribute " + attr.getName());
 
                   // Can we release the original attributes without mapping?
-                  if (arpEngine.release(principal.getRelyingPartyID(), attrName, attrValue)) {
+                  if (arpEngine.release(relyingParty, attrName, attrValue)) {
                     log.debug("Released attribute " + attrName);
                     AttributorAttribute attribute = attributes.addNewAttribute();
                     attribute.setName(attrName);
                     attribute.setValue(attrValue);
                   }
                   else {
-                    log.debug("Attribute release blocked by ARP : " + attrName + " to " + principal.getRelyingPartyID());
+                    log.debug("Attribute release blocked by ARP : " + attrName + " to " + relyingParty);
 
                     // Sort out any mappings. This will change the default name/value if necessary...
-                    if (mapper.map(principal, principal.getRelyingPartyID(), attr.getName(), attrValue)) {
+                    if (mapper.map(principal, relyingParty, attr.getName(), attrValue)) {
                       for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                         // Release the mapped attribute if appropriate
-                        if (arpEngine.release(principal.getRelyingPartyID(), mapper.getMappedNames()[mapCount],
+                        if (arpEngine.release(relyingParty, mapper.getMappedNames()[mapCount],
                                               mapper.getMappedValues()[mapCount])) {
                           String mappedValue = mapper.getMappedValues()[mapCount];
                           if (mappedValue.endsWith("@")) mappedValue += ldapConfig.getDomain();
@@ -172,11 +174,11 @@ public class LDAPAttributor extends SimpleAttributor {
                           attribute.setValue(mappedValue);
 
                           log.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
-                                    " -> " + mappedValue + " to " + principal.getRelyingPartyID());
+                                    " -> " + mappedValue + " to " + relyingParty);
                         }
                         else {
                           log.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
-                                    " to " + principal.getRelyingPartyID());
+                                    " to " + relyingParty);
                         }
                       } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                     }

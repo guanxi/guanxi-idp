@@ -49,7 +49,15 @@ public class FlatFileAttributor extends SimpleAttributor {
     }
   }
 
-  public void getAttributes(GuanxiPrincipal principal, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
+  /**
+   * Retrieves attributes for a user from a flat file.
+   *
+   * @param principal GuanxiPrincipal identifying the previously authenticated user
+   * @param relyingParty The providerId of the relying party the attribute are for
+   * @param attributes The document into whic to put the attributes
+   * @throws GuanxiException if an error occurs
+   */
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     // GuanxiPrincipal is storing their username, put there by the authenticator
     String username = (String)principal.getPrivateProfileDataEntry("username");
 
@@ -65,7 +73,7 @@ public class FlatFileAttributor extends SimpleAttributor {
           String attrValue = attrs[cc].getValue();
 
           // Can we release the original attributes without mapping?
-          if (arpEngine.release(principal.getRelyingPartyID(), attrName, attrValue)) {
+          if (arpEngine.release(relyingParty, attrName, attrValue)) {
             AttributorAttribute attribute = attributes.addNewAttribute();
             attribute.setName(attrName);
             attribute.setValue(attrValue);
@@ -74,7 +82,7 @@ public class FlatFileAttributor extends SimpleAttributor {
           }
           else {
             // Sort out any mappings. This will change the default name/value if necessary...
-            if (mapper.map(principal, principal.getRelyingPartyID(), attrName, attrValue)) {
+            if (mapper.map(principal, relyingParty, attrName, attrValue)) {
               for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
                 log.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
 
@@ -84,7 +92,7 @@ public class FlatFileAttributor extends SimpleAttributor {
                 if (attrValue.endsWith("@")) attrValue += ffConfig.getDomain();
 
                 // ...then run the original or mapped attribute through the ARP
-                if (arpEngine.release(principal.getRelyingPartyID(), attrName, attrValue)) {
+                if (arpEngine.release(relyingParty, attrName, attrValue)) {
                   AttributorAttribute attribute = attributes.addNewAttribute();
                   attribute.setName(attrName);
                   attribute.setValue(attrValue);
