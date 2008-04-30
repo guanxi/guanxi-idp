@@ -138,21 +138,8 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     // ...and retrieve their SP specific details from the session
     GuanxiPrincipal principal = (GuanxiPrincipal)servletContext.getAttribute(nameIdentifier);
 
-    // Need to work out the identity to use based on the SP's providerId
-    String issuer = null;
-    ServiceProvider[] spList = idpConfig.getServiceProviderArray();
-    for (int c=0; c < spList.length; c++) {
-      if (spList[c].getName().equals(principal.getRelyingPartyID())) {
-        String identity = spList[c].getIdentity();
-        // We've found the <service-provider> node so look for the corresponding <identity> node
-        Identity[] ids = idpConfig.getIdentityArray();
-        for (int cc=0; cc < ids.length; cc++) {
-          if (ids[cc].getName().equals(identity)) {
-            issuer = ids[cc].getIssuer();
-          }
-        }
-      }
-    }
+    // Get the SP's providerId from the attribute query
+    String spProviderId = samlRequest.getAttributeQuery().getResource();
 
     HashMap namespaces = new HashMap();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
@@ -196,7 +183,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     UserAttributesDocument attributesDoc = UserAttributesDocument.Factory.newInstance();
     UserAttributesDocument.UserAttributes attributes = attributesDoc.addNewUserAttributes();
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
-      attr.getAttributes(principal, attributes);
+      attr.getAttributes(principal, spProviderId, attributes);
     }
 
     // Set the Status for the SAML Response
@@ -209,7 +196,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     assertion.setAssertionID(Utils.createNCNameID());
     assertion.setMajorVersion(new BigInteger("1"));
     assertion.setMinorVersion(new BigInteger("1"));
-    assertion.setIssuer(issuer);
+    assertion.setIssuer(principal.getIssuerFor(spProviderId));
     assertion.setIssueInstant(Calendar.getInstance());
     Utils.zuluXmlObject(assertion, 0);
 
@@ -239,13 +226,13 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
     // Get the config ready for signing
     SecUtilsConfig secUtilsConfig = new SecUtilsConfig();
-    secUtilsConfig.setKeystoreFile(principal.getCredsConfig().getKeystoreFile());
-    secUtilsConfig.setKeystorePass(principal.getCredsConfig().getKeystorePassword());
-    secUtilsConfig.setKeystoreType(principal.getCredsConfig().getKeystoreType());
-    secUtilsConfig.setPrivateKeyAlias(principal.getCredsConfig().getPrivateKeyAlias());
-    secUtilsConfig.setPrivateKeyPass(principal.getCredsConfig().getPrivateKeyPassword());
-    secUtilsConfig.setCertificateAlias(principal.getCredsConfig().getCertificateAlias());
-    secUtilsConfig.setKeyType(principal.getCredsConfig().getKeyType());
+    secUtilsConfig.setKeystoreFile(principal.getSigningCredsFor(spProviderId).getKeystoreFile());
+    secUtilsConfig.setKeystorePass(principal.getSigningCredsFor(spProviderId).getKeystorePassword());
+    secUtilsConfig.setKeystoreType(principal.getSigningCredsFor(spProviderId).getKeystoreType());
+    secUtilsConfig.setPrivateKeyAlias(principal.getSigningCredsFor(spProviderId).getPrivateKeyAlias());
+    secUtilsConfig.setPrivateKeyPass(principal.getSigningCredsFor(spProviderId).getPrivateKeyPassword());
+    secUtilsConfig.setCertificateAlias(principal.getSigningCredsFor(spProviderId).getCertificateAlias());
+    secUtilsConfig.setKeyType(principal.getSigningCredsFor(spProviderId).getKeyType());
 
     response.setContentType("text/xml");
 
@@ -287,7 +274,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
         if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
           log.info("=======================================================");
-          log.info("Response to AttributeQuery by " + principal.getRelyingPartyID());
+          log.info("Response to AttributeQuery by " + spProviderId);
           log.info("");
           StringWriter sw = new StringWriter();
           soapResponseDoc.save(sw, xmlOptions);
