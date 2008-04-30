@@ -133,8 +133,8 @@ public class AttributeMap implements ServletContextAware {
                   boolean retrievedPersistentAttribute = false;
                   String mappedAttrValue = null;
                   if (map.getPersistent()) {
-                    if (persistenceEngine.attributeExists(principal, mappedAttrName)) {
-                      mappedAttrValue = persistenceEngine.getAttributeValue(principal, mappedAttrName);
+                    if (persistenceEngine.attributeExists(principal, spProviderId, mappedAttrName)) {
+                      mappedAttrValue = persistenceEngine.getAttributeValue(principal, spProviderId, mappedAttrName);
                       retrievedPersistentAttribute = true;
                     }
                   }
@@ -175,7 +175,7 @@ public class AttributeMap implements ServletContextAware {
 
                   // Persist the attribute if required, after all maps and rules have been applied
                   if ((map.getPersistent()) && (!retrievedPersistentAttribute)) {
-                    persistenceEngine.persistAttribute(principal, mappedAttrName, mappedAttrValue);
+                    persistenceEngine.persistAttribute(principal, spProviderId, mappedAttrName, mappedAttrValue);
                   }
 
                   // Finally, scope the attribute if required
