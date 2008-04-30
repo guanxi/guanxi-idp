@@ -51,10 +51,10 @@ public abstract class SimplePersistenceEngine implements PersistenceEngine, Serv
   }
   
   // These must be overriden in derivatives
-  public abstract boolean attributeExists(GuanxiPrincipal principal, String attributeName);
-  public abstract String getAttributeValue(GuanxiPrincipal principal, String attributeName);
-  public abstract boolean persistAttribute(GuanxiPrincipal principal, String attributeName, String attributeValue);
-  public abstract boolean unpersistAttribute(GuanxiPrincipal principal, String attributeName);
+  public abstract boolean attributeExists(GuanxiPrincipal principal, String relyingParty, String attributeName);
+  public abstract String getAttributeValue(GuanxiPrincipal principal, String relyingParty, String attributeName);
+  public abstract boolean persistAttribute(GuanxiPrincipal principal, String relyingParty, String attributeName, String attributeValue);
+  public abstract boolean unpersistAttribute(GuanxiPrincipal principal, String relyingParty, String attributeName);
 
   public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
   public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }

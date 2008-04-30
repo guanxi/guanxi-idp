@@ -63,9 +63,9 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
   
-  public boolean attributeExists(GuanxiPrincipal principal, String attributeName) {
+  public boolean attributeExists(GuanxiPrincipal principal, String relyingParty, String attributeName) {
     String[] columnNames = new String[] {dbConfig.getFieldUserid(), dbConfig.getFieldAttributeName(), dbConfig.getFieldRelyingParty()};
-    String[] columnValues = new String[] {principal.getName(), attributeName, principal.getRelyingPartyID()};
+    String[] columnValues = new String[] {principal.getName(), attributeName, relyingParty};
 
     try {
       String[] attributes = getField(dbConfig.getTableName(), columnNames, columnValues, dbConfig.getFieldAttributeValue());
@@ -80,9 +80,9 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  public String getAttributeValue(GuanxiPrincipal principal, String attributeName) {
+  public String getAttributeValue(GuanxiPrincipal principal, String relyingParty, String attributeName) {
     String[] columnNames = new String[] {dbConfig.getFieldUserid(), dbConfig.getFieldAttributeName(), dbConfig.getFieldRelyingParty()};
-    String[] columnValues = new String[] {principal.getName(), attributeName, principal.getRelyingPartyID()};
+    String[] columnValues = new String[] {principal.getName(), attributeName, relyingParty};
 
     try {
       String[] attributes = getField(dbConfig.getTableName(), columnNames, columnValues, dbConfig.getFieldAttributeValue());
@@ -98,13 +98,13 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  public boolean persistAttribute(GuanxiPrincipal principal, String attributeName, String attributeValue) {
+  public boolean persistAttribute(GuanxiPrincipal principal, String relyingParty, String attributeName, String attributeValue) {
     try {
-      if (attributeExists(principal, attributeName)) {
-        update(principal.getName(), attributeName, attributeValue, principal.getRelyingPartyID());
+      if (attributeExists(principal, relyingParty, attributeName)) {
+        update(principal.getName(), attributeName, attributeValue, relyingParty);
       }
       else {
-        insert(principal.getName(), attributeName, attributeValue, principal.getRelyingPartyID());
+        insert(principal.getName(), attributeName, attributeValue, relyingParty);
       }
       return true;
     }
@@ -114,9 +114,9 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
     }
   }
 
-  public boolean unpersistAttribute(GuanxiPrincipal principal, String attributeName) {
+  public boolean unpersistAttribute(GuanxiPrincipal principal, String relyingParty, String attributeName) {
     try {
-      delete(principal.getName(), attributeName, principal.getRelyingPartyID());
+      delete(principal.getName(), attributeName, relyingParty);
       return true;
     }
     catch(GuanxiException ge) {
