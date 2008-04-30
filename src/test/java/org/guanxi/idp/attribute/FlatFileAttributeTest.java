@@ -31,7 +31,7 @@ public class FlatFileAttributeTest extends AttributeTest {
 
     Attributor ffAttributor = (Attributor)ctx.getBean("flatFileAttributor");
     try {
-      ffAttributor.getAttributes(principal, attributes);
+      ffAttributor.getAttributes(principal, TEST_RELYING_PARTY, attributes);
       assertTrue(attributes.getAttributeArray().length > 0);
 
       AttributorAttribute[] attrs = attributes.getAttributeArray();
