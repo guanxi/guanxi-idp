@@ -181,19 +181,6 @@ public class SSO extends AbstractController implements ServletContextAware {
      */
     GuanxiPrincipal principal = (GuanxiPrincipal)request.getAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL);
 
-
-    /*
-     * We've been given a principal by the auth handler, which means the user has already authenticated.
-     * However, the SP that kicked off that authentication might not be the one that's
-     * currently talking to us. If it isn't, we'll need to create a new principal for use
-     * with that SP, otherwise this SP will get the identity and creds of the previous SP.
-     */
-    if (!principal.getRelyingPartyID().equals(request.getParameter(Shibboleth.PROVIDER_ID))) {
-      principal.setUniqueId(Utils.getUniqueID());
-      principal.setRelyingPartyID(request.getParameter(Shibboleth.PROVIDER_ID));
-      getServletContext().setAttribute(principal.getUniqueId(), principal);
-    }
-
     // Need these for the Response
     String issuer = null;
     String nameQualifier = null;
@@ -207,8 +194,8 @@ public class SSO extends AbstractController implements ServletContextAware {
     String spID = null;
     ServiceProvider[] spList = idpConfig.getServiceProviderArray();
     for (int c=0; c < spList.length; c++) {
-      if (spList[c].getName().equals(principal.getRelyingPartyID())) {
-        spID = principal.getRelyingPartyID();
+      if (spList[c].getName().equals(request.getParameter(Shibboleth.PROVIDER_ID))) {
+        spID = request.getParameter(Shibboleth.PROVIDER_ID);
       }
     }
     if (spID == null) {
@@ -241,8 +228,10 @@ public class SSO extends AbstractController implements ServletContextAware {
       }
     }
 
-    // Associate the principal with SAML signing credentials
-    principal.setCredsConfig(credsConfig);
+    // Associate the principal with the issuer to use...
+    principal.addIssuer(request.getParameter(Shibboleth.PROVIDER_ID), issuer);
+    // ...and the SAML signing credentials
+    principal.addSigningCreds(request.getParameter(Shibboleth.PROVIDER_ID), credsConfig);
 
     // Sort out the namespaces for saving the Response
     HashMap namespaces = new HashMap();
@@ -388,7 +377,7 @@ public class SSO extends AbstractController implements ServletContextAware {
       if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
         if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
           log.info("=======================================================");
-          log.info("IdP response to Shire with providerId " + principal.getRelyingPartyID());
+          log.info("IdP response to Shire with providerId " + request.getParameter(Shibboleth.PROVIDER_ID));
           log.info("");
           StringWriter sw = new StringWriter();
           samlResponseDoc.save(sw, xmlOptions);
@@ -401,7 +390,7 @@ public class SSO extends AbstractController implements ServletContextAware {
     }
 
     for (IdPFilter filter : filters) {
-      filter.filter(principal, samlResponseDoc);
+      filter.filter(principal, request.getParameter(Shibboleth.PROVIDER_ID), samlResponseDoc);
     }
 
     // Send the Response to the SP
