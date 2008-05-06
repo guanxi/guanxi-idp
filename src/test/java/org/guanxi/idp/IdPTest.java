@@ -18,10 +18,13 @@ package org.guanxi.idp;
 
 import org.springframework.mock.web.MockServletContext;
 import org.junit.BeforeClass;
+import static org.junit.Assert.fail;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
 
 import java.util.ResourceBundle;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * The root of the IdP test hierarchy
@@ -39,7 +42,12 @@ public abstract class IdPTest {
   @BeforeClass
   public static void init() {
     idpProperties = ResourceBundle.getBundle("test");
-    idpHome = "file://" + idpProperties.getString("idp.webapp.home");
+    try {
+      idpHome = "file://" + new File(".").getCanonicalPath() + "/src/main/webapp";
+    }
+    catch(IOException ioe) {
+      fail(ioe.getMessage());
+    }
     servletContext = new MockServletContext(idpHome);
 
     persistenceFiles = new String[] {idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/persistence.xml",
