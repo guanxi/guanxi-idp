@@ -43,7 +43,7 @@ public abstract class IdPTest {
   public static void init() {
     idpProperties = ResourceBundle.getBundle("test");
     try {
-      idpHome = "file://" + new File(".").getCanonicalPath() + "/src/main/webapp";
+      idpHome = "file:///" + new File(".").getCanonicalPath() + "/src/main/webapp";
     }
     catch(IOException ioe) {
       fail(ioe.getMessage());
