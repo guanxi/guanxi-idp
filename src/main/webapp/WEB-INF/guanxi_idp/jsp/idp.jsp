@@ -28,6 +28,7 @@
 
   <div style="border:1px solid black; width:50%; height:20%; background-image:url(images/formback.gif); background-repeat:repeat-x repeat-y; margin: 0 auto;">
     <div style="padding:20px; margin: 0 auto;">
+      <a href="shibb/register-sp"><fmt:message key="idp.register.sp.link"/></a><br/><br/>
       <fmt:message key="idp.docs.link.message"/><br><br>
       <a href="http://www.guanxi.uhi.ac.uk/index.php/Identity_Provider"><fmt:message key="idp.docs.link.text"/></a><br><br>
     </div>
