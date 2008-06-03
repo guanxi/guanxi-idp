@@ -30,7 +30,7 @@ public class ShibbolethGuanxiPrincipalFactory implements GuanxiPrincipalFactory 
     GuanxiPrincipal gxPrincipal = new GuanxiPrincipal();
 
     // Set the session ID... This will be the NameIdentifier
-    gxPrincipal.setUniqueId(Utils.getUniqueID());
+    gxPrincipal.setUniqueId(Utils.getUniqueID().replaceAll(":", "--"));
 
     return gxPrincipal;
   }
