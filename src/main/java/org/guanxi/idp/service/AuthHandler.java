@@ -40,6 +40,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletContext;
 import java.util.List;
 
+/**
+ * @author Alistair Young alistair@codebrane.com
+ * @author Marcin Mielnicki mielniczu@o2.pl - bug fixing
+ */
 public class AuthHandler extends HandlerInterceptorAdapter implements ServletContextAware {
   /** The name of the request attribute that the form action will be stored under */
   public static final String FORM_ACTION_ATTRIBUTE = "FORM_ACTION_ATTRIBUTE";
@@ -104,6 +108,8 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
    * @throws Exception if an error occurs
    */
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
+    request.setCharacterEncoding("UTF-8");
+    
     String missingParams = checkRequestParameters(request);
     if (missingParams != null) {
       log.info("Missing param(s)");
