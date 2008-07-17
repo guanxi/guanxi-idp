@@ -99,9 +99,9 @@ import org.springframework.web.context.ServletContextAware;
   <HTTP-Version> 200 <Reason Phrase>
   <html>
     <Body Onload="document.forms[0].submit()">
-      <FORM Method=ÓPostÓ Action=Óhttps://<assertion consumer host name and path>Ó ...
-      <INPUT TYPE=ÓhiddenÓ NAME=ÓResponseÓ Value=ÓB64(<response>)Ó>
-      <INPUT TYPE=ÓhiddenÓ NAME=ÓTARGETÓ Value=Ó<Target>Ó>
+      <FORM Method=ï¿½Postï¿½ Action=ï¿½https://<assertion consumer host name and path>ï¿½ ...
+      <INPUT TYPE=ï¿½hiddenï¿½ NAME=ï¿½Responseï¿½ Value=ï¿½B64(<response>)ï¿½>
+      <INPUT TYPE=ï¿½hiddenï¿½ NAME=ï¿½TARGETï¿½ Value=ï¿½<Target>ï¿½>
     </Body>
   </html>
 
@@ -170,6 +170,7 @@ public class SSO extends AbstractController implements ServletContextAware {
    * target - Generally the URL of a resource accessed at the service provider<br>
    * time - The current time, in seconds elapsed since midnight, January 1st, 1970, as a string of up to 10 base10 digits<br>
    */
+  @SuppressWarnings("unchecked")
   public ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
     ModelAndView mAndV = new ModelAndView();
 
@@ -234,7 +235,7 @@ public class SSO extends AbstractController implements ServletContextAware {
     principal.addSigningCreds(request.getParameter(Shibboleth.PROVIDER_ID), credsConfig);
 
     // Sort out the namespaces for saving the Response
-    HashMap namespaces = new HashMap();
+    HashMap<String, String> namespaces = new HashMap<String, String>();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
     namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
     XmlOptions xmlOptions = new XmlOptions();

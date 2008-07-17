@@ -114,7 +114,7 @@ public class LDAPAttributor extends SimpleAttributor {
 
           if (attrs != null) {
             LDAPAttribute attr = null;
-            Iterator entries = attrs.iterator();
+            Iterator<?> entries = attrs.iterator();
 
             while (entries.hasNext()) {
               // Get the name of the attribute...

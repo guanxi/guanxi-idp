@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.openssl.PEMWriter;
@@ -62,6 +63,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   /** The Logging setup to use */
   private Log4JLogger logger = null;
   /** Spring ApplicationContext */
+  @SuppressWarnings("unused")
   private ApplicationContext applicationContext = null;
   /** The servlet context */
   private ServletContext servletContext = null;
@@ -261,8 +263,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       PrivateKey privkey = keypair.getPrivate();
       PublicKey pubkey = keypair.getPublic();
 
-      Hashtable attrs = new Hashtable();
-      Vector ordering = new Vector();
+      Hashtable<DERObjectIdentifier, String> attrs = new Hashtable<DERObjectIdentifier, String>();
+      Vector<DERObjectIdentifier> ordering = new Vector<DERObjectIdentifier>();
       ordering.add(X509Name.CN);
       attrs.put(X509Name.CN, cn);
       X509Name issuerDN = new X509Name(ordering, attrs);

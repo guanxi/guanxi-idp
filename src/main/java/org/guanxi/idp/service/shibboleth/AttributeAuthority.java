@@ -141,7 +141,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     // Get the SP's providerId from the attribute query
     String spProviderId = samlRequest.getAttributeQuery().getResource();
 
-    HashMap namespaces = new HashMap();
+    HashMap<String, String> namespaces = new HashMap<String, String>();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
     namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
 
@@ -294,7 +294,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     // Get the client's X509 and any cert chain
     X509Certificate[] x509s = (X509Certificate[])servletContext.getAttribute("javax.servlet.request.X509Certificate");
 
-    X509Certificate[] x = (X509Certificate[])request.getAttribute("javax.servlet.request.X509Certificate");
+    //X509Certificate[] x = (X509Certificate[])request.getAttribute("javax.servlet.request.X509Certificate");
     //X509Certificate[] x = (X509Certificate[])request.getAttribute("org.apache.coyote.request.X509Certificate");
     //x = (X509Certificate[])request.getAttribute("X509Certificate");
 
@@ -304,7 +304,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     // See if we support a client with this certificate
     X509Certificate x509 = null;
     PublicKey publicKey = null;
-    byte[] encodedBytes = null;
+    //byte[] encodedBytes = null;
     for (int count=0; count > x509s.length; count++) {
       try {
         x509 = x509s[count];
@@ -313,7 +313,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
         x509.checkValidity();
 
         publicKey = x509.getPublicKey();
-        encodedBytes = publicKey.getEncoded();
+        /*encodedBytes = */publicKey.getEncoded();// no assignment needed, the byte array is not used
       }
       catch(CertificateExpiredException cee) {return false; }
       catch(CertificateNotYetValidException cnyve) {return false; }

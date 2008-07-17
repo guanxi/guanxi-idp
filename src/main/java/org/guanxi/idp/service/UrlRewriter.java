@@ -38,7 +38,7 @@ public class UrlRewriter extends HandlerInterceptorAdapter implements ServletCon
   /** The Logging setup to use */
   private Log4JLogger logger = null;
   /** The URLs to map */
-  private HashMap urlMaps = null;
+  private HashMap<?, ?> urlMaps = null;
 
   /**
    * Initialise the interceptor
@@ -91,5 +91,5 @@ public class UrlRewriter extends HandlerInterceptorAdapter implements ServletCon
   public void setLogger(Log4JLogger logger) { this.logger = logger; }
   public Log4JLogger getLogger() { return logger; }
 
-  public void setUrlMaps(HashMap urlMaps) { this.urlMaps = urlMaps; }
+  public void setUrlMaps(HashMap<?, ?> urlMaps) { this.urlMaps = urlMaps; }
 }

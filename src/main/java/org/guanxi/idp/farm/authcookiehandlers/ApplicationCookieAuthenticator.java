@@ -18,8 +18,6 @@ package org.guanxi.idp.farm.authcookiehandlers;
 
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.context.ServletContextAware;
-import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.GuanxiPrincipal;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -27,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class ApplicationCookieAuthenticator extends HandlerInterceptorAdapter implements ServletContextAware {
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
+  @SuppressWarnings("unused")
   private ServletContext servletContext = null;
 
   /**

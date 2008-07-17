@@ -18,6 +18,7 @@ package org.guanxi.idp.util;
 
 import org.guanxi.common.GuanxiException;
 import org.guanxi.xal.idp.*;
+import org.guanxi.xal.idp.ArpDocument.Arp;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.web.context.ServletContextAware;
 
@@ -35,12 +36,12 @@ public class ARPEngine implements ServletContextAware {
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our ARP files */
-  private Vector arpFiles = null;
+  private Vector<Arp> arpFiles = null;
   /** The map file to use */
   private String arpFile = null;
 
   public void init() {
-    arpFiles = new Vector();
+    arpFiles = new Vector<Arp>();
 
     try {
       loadARPs(arpFile);
