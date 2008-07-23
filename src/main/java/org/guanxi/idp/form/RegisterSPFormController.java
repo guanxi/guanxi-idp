@@ -55,6 +55,7 @@ public class RegisterSPFormController extends SimpleFormController {
    * @param response Standard issue HttpServletResponse
    * @throws ServletException
    */
+  @SuppressWarnings("unchecked")
   public ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response,
                                Object command, BindException errors) throws ServletException {
 

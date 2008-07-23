@@ -19,7 +19,6 @@ package org.guanxi.idp.service.shibboleth;
 import org.guanxi.common.GuanxiPrincipalFactory;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
-import org.guanxi.common.definitions.Shibboleth;
 
 import javax.servlet.http.HttpServletRequest;
 

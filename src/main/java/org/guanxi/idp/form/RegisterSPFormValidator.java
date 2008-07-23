@@ -38,6 +38,7 @@ public class RegisterSPFormValidator implements Validator, ServletContextAware {
     this.servletContext = servletContext;
   }
 
+  @SuppressWarnings("unchecked")
   public boolean supports(Class clazz) {
     return clazz.equals(RegisterSP.class);
   }

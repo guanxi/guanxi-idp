@@ -44,12 +44,12 @@ public class AttributeMap implements ServletContextAware {
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our provider groupings and mapping rules */
-  private Vector maps = null;
-  private Vector providers = null;
+  private Vector<Map> maps = null;
+  private Vector<MapProvider> providers = null;
   /** The new names of the attribute passed to map() */
-  private Vector mappedNames = null;
+  private Vector<String> mappedNames = null;
   /** The new values of the attribute passed to map() */
-  private Vector mappedValues = null;
+  private Vector<String> mappedValues = null;
   /** The map file to use */
   private String mapFile = null;
   /** The persistence engine to use */
@@ -58,10 +58,10 @@ public class AttributeMap implements ServletContextAware {
   private AttributeRule[] attributeRules = null;
 
   public void init() {
-    maps = new Vector();
-    providers = new Vector();
-    mappedNames = new Vector();
-    mappedValues = new Vector();
+    maps = new Vector<Map>();
+    providers = new Vector<MapProvider>();
+    mappedNames = new Vector<String>();
+    mappedValues = new Vector<String>();
 
     try {
       loadMaps(mapFile);
