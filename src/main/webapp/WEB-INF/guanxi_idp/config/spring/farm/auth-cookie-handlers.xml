@@ -10,19 +10,9 @@
   <!-- Flat file attributor -->
   <!--
   <bean id="bodingtonCookieHandler" class="org.guanxi.idp.farm.authcookiehandlers.BodingtonCookieHandler" init-method="init">
-    <property name="logger"><ref bean="authCookieHandlerLogger"/></property>
-    <property name="loggerConfig"><ref bean="bodingtonCookieHandlerLoggerConfig"/></property>
     <property name="idpConfig"><ref bean="idpConfig"/></property>
     <property name="cookieHandlerConfig"><value>NOT_NEEDED</value></property>
     <property name="bodingtonCookieName"><value>ORG_BODINGTON_SERVLET_SESSION_ID</value></property>
-  </bean>
-
-  <bean id="bodingtonCookieHandlerLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/bodington-cookie-handler.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
   -->
   <!-- ***************************************************************************** -->
