@@ -16,51 +16,36 @@
 
 package org.guanxi.idp.persistence;
 
+import javax.servlet.ServletContext;
+
 import org.apache.log4j.Logger;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.GuanxiException;
 import org.guanxi.common.GuanxiPrincipal;
 import org.springframework.web.context.ServletContextAware;
-
-import javax.servlet.ServletContext;
 
 public abstract class SimplePersistenceEngine implements PersistenceEngine, ServletContextAware {
   /** The servlet context */
   protected ServletContext servletContext = null;
   /** Our logger */
-  protected Logger log = null;
-  /** The logger config */
-  protected Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  protected Log4JLogger logger = null;
+  protected Logger logger = null;
 
   public void init() {
-    try {
-      loggerConfig.setClazz(this.getClass());
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException ge) {
-    }
+    logger = Logger.getLogger(this.getClass().getName());
   }
-  
+
   // These must be overriden in derivatives
-  public abstract boolean attributeExists(GuanxiPrincipal principal, String relyingParty, String attributeName);
-  public abstract String getAttributeValue(GuanxiPrincipal principal, String relyingParty, String attributeName);
-  public abstract boolean persistAttribute(GuanxiPrincipal principal, String relyingParty, String attributeName, String attributeValue);
-  public abstract boolean unpersistAttribute(GuanxiPrincipal principal, String relyingParty, String attributeName);
+  public abstract boolean attributeExists(GuanxiPrincipal principal, String relyingParty,
+                                          String attributeName);
 
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
+  public abstract String getAttributeValue(GuanxiPrincipal principal, String relyingParty,
+                                           String attributeName);
 
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
+  public abstract boolean persistAttribute(GuanxiPrincipal principal, String relyingParty,
+                                           String attributeName, String attributeValue);
 
-  public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
+  public abstract boolean unpersistAttribute(GuanxiPrincipal principal, String relyingParty,
+                                             String attributeName);
+
+  public void setServletContext(ServletContext servletContext) {
+    this.servletContext = servletContext;
+  }
 }

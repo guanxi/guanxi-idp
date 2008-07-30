@@ -44,10 +44,10 @@ public class FlatFileAuthenticator extends SimpleAuthenticator {
       ffConfig = configDoc.getFlatFileAuthenticatorConfig();
     }
     catch(IOException me) {
-      log.error("Can't load attributor config file", me);
+      logger.error("Can't load attributor config file", me);
     }
     catch(XmlException xe) {
-      log.error("Can't parse attributor config file", xe);
+      logger.error("Can't parse attributor config file", xe);
     }
   }
 

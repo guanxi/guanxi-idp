@@ -16,29 +16,27 @@
 
 package org.guanxi.idp.service;
 
+import java.util.List;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
 import org.guanxi.common.GuanxiPrincipal;
-import org.guanxi.common.GuanxiException;
 import org.guanxi.common.GuanxiPrincipalFactory;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.idp.farm.authenticators.Authenticator;
 import org.guanxi.xal.idp.AuthPage;
 import org.guanxi.xal.idp.IdpDocument;
 import org.guanxi.xal.idp.ServiceProvider;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.guanxi.xal.saml_2_0.metadata.SPSSODescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.IndexedEndpointType;
-import org.guanxi.idp.farm.authenticators.Authenticator;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import org.springframework.web.context.ServletContextAware;
+import org.guanxi.xal.saml_2_0.metadata.SPSSODescriptorType;
 import org.springframework.context.MessageSource;
-import org.apache.log4j.Logger;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletContext;
-import java.util.List;
+import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 /**
  * @author Alistair Young alistair@codebrane.com
@@ -54,11 +52,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
+  private static final Logger logger = Logger.getLogger(AuthHandler.class.getName());
   /** The error page to use */
   private String errorPage = null;
   /** The authenticator to use */
@@ -80,18 +74,6 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
    * Initialise the interceptor
    */
   public void init() {
-    try {
-      loggerConfig.setClazz(AuthHandler.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException me) {
-    }
   }
 
   /**
@@ -112,7 +94,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     
     String missingParams = checkRequestParameters(request);
     if (missingParams != null) {
-      log.info("Missing param(s)");
+      logger.info("Missing param(s)");
       request.setAttribute("message", messageSource.getMessage("missing.param",
                                                                new Object[] {missingParams},
                                                                request.getLocale()));
@@ -153,7 +135,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
 
     // Did we find the service provider?
     if (!spSupported) {
-      log.error("Service Provider providerId " + request.getParameter(spIDRequestParam) + " not supported");
+      logger.error("Service Provider providerId " + request.getParameter(spIDRequestParam) + " not supported");
       request.setAttribute("message", messageSource.getMessage("sp.not.supported",
                                                                new Object[]{request.getParameter(spIDRequestParam)},
                                                                request.getLocale()));
@@ -164,7 +146,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     // Verify an SP based on cached SAML2 federation metadata
     if (servletContext.getAttribute(request.getParameter(spIDRequestParam)) != null) {
       if (!entityVerifier.verify((EntityDescriptorType)servletContext.getAttribute(request.getParameter(spIDRequestParam)), request)) {
-        log.error("Service Provider providerId " + request.getParameter(spIDRequestParam) + " failed verification");
+        logger.error("Service Provider providerId " + request.getParameter(spIDRequestParam) + " failed verification");
         request.setAttribute("message", messageSource.getMessage("sp.failed.verification",
                                                                  new Object[]{request.getParameter(spIDRequestParam)},
                                                                  request.getLocale()));
@@ -222,7 +204,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
           return true;
         } // if (authenticator.authenticate...
         else {
-          log.error("Authentication error : " + authenticator.getErrorMessage());
+          logger.error("Authentication error : " + authenticator.getErrorMessage());
           request.setAttribute("message", messageSource.getMessage("authentication.error",
                                                                    null,
                                                                    request.getLocale()));
@@ -299,15 +281,6 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
 
   // Called by Spring as we are ServletContextAware
   public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
-
-  public void setLog(Logger log) { this.log = log; }
-  public Logger getLog() { return log; }
-
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
-
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
 
   public void setErrorPage(String errorPage) { this.errorPage = errorPage; }
 

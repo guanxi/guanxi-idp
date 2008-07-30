@@ -58,10 +58,10 @@ public class LDAPAttributor extends SimpleAttributor {
       ldapConfig = configDoc.getLdap();
     }
     catch(IOException me) {
-      log.error("Can't load attributor config file", me);
+      logger.error("Can't load attributor config file", me);
     }
     catch(XmlException xe) {
-      log.error("Can't parse attributor config file", xe);
+      logger.error("Can't parse attributor config file", xe);
     }
   }
 
@@ -89,11 +89,11 @@ public class LDAPAttributor extends SimpleAttributor {
 
         // Connect to the server
         lc.connect(server.getAddress(), Integer.parseInt(server.getPort()));
-        log.info("Connected to " + server.getAddress() + " on port " + server.getPort());
+        logger.info("Connected to " + server.getAddress() + " on port " + server.getPort());
 
         // Bind with enough rights to get attributes
         lc.bind(LDAP_VERSION, server.getPrivilegedDn(), server.getPrivilegedDnPassword().getBytes());
-        log.info("Authenticated admin user on " + server.getAddress());
+        logger.info("Authenticated admin user on " + server.getAddress());
 
         // Get all the available attributes for the user. The DN is stored in the principal by the authenticator
 
@@ -148,17 +148,17 @@ public class LDAPAttributor extends SimpleAttributor {
                     valueCount = attrValues.length - 1;
                   }
 
-                  log.debug("Obtained attribute " + attr.getName());
+                  logger.debug("Obtained attribute " + attr.getName());
 
                   // Can we release the original attributes without mapping?
                   if (arpEngine.release(relyingParty, attrName, attrValue)) {
-                    log.debug("Released attribute " + attrName);
+                    logger.debug("Released attribute " + attrName);
                     AttributorAttribute attribute = attributes.addNewAttribute();
                     attribute.setName(attrName);
                     attribute.setValue(attrValue);
                   }
                   else {
-                    log.debug("Attribute release blocked by ARP : " + attrName + " to " + relyingParty);
+                    logger.debug("Attribute release blocked by ARP : " + attrName + " to " + relyingParty);
 
                     // Sort out any mappings. This will change the default name/value if necessary...
                     if (mapper.map(principal, relyingParty, attr.getName(), attrValue)) {
@@ -173,11 +173,11 @@ public class LDAPAttributor extends SimpleAttributor {
                           attribute.setName(mapper.getMappedNames()[mapCount]);
                           attribute.setValue(mappedValue);
 
-                          log.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
+                          logger.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
                                     " -> " + mappedValue + " to " + relyingParty);
                         }
                         else {
-                          log.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
+                          logger.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
                                     " to " + relyingParty);
                         }
                       } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
@@ -188,21 +188,21 @@ public class LDAPAttributor extends SimpleAttributor {
             } // while (entries.hasNext()) {
           }
           else { // if (attrs != null) {
-            log.debug("No attributes found for user");
+            logger.debug("No attributes found for user");
           }
         }
         else { // if (attrGroup != null) {
-          log.debug("No attribute group found for user");
+          logger.debug("No attribute group found for user");
         }
       }
       catch(LDAPException le) {
         // If we get an exception, we'll just move on to the next server
         errorMessage = le.getMessage();
-        log.error(le);
+        logger.error(le);
       }
       catch(NullPointerException npe){
         // thrown because the principal hasn't been authenticated
-        log.debug("Caught null pointer exception in LDAPAttributor.");
+        logger.debug("Caught null pointer exception in LDAPAttributor.");
       }
     } // while (((baseServerNode ...
   }

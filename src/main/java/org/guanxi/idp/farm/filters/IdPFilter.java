@@ -18,12 +18,11 @@ package org.guanxi.idp.farm.filters;
 
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
-import org.guanxi.idp.farm.Loggable;
 
 /**
  * Filter interface
  */
-public interface IdPFilter extends Loggable {
+public interface IdPFilter {
   public void init();
   public void filter(GuanxiPrincipal principal, String relyingParty, ResponseDocument ssoResponseDoc);
 }

@@ -16,32 +16,53 @@
 
 package org.guanxi.idp.service.shibboleth;
 
-import javax.servlet.http.*;
-import javax.xml.namespace.QName;
-import java.io.*;
-import java.util.*;
+import java.io.StringWriter;
 import java.math.BigInteger;
-import org.guanxi.common.Utils;
-import org.guanxi.common.GuanxiPrincipal;
+import java.util.Calendar;
+import java.util.HashMap;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.namespace.QName;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.definitions.Shibboleth;
+import org.guanxi.common.GuanxiPrincipal;
+import org.guanxi.common.Utils;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.SAML;
+import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.security.SecUtilsConfig;
-import org.guanxi.xal.idp.*;
-import org.guanxi.xal.saml_1_0.protocol.*;
-import org.guanxi.xal.saml_1_0.assertion.*;
 import org.guanxi.idp.farm.filters.IdPFilter;
-import org.w3c.dom.Document;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlException;
-import org.springframework.web.servlet.mvc.AbstractController;
-import org.springframework.web.servlet.ModelAndView;
+import org.guanxi.xal.idp.Creds;
+import org.guanxi.xal.idp.IdpDocument;
+import org.guanxi.xal.idp.ServiceProvider;
+import org.guanxi.xal.saml_1_0.assertion.AssertionDocument;
+import org.guanxi.xal.saml_1_0.assertion.AssertionType;
+import org.guanxi.xal.saml_1_0.assertion.AudienceRestrictionConditionDocument;
+import org.guanxi.xal.saml_1_0.assertion.AudienceRestrictionConditionType;
+import org.guanxi.xal.saml_1_0.assertion.AuthenticationStatementDocument;
+import org.guanxi.xal.saml_1_0.assertion.AuthenticationStatementType;
+import org.guanxi.xal.saml_1_0.assertion.ConditionsDocument;
+import org.guanxi.xal.saml_1_0.assertion.ConditionsType;
+import org.guanxi.xal.saml_1_0.assertion.NameIdentifierDocument;
+import org.guanxi.xal.saml_1_0.assertion.NameIdentifierType;
+import org.guanxi.xal.saml_1_0.assertion.SubjectConfirmationDocument;
+import org.guanxi.xal.saml_1_0.assertion.SubjectConfirmationType;
+import org.guanxi.xal.saml_1_0.assertion.SubjectDocument;
+import org.guanxi.xal.saml_1_0.assertion.SubjectType;
+import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
+import org.guanxi.xal.saml_1_0.protocol.ResponseType;
+import org.guanxi.xal.saml_1_0.protocol.StatusCodeType;
+import org.guanxi.xal.saml_1_0.protocol.StatusDocument;
+import org.guanxi.xal.saml_1_0.protocol.StatusType;
 import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.AbstractController;
+import org.w3c.dom.Document;
 
 /*
   From the Shibboleth Working Draft 02 - 22/9/04
@@ -119,25 +140,12 @@ import org.springframework.web.context.ServletContextAware;
  */
 public class SSO extends AbstractController implements ServletContextAware {
   /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
+  private static final Logger logger = Logger.getLogger(SSO.class.getName());
   private IdPFilter[] filters = null;
   private String errorView = null;
   private String shibView = null;
   /** The value of the service-provider:name in the config file that points to the default identity and creds */
   private String defaultSPEntry = null;
-
-  public void setLog(Logger log) { this.log = log; }
-  public Logger getLog() { return log; }
-
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
-
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
 
   public IdPFilter[] getFilters() { return filters; }
   public void setFilters(IdPFilter[] filters) { this.filters = filters; }
@@ -149,18 +157,6 @@ public class SSO extends AbstractController implements ServletContextAware {
   public void setDefaultSPEntry(String defaultSPEntry) { this.defaultSPEntry = defaultSPEntry; }
 
   public void init() {
-    try {
-      loggerConfig.setClazz(SSO.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(getServletContext().getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(getServletContext().getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException me) {
-    }
   }
 
   /*
@@ -354,7 +350,7 @@ public class SSO extends AbstractController implements ServletContextAware {
       signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)samlResponseDoc.newDomNode(xmlOptions), "");
     }
     catch(GuanxiException ge) {
-      log.error(ge);
+      logger.error(ge);
     }
 
     try {
@@ -362,7 +358,7 @@ public class SSO extends AbstractController implements ServletContextAware {
       samlResponseDoc = ResponseDocument.Factory.parse(signedDoc);
     }
     catch(XmlException xe) {
-      log.error("Couldn't get a signed Response", xe);
+      logger.error("Couldn't get a signed Response", xe);
       mAndV.setViewName(errorView);
       return mAndV;
     }
@@ -377,15 +373,15 @@ public class SSO extends AbstractController implements ServletContextAware {
     if (idpConfig.getDebug() != null) {
       if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
         if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
-          log.info("=======================================================");
-          log.info("IdP response to Shire with providerId " + request.getParameter(Shibboleth.PROVIDER_ID));
-          log.info("");
+          logger.info("=======================================================");
+          logger.info("IdP response to Shire with providerId " + request.getParameter(Shibboleth.PROVIDER_ID));
+          logger.info("");
           StringWriter sw = new StringWriter();
           samlResponseDoc.save(sw, xmlOptions);
-          log.info(sw.toString());
+          logger.info(sw.toString());
           sw.close();
-          log.info("");
-          log.info("=======================================================");
+          logger.info("");
+          logger.info("=======================================================");
         }
       }
     }

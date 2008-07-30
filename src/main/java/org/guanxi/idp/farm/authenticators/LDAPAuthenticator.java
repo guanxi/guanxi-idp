@@ -45,10 +45,10 @@ public class LDAPAuthenticator extends SimpleAuthenticator {
       ldapConfig = configDoc.getLdap();
     }
     catch(IOException me) {
-      log.error("Can't load attributor config file", me);
+      logger.error("Can't load attributor config file", me);
     }
     catch(XmlException xe) {
-      log.error("Can't parse attributor config file", xe);
+      logger.error("Can't parse attributor config file", xe);
     }
   }
 
@@ -74,10 +74,10 @@ public class LDAPAuthenticator extends SimpleAuthenticator {
         
         // Connect to the server
         lc.connect(server.getAddress(), Integer.parseInt(server.getPort()));
-        log.info("Connected to " + server.getAddress() + " on port " + server.getPort());
+        logger.info("Connected to " + server.getAddress() + " on port " + server.getPort());
 
         lc.bind(LDAP_VERSION, server.getPrivilegedDn(), server.getPrivilegedDnPassword().getBytes());
-        log.info("Authenticated admin user on " + server.getAddress());
+        logger.info("Authenticated admin user on " + server.getAddress());
 
         // Build the CN of the user to look for
         String searchFilter = "(" + server.getSearchAttribute() +"=" + username + ")";
@@ -109,14 +109,14 @@ public class LDAPAuthenticator extends SimpleAuthenticator {
             
             // Get the users's DN to use in the authentication call
             userDN = nextEntry.getDN();
-            log.info("Found user : " + userDN);
+            logger.info("Found user : " + userDN);
 
             // Only take the first DN found
             break;
           }
           catch(LDAPException le) {
             errorMessage = le.getMessage();
-            log.error(le);
+            logger.error(le);
             lc.disconnect();
           }
         }
@@ -132,7 +132,7 @@ public class LDAPAuthenticator extends SimpleAuthenticator {
           // Store the user's DN to get their attributes later
           principal.addPrivateProfileDataEntry("dn", userDN);
 
-          log.info("Authenticated user");
+          logger.info("Authenticated user");
 
           // User authenticated
           return true;
@@ -141,7 +141,7 @@ public class LDAPAuthenticator extends SimpleAuthenticator {
       catch(LDAPException le) {
         // If we get an exception, we'll just move on to the next server
         errorMessage = le.getMessage();
-        log.error(le);
+        logger.error(le);
       }
     } // while (((baseServerNode ...
 

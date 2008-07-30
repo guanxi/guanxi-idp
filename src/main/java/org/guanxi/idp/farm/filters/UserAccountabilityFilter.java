@@ -31,7 +31,7 @@ public class UserAccountabilityFilter extends SimpleIdPFilter {
   }
   
   public void filter(GuanxiPrincipal principal, String relyingParty, ResponseDocument ssoResponseDoc) {
-    log.info(principal.getUniqueId() + delimiter +            // NameIdentifier
+    logger.info(principal.getUniqueId() + delimiter +            // NameIdentifier
              principal.getName() + delimiter +          // Username
              relyingParty + delimiter +    // SP id
              principal.getPrivateProfileDataEntry("dn") + delimiter +      // User's DN

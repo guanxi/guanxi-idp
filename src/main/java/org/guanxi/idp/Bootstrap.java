@@ -25,8 +25,6 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.context.support.RequestHandledEvent;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.xal.idp.IdpDocument;
@@ -56,12 +54,7 @@ import java.math.BigInteger;
 import java.text.ParseException;
 
 public class Bootstrap implements ApplicationListener, ApplicationContextAware, ServletContextAware {
-  /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
+  private static final Logger logger = Logger.getLogger(Bootstrap.class.getName());
   /** Spring ApplicationContext */
   @SuppressWarnings("unused")
   private ApplicationContext applicationContext = null;
@@ -73,15 +66,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   /** The background jobs to start */
   private GuanxiJobConfig[] gxJobs = null;
 
-  public void setLog(Logger log) { this.log = log; }
-  public Logger getLog() { return log; }
-
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
-
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
-
   public void setConfigFile(String configFile) { this.configFile = configFile; }
   public String getConfigFile() { return configFile; }
 
@@ -92,15 +76,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
    */
   public void init() {
     try {
-      loggerConfig.setClazz(Bootstrap.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-
       /* If we try to add the BouncyCastle provider but another Guanxi::SP running
        * in another webapp in the same container has already done so, then we'll get
        * -1 returned from the method, in which case, we should leave unloading of the
@@ -179,7 +154,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
    */
   public void onApplicationEvent(ApplicationEvent applicationEvent) {
     if (applicationEvent instanceof ContextRefreshedEvent) {
-      log.info("Bootstrap init");
+      logger.info("Bootstrap init");
     }
 
     if (applicationEvent instanceof ContextClosedEvent) {
@@ -318,7 +293,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       idpDoc = IdpDocument.Factory.parse(new File(servletContext.getRealPath(SSO_CONFIG_FILE)));
     }
     catch(XmlException xe) {
-      log.error("Can't create config file", xe);
+      logger.error("Can't create config file", xe);
       return;
     }
 
@@ -386,13 +361,13 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       }
     }
     catch(ClassNotFoundException cnfe) {
-      log.error("Error locating job class", cnfe);
+      logger.error("Error locating job class", cnfe);
     }
     catch(SchedulerException se) {
-      log.error("Job scheduling error", se);
+      logger.error("Job scheduling error", se);
     }
     catch(ParseException pe) {
-      log.error("Error parsing job cronline", pe);
+      logger.error("Error parsing job cronline", pe);
     }
 
 

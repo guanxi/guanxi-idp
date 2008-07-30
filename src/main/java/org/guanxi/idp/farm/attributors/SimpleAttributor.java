@@ -17,9 +17,6 @@
 package org.guanxi.idp.farm.attributors;
 
 import org.apache.log4j.Logger;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.GuanxiException;
 import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.idp.util.AttributeMap;
 import org.springframework.web.context.ServletContextAware;
@@ -30,11 +27,7 @@ public abstract class SimpleAttributor implements Attributor, ServletContextAwar
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   ServletContext servletContext = null;
   /** Our logger */
-  protected Logger log = null;
-  /** The logger config */
-  protected Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  protected Log4JLogger logger = null;
+  protected Logger logger = null;
   /** Our ARP engine */
   protected ARPEngine arpEngine = null;
   /** Our attribute mapper */
@@ -45,41 +38,38 @@ public abstract class SimpleAttributor implements Attributor, ServletContextAwar
   protected String errorMessage = null;
 
   public void init() {
-    try {
-      loggerConfig.setClazz(this.getClass());
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException me) {
-    }
+    logger = Logger.getLogger(this.getClass().getName());
   }
 
   public String getErrorMessage() {
     return errorMessage;
   }
 
-  public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
+  public void setServletContext(ServletContext servletContext) {
+    this.servletContext = servletContext;
+  }
 
-  public void setLog(Logger log) { this.log = log; }
-  public Logger getLog() { return log; }
+  public void setAttributorConfig(String attributorConfig) {
+    this.attributorConfig = attributorConfig;
+  }
 
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
+  public String getAttributorConfig() {
+    return attributorConfig;
+  }
 
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
+  public void setMapper(AttributeMap mapper) {
+    this.mapper = mapper;
+  }
 
-  public void setAttributorConfig(String attributorConfig) { this.attributorConfig = attributorConfig; }
-  public String getAttributorConfig() { return attributorConfig; }
+  public AttributeMap getMapper() {
+    return mapper;
+  }
 
-  public void setMapper(AttributeMap mapper) { this.mapper = mapper; }
-  public AttributeMap getMapper() { return mapper; }
+  public void setArpEngine(ARPEngine arpEngine) {
+    this.arpEngine = arpEngine;
+  }
 
-  public void setArpEngine(ARPEngine arpEngine) { this.arpEngine = arpEngine; }
-  public ARPEngine getArpEngine() { return arpEngine; }
+  public ARPEngine getArpEngine() {
+    return arpEngine;
+  }
 }
