@@ -18,6 +18,7 @@
 	     set too, as defined above.
 	     The attribute mapping rules referenced here can be found in protectedapp-maps.xml. -->
   <provider providerId="protectedapp-guard">
+    <!-- Flat file attributes -->
     <mapRef name="protectedAppFFIdMapping" />
     <mapRef name="protectedAppFFIdMapping2" />
     <mapRef name="protectedAppFFIdMappingWithDomain" />
@@ -28,5 +29,9 @@
     <mapRef name="protectedAppFFEmailMapping2" />
     <mapRef name="protectedAppFFPersistentIDMapping" />
     <mapRef name="eduPersonScopedAffiliation" />
+    <!-- LDAP attributes -->
+    <mapRef name="urn:mace:dir:attribute-def:eduPersonTargetedID" />
+    <mapRef name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-member" />
+    <mapRef name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-staff" />
   </provider>
 </AttributeMap>
