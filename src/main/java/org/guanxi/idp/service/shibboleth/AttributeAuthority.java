@@ -238,7 +238,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
     // Do we need to sign the assertion?
     boolean samlAddedToResponse = false;
-    EntityDescriptorType sp = (EntityDescriptorType)servletContext.getAttribute(request.getParameter(samlRequest.getAttributeQuery().getResource()));
+    EntityDescriptorType sp = (EntityDescriptorType)servletContext.getAttribute(samlRequest.getAttributeQuery().getResource());
     if (sp != null) {
       if (sp.getSPSSODescriptorArray(0) != null) {
         if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned()) {
@@ -258,7 +258,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
         } // if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned())
       } // if (sp.getSPSSODescriptorArray(0) != null)
     }
-
+    
     if (!samlAddedToResponse) {
       // Add the unsigned SAML Response to the SOAP message
       soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlResponse.newDomNode(xmlOptions), true));
