@@ -50,8 +50,7 @@ public abstract class IdPTest {
     }
     servletContext = new MockServletContext(idpHome);
 
-    persistenceFiles = new String[] {idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/persistence.xml",
-                                     idpHome + "/WEB-INF/guanxi_idp/config/spring/common.xml"};
+    persistenceFiles = new String[] {idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/persistence.xml"};
 
     principal = new GuanxiPrincipal();
     principal.setName(TEST_USER_NAME);

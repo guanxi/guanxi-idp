@@ -42,10 +42,10 @@ public class FlatFileAttributor extends SimpleAttributor {
       ffConfig = configDoc.getFlatFileAuthenticatorConfig();
     }
     catch(IOException me) {
-      log.error("Can't load attributor config file", me);
+      logger.error("Can't load attributor config file", me);
     }
     catch(XmlException xe) {
-      log.error("Can't parse attributor config file", xe);
+      logger.error("Can't parse attributor config file", xe);
     }
   }
 
@@ -78,13 +78,13 @@ public class FlatFileAttributor extends SimpleAttributor {
             attribute.setName(attrName);
             attribute.setValue(attrValue);
 
-            log.debug("Released attribute " + attrName);
+            logger.debug("Released attribute " + attrName);
           }
           else {
             // Sort out any mappings. This will change the default name/value if necessary...
             if (mapper.map(principal, relyingParty, attrName, attrValue)) {
               for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-                log.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
+                logger.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
 
                 attrName = mapper.getMappedNames()[mapCount];
                 attrValue = mapper.getMappedValues()[mapCount];
@@ -97,7 +97,7 @@ public class FlatFileAttributor extends SimpleAttributor {
                   attribute.setName(attrName);
                   attribute.setValue(attrValue);
 
-                  log.debug("Released attribute " + attrName);
+                  logger.debug("Released attribute " + attrName);
                 }
               } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
             } // if (mapper.map(principal.getProviderID(), attrName, attrValue)) {

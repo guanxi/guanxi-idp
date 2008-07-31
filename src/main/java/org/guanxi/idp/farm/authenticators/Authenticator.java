@@ -17,14 +17,13 @@
 package org.guanxi.idp.farm.authenticators;
 
 import org.guanxi.common.GuanxiPrincipal;
-import org.guanxi.idp.farm.Loggable;
 
 /**
  * <font size=5><b></b></font>
  *
  * @author Alistair Young alistair@smo.uhi.ac.uk
  */
-public interface Authenticator extends Loggable {
+public interface Authenticator {
   /** Default status for use by implementations */
   public static final String NO_ERROR = "no_error";
 

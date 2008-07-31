@@ -9,34 +9,14 @@
   <!-- ***************************************************************************** -->
   <!-- Flat file authenticator -->
   <bean id="flatFileAuthenticator" class="org.guanxi.idp.farm.authenticators.FlatFileAuthenticator" init-method="init">
-    <property name="logger"><ref bean="authHandlerLogger"/></property>
-    <property name="loggerConfig"><ref bean="flatFileAuthenticatorLoggerConfig"/></property>
     <property name="authenticatorConfig"><value>/WEB-INF/guanxi_idp/config/shared/flatfile.xml</value></property>
-  </bean>
-
-  <bean id="flatFileAuthenticatorLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/ff-authenticator.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
   <!-- ***************************************************************************** -->
 
   <!-- ***************************************************************************** -->
   <!-- LDAP authenticator -->
   <bean id="ldapAuthenticator" class="org.guanxi.idp.farm.authenticators.LDAPAuthenticator" init-method="init">
-    <property name="logger"><ref bean="authHandlerLogger"/></property>
-    <property name="loggerConfig"><ref bean="ldapAuthenticatorLoggerConfig"/></property>
     <property name="authenticatorConfig"><value>/WEB-INF/guanxi_idp/config/shared/ldap.xml</value></property>
-  </bean>
-
-  <bean id="ldapAuthenticatorLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/ldap-authenticator.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
   <!-- ***************************************************************************** -->
 </beans>

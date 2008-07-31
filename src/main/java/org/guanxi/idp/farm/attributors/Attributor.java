@@ -21,14 +21,13 @@ import org.guanxi.common.GuanxiException;
 import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.idp.util.AttributeMap;
-import org.guanxi.idp.farm.Loggable;
 
 /**
  * <font size=5><b></b></font>
  *
  * @author Alistair Young alistair@smo.uhi.ac.uk
  */
-public interface Attributor extends Loggable {
+public interface Attributor {
   public static final String NO_ERROR = "no_error";
 
   public void init();

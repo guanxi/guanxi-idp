@@ -16,27 +16,21 @@
 
 package org.guanxi.idp.service;
 
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import org.springframework.web.context.ServletContextAware;
-import org.apache.log4j.Logger;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.GuanxiException;
+import java.util.HashMap;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
+
+import org.apache.log4j.Logger;
+import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 public class UrlRewriter extends HandlerInterceptorAdapter implements ServletContextAware {
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
+  private static final Logger logger = Logger.getLogger(UrlRewriter.class.getName());
   /** The URLs to map */
   private HashMap<?, ?> urlMaps = null;
 
@@ -44,18 +38,6 @@ public class UrlRewriter extends HandlerInterceptorAdapter implements ServletCon
    * Initialise the interceptor
    */
   public void init() {
-    try {
-      loggerConfig.setClazz(AuthHandler.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException me) {
-    }
   }
 
   /**
@@ -81,15 +63,6 @@ public class UrlRewriter extends HandlerInterceptorAdapter implements ServletCon
 
   // Called by Spring as we are ServletContextAware
   public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
-
-  public void setLog(Logger log) { this.log = log; }
-  public Logger getLog() { return log; }
-
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
-
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
 
   public void setUrlMaps(HashMap<?, ?> urlMaps) { this.urlMaps = urlMaps; }
 }

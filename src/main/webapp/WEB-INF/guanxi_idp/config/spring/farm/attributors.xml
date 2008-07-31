@@ -9,19 +9,9 @@
   <!-- ***************************************************************************** -->
   <!-- Flat file attributor -->
   <bean id="flatFileAttributor" class="org.guanxi.idp.farm.attributors.FlatFileAttributor" init-method="init">
-    <property name="logger"><ref bean="attributorLogger"/></property>
-    <property name="loggerConfig"><ref bean="flatFileAttriubtorLoggerConfig"/></property>
     <property name="attributorConfig"><value>/WEB-INF/guanxi_idp/config/shared/flatfile.xml</value></property>
     <property name="mapper"><ref bean="attributeMapper"/></property>
     <property name="arpEngine"><ref bean="ffARPEngine"/></property>
-  </bean>
-
-  <bean id="flatFileAttriubtorLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/ff-attributor.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
 
   <bean id="ffARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
@@ -31,25 +21,17 @@
 
   <!-- ***************************************************************************** -->
   <!-- LDAP attributor -->
+  <!-- 
   <bean id="ldapAttributor" class="org.guanxi.idp.farm.attributors.LDAPAttributor" init-method="init">
-    <property name="logger"><ref bean="attributorLogger"/></property>
-    <property name="loggerConfig"><ref bean="ldapAttriubtorLoggerConfig"/></property>
     <property name="attributorConfig"><value>/WEB-INF/guanxi_idp/config/shared/ldap.xml</value></property>
     <property name="mapper"><ref bean="attributeMapper"/></property>
     <property name="arpEngine"><ref bean="ldapARPEngine"/></property>
   </bean>
 
-  <bean id="ldapAttriubtorLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/ldap-attributor.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
-  </bean>
-
   <bean id="ldapARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
     <property name="arpFile"><value>/WEB-INF/guanxi_idp/config/shared/arp.xml</value></property>
   </bean>
+  -->
   <!-- ***************************************************************************** -->
 
 </beans>

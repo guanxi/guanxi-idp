@@ -16,44 +16,64 @@
 
 package org.guanxi.idp.service.shibboleth;
 
-import org.w3c.dom.*;
-import org.guanxi.common.GuanxiPrincipal;
-import org.guanxi.common.GuanxiException;
-import org.guanxi.common.Utils;
-import org.guanxi.common.security.SecUtils;
-import org.guanxi.common.security.SecUtilsConfig;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.definitions.Shibboleth;
-import org.guanxi.common.definitions.EduPerson;
-import org.guanxi.xal.saml_1_0.protocol.*;
-import org.guanxi.xal.saml_1_0.assertion.*;
-import org.guanxi.xal.soap.EnvelopeDocument;
-import org.guanxi.xal.soap.Envelope;
-import org.guanxi.xal.soap.Body;
-import org.guanxi.xal.idp.*;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import org.springframework.web.context.ServletContextAware;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-import javax.servlet.ServletContext;
-import javax.xml.namespace.QName;
-import java.io.*;
-import java.security.cert.X509Certificate;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.math.BigInteger;
+import java.security.PublicKey;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
-import java.security.PublicKey;
-import java.math.BigInteger;
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.HashMap;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.namespace.QName;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
+import org.guanxi.common.GuanxiException;
+import org.guanxi.common.GuanxiPrincipal;
+import org.guanxi.common.Utils;
+import org.guanxi.common.definitions.EduPerson;
+import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.definitions.Shibboleth;
+import org.guanxi.common.security.SecUtils;
+import org.guanxi.common.security.SecUtilsConfig;
+import org.guanxi.xal.idp.AttributorAttribute;
+import org.guanxi.xal.idp.IdpDocument;
+import org.guanxi.xal.idp.UserAttributesDocument;
+import org.guanxi.xal.saml_1_0.assertion.AssertionDocument;
+import org.guanxi.xal.saml_1_0.assertion.AssertionType;
+import org.guanxi.xal.saml_1_0.assertion.AttributeStatementDocument;
+import org.guanxi.xal.saml_1_0.assertion.AttributeStatementType;
+import org.guanxi.xal.saml_1_0.assertion.AttributeType;
+import org.guanxi.xal.saml_1_0.assertion.ConditionsDocument;
+import org.guanxi.xal.saml_1_0.assertion.ConditionsType;
+import org.guanxi.xal.saml_1_0.assertion.NameIdentifierType;
+import org.guanxi.xal.saml_1_0.assertion.SubjectType;
+import org.guanxi.xal.saml_1_0.protocol.RequestDocument;
+import org.guanxi.xal.saml_1_0.protocol.RequestType;
+import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
+import org.guanxi.xal.saml_1_0.protocol.ResponseType;
+import org.guanxi.xal.saml_1_0.protocol.StatusCodeType;
+import org.guanxi.xal.saml_1_0.protocol.StatusDocument;
+import org.guanxi.xal.saml_1_0.protocol.StatusType;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.guanxi.xal.soap.Body;
+import org.guanxi.xal.soap.Envelope;
+import org.guanxi.xal.soap.EnvelopeDocument;
+import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Text;
 
 /**
  * <font size=5><b></b></font>
@@ -64,40 +84,15 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
+  private static final Logger logger = Logger.getLogger(AttributeAuthority.class.getName());
   /** The attributors to use */
   private org.guanxi.idp.farm.attributors.Attributor[] attributor = null;
 
   public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
 
-  public void setLog(Logger log) { this.log = log; }
-  public Logger getLog() { return log; }
-
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
-
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
-
   public void setAttributor(org.guanxi.idp.farm.attributors.Attributor[] attributor) { this.attributor = attributor; }
 
   public void init() throws ServletException {
-    try {
-      loggerConfig.setClazz(AttributeAuthority.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException me) {
-    }
   }
 
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
@@ -128,7 +123,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       samlRequest = samlRequestDoc.getRequest();
     }
     catch(XmlException xe) {
-      log.error("Can't parse SOAP AttributeQuery", xe);
+      logger.error("Can't parse SOAP AttributeQuery", xe);
     }
 
     // The first thing we need to do is find out what Principal is being referred to by the requesting SP
@@ -258,7 +253,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
             soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(signedDoc.getDocumentElement(), true));
           }
           catch(GuanxiException ge) {
-            log.error(ge);
+            logger.error(ge);
           }
         } // if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned())
       } // if (sp.getSPSSODescriptorArray(0) != null)
@@ -273,14 +268,14 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     if (idpConfig.getDebug() != null) {
       if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
         if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
-          log.info("=======================================================");
-          log.info("Response to AttributeQuery by " + spProviderId);
-          log.info("");
+          logger.info("=======================================================");
+          logger.info("Response to AttributeQuery by " + spProviderId);
+          logger.info("");
           StringWriter sw = new StringWriter();
           soapResponseDoc.save(sw, xmlOptions);
-          log.info(sw.toString());
-          log.info("");
-          log.info("=======================================================");
+          logger.info(sw.toString());
+          logger.info("");
+          logger.info("=======================================================");
         }
       }
     }

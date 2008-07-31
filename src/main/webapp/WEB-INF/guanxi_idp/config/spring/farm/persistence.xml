@@ -6,8 +6,6 @@
 
   <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.DerbyPersistenceEngine"
         init-method="init" destroy-method="destroy">
-    <property name="logger"><ref bean="idpLogger"/></property>
-    <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
 
     <property name="driver"><value>org.apache.derby.jdbc.EmbeddedDriver</value></property>
     <property name="connectionString"><value>jdbc:derby:guanxiidp</value></property>
@@ -25,8 +23,6 @@
   <!--
   <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.JDBCPersistenceEngine"
         init-method="init" destroy-method="destroy">
-    <property name="logger"><ref bean="idpLogger"/></property>
-    <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
 
     <property name="driver"><value>com.mysql.jdbc.Driver</value></property>
     <property name="connectionString"><value>jdbc:mysql://localhost/guanxiidp</value></property>
@@ -42,8 +38,6 @@
   <!--
   <bean id="idpPersistenceEngine" class="org.guanxi.idp.persistence.db.PostgresPersistenceEngine"
         init-method="init" destroy-method="destroy">
-    <property name="logger"><ref bean="idpLogger"/></property>
-    <property name="loggerConfig"><ref bean="idpPersistenceEngineLoggerConfig"/></property>
 
     <property name="driver"><value>org.postgresql.Driver</value></property>
     <property name="connectionString"><value>jdbc:postgresql://localhost:5432/guanxiidp</value></property>
@@ -64,14 +58,6 @@
     <property name="fieldAttributeName"><value>attribute_name</value></property>
     <property name="fieldAttributeValue"><value>attribute_value</value></property>
     <property name="fieldRelyingParty"><value>relying_party</value></property>
-  </bean>
-
-  <bean id="idpPersistenceEngineLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/jdbc-persistence-engine.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
   
 </beans>

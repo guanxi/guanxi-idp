@@ -9,17 +9,7 @@
   <!-- ***************************************************************************** -->
   <!-- Flat file attributor -->
   <bean id="userAccountabilityFilter" class="org.guanxi.idp.farm.filters.UserAccountabilityFilter" init-method="init">
-    <property name="logger"><ref bean="userAccountabilityFilterLogger"/></property>
-    <property name="loggerConfig"><ref bean="userAccountabilityFilterLoggerConfig"/></property>
     <property name="delimiter"><value>,</value></property>
-  </bean>
-
-  <bean id="userAccountabilityFilterLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_idp/logs/useraccountabilityfilter.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_idp/config/idp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
   <!-- ***************************************************************************** -->
 
