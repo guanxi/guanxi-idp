@@ -28,8 +28,10 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 public class UrlRewriter extends HandlerInterceptorAdapter implements ServletContextAware {
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
+  @SuppressWarnings("unused")
   private ServletContext servletContext = null;
   /** Our logger */
+  @SuppressWarnings("unused")
   private static final Logger logger = Logger.getLogger(UrlRewriter.class.getName());
   /** The URLs to map */
   private HashMap<?, ?> urlMaps = null;

@@ -49,6 +49,7 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our logger */
+  @SuppressWarnings("unused")
   private static final Logger logger = Logger.getLogger(Logout.class.getName());
   /** The error page to use */
   private String logoutPage = null;
