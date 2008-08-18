@@ -11,6 +11,9 @@
         <ref bean="ukFederationMetadataParser" />
       </list>
     </property>
+    <property name="metadataCacheFile">
+    	<value>/WEB-INF/guanxi_idp/config/metadata-cache.xml</value>
+    </property>
   </bean>
 
   <bean id="idpLogger" class="org.guanxi.common.log.Log4JLogger" />
