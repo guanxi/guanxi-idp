@@ -23,6 +23,9 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.metadata.SPMetadataManager;
+import org.guanxi.common.metadata.IdPMetadataImpl;
+import org.guanxi.common.metadata.SPMetadataImpl;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
 
@@ -40,11 +43,14 @@ public class SAML2MetadataParser implements Job {
       EntitiesDescriptorDocument doc = Utils.parseSAML2Metadata(config.getMetadataURL(), config.getWho());
       EntityDescriptorType[] entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
 
+      SPMetadataManager manager = SPMetadataManager.getManager(config.getServletContext());
+      manager.removeMetadata(config.getMetadataURL());
+
       for (EntityDescriptorType entityDescriptor : entityDescriptors) {
         // Look for Service Providers
         if (entityDescriptor.getSPSSODescriptorArray().length > 0) {
           config.getLog().info("Loading SP metadata for : " + entityDescriptor.getEntityID());
-          config.getServletContext().setAttribute(entityDescriptor.getEntityID(), entityDescriptor);
+          manager.addMetadata(config.getMetadataURL(), new SPMetadataImpl(entityDescriptor));
         }
       }
     }

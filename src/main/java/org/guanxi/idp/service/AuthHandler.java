@@ -26,14 +26,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiPrincipalFactory;
+import org.guanxi.common.metadata.SPMetadataManager;
+import org.guanxi.common.metadata.SPMetadata;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.idp.farm.authenticators.Authenticator;
 import org.guanxi.xal.idp.AuthPage;
 import org.guanxi.xal.idp.IdpDocument;
 import org.guanxi.xal.idp.ServiceProvider;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.guanxi.xal.saml_2_0.metadata.IndexedEndpointType;
-import org.guanxi.xal.saml_2_0.metadata.SPSSODescriptorType;
 import org.springframework.context.MessageSource;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
@@ -104,26 +103,17 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
 
     IdpDocument.Idp idpConfig = (IdpDocument.Idp)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
 
-    // Look for the service provider in the cached federation metadata...
     boolean spSupported = false;
-    if (servletContext.getAttribute(request.getParameter(spIDRequestParam)) != null) {
-      // Verify the SSO endpoint via the metadata : internet2-mace-shibboleth-arch-protocols-200509 : 3.1.1.3 Processing Rules
-      EntityDescriptorType spMetadata = (EntityDescriptorType)servletContext.getAttribute(request.getParameter(spIDRequestParam));
-      SPSSODescriptorType[] descriptors = spMetadata.getSPSSODescriptorArray();
-      for (SPSSODescriptorType descriptor : descriptors) {
-        IndexedEndpointType[] acsEndpoints = descriptor.getAssertionConsumerServiceArray();
-
-        for (IndexedEndpointType acsEndpoint : acsEndpoints) {
-          if (acsEndpoint.getBinding().equals("urn:oasis:names:tc:SAML:1.0:profiles:browser-post")) {
-            if (acsEndpoint.getLocation().equals(request.getParameter("shire"))) {
-              spSupported = true;
-            }
-          }
-        }
+    SPMetadataManager manager = SPMetadataManager.getManager(servletContext);
+    SPMetadata metadata = manager.getMetadata(request.getParameter(spIDRequestParam));
+    // Verify the SSO endpoint via the metadata : internet2-mace-shibboleth-arch-protocols-200509 : 3.1.1.3 Processing Rules
+    if (metadata != null) {
+      if (metadata.getAssertionConsumerServiceURL().equals(request.getParameter("shire"))) {
+        spSupported = true;
       }
     }
-    else {
-      // ...if we can't find it, it might be in the local metadata
+    
+    if (!spSupported) {
       ServiceProvider[] spList = idpConfig.getServiceProviderArray();
       for (int c=0; c < spList.length; c++) {
         if (spList[c].getName().equals(request.getParameter(spIDRequestParam))) {
@@ -141,18 +131,6 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
                                                                request.getLocale()));
       request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
-    }
-
-    // Verify an SP based on cached SAML2 federation metadata
-    if (servletContext.getAttribute(request.getParameter(spIDRequestParam)) != null) {
-      if (!entityVerifier.verify((EntityDescriptorType)servletContext.getAttribute(request.getParameter(spIDRequestParam)), request)) {
-        logger.error("Service Provider providerId " + request.getParameter(spIDRequestParam) + " failed verification");
-        request.setAttribute("message", messageSource.getMessage("sp.failed.verification",
-                                                                 new Object[]{request.getParameter(spIDRequestParam)},
-                                                                 request.getLocale()));
-        request.getRequestDispatcher(errorPage).forward(request, response);
-        return false;
-      }
     }
 
     // Look for our cookie. This is after any application cookie handler has authenticated the user
