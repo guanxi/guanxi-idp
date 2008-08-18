@@ -10,8 +10,10 @@
        generated attributes from the FlatFileAttributor. -->
   <provider name="protectedapp-guard">
     <allow>MappedFlatFileAttributesForProtectedApp</allow>
-    <allow>memberMapping</allow>
     <allow>ldap</allow>
-    <deny>global</deny>
+  </provider>
+
+  <provider name="*">
+    <allow>memberMapping</allow>
   </provider>
 </arp>
