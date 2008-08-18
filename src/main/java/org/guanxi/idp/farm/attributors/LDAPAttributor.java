@@ -159,30 +159,30 @@ public class LDAPAttributor extends SimpleAttributor {
                   }
                   else {
                     logger.debug("Attribute release blocked by ARP : " + attrName + " to " + relyingParty);
+                  }
 
-                    // Sort out any mappings. This will change the default name/value if necessary...
-                    if (mapper.map(principal, relyingParty, attr.getName(), attrValue)) {
-                      for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-                        // Release the mapped attribute if appropriate
-                        if (arpEngine.release(relyingParty, mapper.getMappedNames()[mapCount],
-                                              mapper.getMappedValues()[mapCount])) {
-                          String mappedValue = mapper.getMappedValues()[mapCount];
-                          if (mappedValue.endsWith("@")) mappedValue += ldapConfig.getDomain();
+                  // Sort out any mappings. This will change the default name/value if necessary...
+                  if (mapper.map(principal, relyingParty, attr.getName(), attrValue)) {
+                    for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
+                      // Release the mapped attribute if appropriate
+                      if (arpEngine.release(relyingParty, mapper.getMappedNames()[mapCount],
+                                            mapper.getMappedValues()[mapCount])) {
+                        String mappedValue = mapper.getMappedValues()[mapCount];
+                        if (mappedValue.endsWith("@")) mappedValue += ldapConfig.getDomain();
 
-                          AttributorAttribute attribute = attributes.addNewAttribute();
-                          attribute.setName(mapper.getMappedNames()[mapCount]);
-                          attribute.setValue(mappedValue);
+                        AttributorAttribute attribute = attributes.addNewAttribute();
+                        attribute.setName(mapper.getMappedNames()[mapCount]);
+                        attribute.setValue(mappedValue);
 
-                          logger.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
-                                    " -> " + mappedValue + " to " + relyingParty);
-                        }
-                        else {
-                          logger.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
-                                    " to " + relyingParty);
-                        }
-                      } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-                    }
-                  } // else
+                        logger.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
+                                  " -> " + mappedValue + " to " + relyingParty);
+                      }
+                      else {
+                        logger.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
+                                  " to " + relyingParty);
+                      }
+                    } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
+                  }
                 } // while (values.hasMoreElements())
               } // if (values != null) {
             } // while (entries.hasNext()) {

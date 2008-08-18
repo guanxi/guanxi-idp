@@ -80,28 +80,27 @@ public class FlatFileAttributor extends SimpleAttributor {
 
             logger.debug("Released attribute " + attrName);
           }
-          else {
-            // Sort out any mappings. This will change the default name/value if necessary...
-            if (mapper.map(principal, relyingParty, attrName, attrValue)) {
-              for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-                logger.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
 
-                attrName = mapper.getMappedNames()[mapCount];
-                attrValue = mapper.getMappedValues()[mapCount];
+          // Sort out any mappings. This will change the default name/value if necessary...
+          if (mapper.map(principal, relyingParty, attrName, attrValue)) {
+            for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
+              logger.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
 
-                if (attrValue.endsWith("@")) attrValue += ffConfig.getDomain();
+              attrName = mapper.getMappedNames()[mapCount];
+              attrValue = mapper.getMappedValues()[mapCount];
 
-                // ...then run the original or mapped attribute through the ARP
-                if (arpEngine.release(relyingParty, attrName, attrValue)) {
-                  AttributorAttribute attribute = attributes.addNewAttribute();
-                  attribute.setName(attrName);
-                  attribute.setValue(attrValue);
+              if (attrValue.endsWith("@")) attrValue += ffConfig.getDomain();
 
-                  logger.debug("Released attribute " + attrName);
-                }
-              } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-            } // if (mapper.map(principal.getProviderID(), attrName, attrValue)) {
-          } // else
+              // ...then run the original or mapped attribute through the ARP
+              if (arpEngine.release(relyingParty, attrName, attrValue)) {
+                AttributorAttribute attribute = attributes.addNewAttribute();
+                attribute.setName(attrName);
+                attribute.setValue(attrValue);
+
+                logger.debug("Released attribute " + attrName);
+              }
+            } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
+          } // if (mapper.map(principal.getProviderID(), attrName, attrValue)) {
         } // for (int cc=0; cc < attrs.length; cc++)
       } // if (users[c].getUsername().equals(username))
     } // for (int c=0; c < users.length; c++)
