@@ -72,6 +72,7 @@
   <identity name="exampleIdentity">
     <issuer>CREATED FROM SETUP</issuer>
     <name-qualifier>CREATED FROM SETUP</name-qualifier>
+    <format>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</format>
   </identity>
 
   <!-- A creds (short for credentials) set tells the IdP what certificates to use
