@@ -393,7 +393,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   }
 
   private void loadMetadata() throws IOException, XmlException {
-    File metadata_file = new File(metadataCacheFile);
+    File metadata_file = new File(sanitisePath(metadataCacheFile));
     if (metadata_file.exists()) {
       InputStream in = new FileInputStream(metadata_file);
       try {
@@ -406,7 +406,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   }
 
   private void saveMetadata() throws IOException {
-    File metadata_file = new File(metadataCacheFile);
+    File metadata_file = new File(sanitisePath(metadataCacheFile));
     if (metadata_file.exists()) {
       OutputStream out = new FileOutputStream(metadata_file);
       try {
@@ -415,6 +415,16 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       finally {
         out.close();
       }
+    }
+  }
+
+  private String sanitisePath(String path) {
+    if ((path.startsWith("WEB-INF")) ||
+        (path.startsWith(File.separator + "WEB-INF"))) {
+      return servletContext.getRealPath(path);
+    }
+    else {
+      return path;
     }
   }
 }
