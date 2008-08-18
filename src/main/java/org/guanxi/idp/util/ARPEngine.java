@@ -63,83 +63,86 @@ public class ARPEngine implements ServletContextAware {
    * @return true if the attribute can be released otherwise false
    */
   public boolean release(String provider, String attribute, String attributeValue) {
+    Vector<Provider> spProviders = new Vector<Provider>();
+
     // Find the provider's ruleset in the ARPs
-    Provider spProvider = null;
     for (int arpFilesCount = 0; arpFilesCount < arpFiles.size(); arpFilesCount++) {
       ArpDocument.Arp arp = (ArpDocument.Arp)arpFiles.get(arpFilesCount);
 
       for (int count = 0; count < arp.getProviderArray().length; count++) {
-        if (arp.getProviderArray(count).getName().equals(provider))
-          spProvider = arp.getProviderArray(count);
+        if ((arp.getProviderArray(count).getName().equals(provider)) ||
+            (arp.getProviderArray(count).getName().equals("*")))
+          // There must be at least one rule. If none are present, release nothing
+          if (arp.getProviderArray(count).getAllowArray().length > 0) {
+            spProviders.add(arp.getProviderArray(count));
+          }
       }
     }
 
     // If the provider isn't listed, release nothing to it
-    if (spProvider == null)
-      return false;
-
-    // There must be at least one rule. If none are present, release nothing
-    if ((spProvider.getAllowArray().length == 0) || (spProvider.getDenyArray().length == 0))
+    if (spProviders.size() == 0)
       return false;
 
     // Check the list of allowed attributes
-    return releaseAttribute(spProvider, attribute, attributeValue);
+    return releaseAttribute(spProviders, attribute, attributeValue);
   }
 
   /**
    * Checks a provider's element in the ARP file to see if an attribute is in any of the
    * bags referenced from a set of allow nodes.
    *
-   * @param provider The providerId of the provider who wants the attribute
+   * @param providers List of Provider objects that want the attribute to be released
    * @param attributeName The fully qualified name of the attribute
    * @param attributeValue The value of the attribute
    * @return true if the attribute can be released otherwise false
    */
-  private boolean releaseAttribute(Provider provider, String attributeName, String attributeValue) {
+  private boolean releaseAttribute(Vector<Provider> providers, String attributeName, String attributeValue) {
     // Cycle through all the <allow> nodes for a <provider> node
     for (int arpFilesCount = 0; arpFilesCount < arpFiles.size(); arpFilesCount++) {
       ArpDocument.Arp arp = (ArpDocument.Arp)arpFiles.get(arpFilesCount);
-      
-      for (int count = 0; count < provider.getAllowArray().length; count++) {
-        String bagName = provider.getAllowArray(count);
 
-        // Load up the bag from the list of <bag> nodes in the ARP file
-        Bag bag = null;
-        for (int bagCount = 0; bagCount < arp.getBagArray().length; bagCount++) {
-          if (arp.getBagArray(bagCount).getName().equals(bagName)) {
-            bag = arp.getBagArray(bagCount);
+      for (Provider provider : providers) {
+        for (int count = 0; count < provider.getAllowArray().length; count++) {
+          String bagName = provider.getAllowArray(count);
+
+          // Load up the bag from the list of <bag> nodes in the ARP file
+          Bag bag = null;
+          for (int bagCount = 0; bagCount < arp.getBagArray().length; bagCount++) {
+            if (arp.getBagArray(bagCount).getName().equals(bagName)) {
+              bag = arp.getBagArray(bagCount);
+            }
           }
-        }
 
-        // If there's no Bag defined, then go on to the next one
-        if (bag == null)
-          continue;
+          // If there's no Bag defined, then go on to the next one
+          if (bag == null)
+            continue;
 
-        // Now look for the attribute in the Bag, or an attribute with a name of *
-        Attribute attribute = null;
-        for (int attrCount = 0; attrCount < bag.getAttributeArray().length; attrCount++) {
-          if ((bag.getAttributeArray(attrCount).getName().equals(attributeName)) ||
-              (bag.getAttributeArray(attrCount).getName().equals("*"))) {
-            attribute = bag.getAttributeArray(attrCount);
+          // Now look for the attribute in the Bag, or an attribute with a name of *
+          Attribute attribute = null;
+          for (int attrCount = 0; attrCount < bag.getAttributeArray().length; attrCount++) {
+            if ((bag.getAttributeArray(attrCount).getName().equals(attributeName)) ||
+                (bag.getAttributeArray(attrCount).getName().equals("*"))) {
+              attribute = bag.getAttributeArray(attrCount);
+            }
           }
-        }
 
-        // If it's not listed, move on to the next Bag
-        if (attribute == null)
-          continue;
+          // If it's not listed, move on to the next Bag
+          if (attribute == null)
+            continue;
 
-        /* Do we release the attribute with any value?
-         * If not, move on to the next Bag.
-         */
-        if (attribute.getValue().equals("*"))
-          return true;
+          /* Do we release the attribute with any value?
+           * If not, move on to the next Bag.
+           */
+          if (attribute.getValue().equals("*"))
+            return true;
 
-        /* Not a wildcard so we need to restrict the attribute's value for release.
-         * If the values don't match we'll just move on to the next Bag.
-         */
-        if (attribute.getValue().equals(attributeValue))
-          return true;
-      } // for (int count = 0; count < provider.getAllowArray().length; count++)
+          /* Not a wildcard so we need to restrict the attribute's value for release.
+           * If the values don't match we'll just move on to the next Bag.
+           */
+          if (attribute.getValue().equals(attributeValue))
+            return true;
+        } // for (int count = 0; count < provider.getAllowArray().length; count++)
+      } // for (Provider provider : providers) {
     } // for (int arpFilesCount = 0; arpFilesCount < arpFiles.size(); arpFilesCount++)
 
     return false;
