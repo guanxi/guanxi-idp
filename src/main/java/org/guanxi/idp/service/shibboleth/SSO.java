@@ -181,6 +181,7 @@ public class SSO extends AbstractController implements ServletContextAware {
     // Need these for the Response
     String issuer = null;
     String nameQualifier = null;
+    String nameQualifierFormat = null;
     // Need this for signing the Response
     Creds credsConfig = null;
 
@@ -212,6 +213,7 @@ public class SSO extends AbstractController implements ServletContextAware {
           if (ids[cc].getName().equals(identityToUse)) {
             issuer = ids[cc].getIssuer();
             nameQualifier = ids[cc].getNameQualifier();
+            nameQualifierFormat = ids[cc].getFormat();
           }
         }
 
@@ -308,6 +310,7 @@ public class SSO extends AbstractController implements ServletContextAware {
     NameIdentifierDocument nameIDDoc = NameIdentifierDocument.Factory.newInstance();
     NameIdentifierType nameID = nameIDDoc.addNewNameIdentifier();
     nameID.setNameQualifier(nameQualifier);
+    nameID.setFormat(nameQualifierFormat);
     nameID.setStringValue(principal.getUniqueId());
 
     // Add the NameIdentifier to the Subject
