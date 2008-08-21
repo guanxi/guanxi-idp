@@ -20,9 +20,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.guanxi.idp.persistence.PersistenceTestSuite;
 import org.guanxi.idp.attribute.AttributeTestSuite;
+import org.guanxi.idp.metadata.MetadataTestSuite;
 
+/**
+ * This is the root of all tests. It will invoke the various test suites that handle
+ * testing of the various IdP subsystems.
+ */
 @RunWith(Suite.class)
 @Suite.SuiteClasses( { PersistenceTestSuite.class,
-                       AttributeTestSuite.class } )
+                       AttributeTestSuite.class,
+                       MetadataTestSuite.class } )
 public class IdPTestSuite {
 }
