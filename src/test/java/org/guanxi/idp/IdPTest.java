@@ -40,7 +40,7 @@ public abstract class IdPTest {
   protected static final String TEST_RELYING_PARTY = "protectedapp-guard";
 
   @BeforeClass
-  public static void init() {
+  public static void initIdPTest() {
     idpProperties = ResourceBundle.getBundle("test");
     try {
       idpHome = "file:///" + new File(".").getCanonicalPath() + "/src/main/webapp";
