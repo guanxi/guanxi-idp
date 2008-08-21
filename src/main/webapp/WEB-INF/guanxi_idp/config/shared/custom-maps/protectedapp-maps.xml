@@ -23,4 +23,11 @@
   <map name="protectedAppFFPersistentIDMapping" attrName="id" attrValue=".*"
        mappedName="protectedApp_PersistentID" mappedRule="encrypt"
        persistent="true"/>
+
+  <!-- eduPersonScopedAffiliation -->
+  <map name="protectedAppEduPersonScopedAffiliation-staff"
+       attrName="group" attrValue="heidbangers"
+       mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation"
+       mappedValue="staff"
+       scoped="true"/>
 </AttributeMap>

@@ -28,8 +28,8 @@
     <mapRef name="protectedAppFFEmailMapping" />
     <mapRef name="protectedAppFFEmailMapping2" />
     <mapRef name="protectedAppFFPersistentIDMapping" />
-    <mapRef name="eduPersonScopedAffiliation" />
-    <!-- LDAP attributes -->
+    <mapRef name="protectedAppEduPersonScopedAffiliation-staff" />
+    <!-- LDAP attributes defined in eduperson-map.xml -->
     <mapRef name="urn:mace:dir:attribute-def:eduPersonTargetedID" />
     <mapRef name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-member" />
     <mapRef name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-staff" />
