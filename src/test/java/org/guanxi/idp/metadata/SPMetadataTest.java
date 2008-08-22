@@ -13,6 +13,7 @@ import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.metadata.SPMetadataManager;
 import org.guanxi.common.metadata.Metadata;
+import org.guanxi.common.metadata.SPMetadata;
 import org.quartz.*;
 import org.quartz.spi.TriggerFiredBundle;
 import org.quartz.impl.StdSchedulerFactory;
@@ -58,7 +59,7 @@ public class SPMetadataTest extends MetadataTest {
       SPMetadataManager manager = SPMetadataManager.getManager(servletContext);
       Assert.assertNotNull(manager);
 
-      Metadata spMetadata = manager.getMetadata("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk");
+      SPMetadata spMetadata = manager.getMetadata("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk");
       Assert.assertNotNull(spMetadata);
 
       Assert.assertEquals("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk", spMetadata.getEntityID());
