@@ -19,12 +19,14 @@ package org.guanxi.idp.job;
 import org.quartz.Job;
 import org.quartz.JobExecutionException;
 import org.quartz.JobExecutionContext;
+import org.apache.log4j.Logger;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
+import org.guanxi.common.job.SimpleGuanxiJobConfig;
 
 /**
  * Parses the UK Federation metadata
@@ -34,8 +36,12 @@ public class SAML2MetadataParser implements Job {
 
   public void execute(JobExecutionContext context) throws JobExecutionException {
     // Get our custom config
-    SAML2MetadataParserConfig config = (SAML2MetadataParserConfig)context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
-
+    SAML2MetadataParserConfig config;
+    Logger logger;
+    
+    config = (SAML2MetadataParserConfig)context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
+    logger = SimpleGuanxiJobConfig.createLogger(config.getServletContext().getRealPath(config.getLoggerConfigurationFile()), SAML2MetadataParser.class.getName());
+    
     try {
       EntitiesDescriptorDocument doc = Utils.parseSAML2Metadata(config.getMetadataURL(), config.getWho());
       EntityDescriptorType[] entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
@@ -43,13 +49,13 @@ public class SAML2MetadataParser implements Job {
       for (EntityDescriptorType entityDescriptor : entityDescriptors) {
         // Look for Service Providers
         if (entityDescriptor.getSPSSODescriptorArray().length > 0) {
-          config.getLog().info("Loading SP metadata for : " + entityDescriptor.getEntityID());
+          logger.info("Loading SP metadata for : " + entityDescriptor.getEntityID());
           config.getServletContext().setAttribute(entityDescriptor.getEntityID(), entityDescriptor);
         }
       }
     }
     catch(GuanxiException ge) {
-      config.getLog().error("Error parsing metadata", ge);
+      logger.error("Error parsing metadata", ge);
     }
   }
 }
