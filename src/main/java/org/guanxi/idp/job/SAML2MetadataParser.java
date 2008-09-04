@@ -23,39 +23,80 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.metadata.SPMetadataManager;
-import org.guanxi.common.metadata.IdPMetadataImpl;
-import org.guanxi.common.metadata.SPMetadataImpl;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
+import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
+import org.apache.log4j.Logger;
 
 /**
  * Parses the UK Federation metadata
  */
 public class SAML2MetadataParser implements Job {
+  /** Our logger */
+  private static final Logger logger = Logger.getLogger(SAML2MetadataParser.class.getName());
+
   public SAML2MetadataParser() {}
 
   public void execute(JobExecutionContext context) throws JobExecutionException {
     // Get our custom config
     SAML2MetadataParserConfig config = (SAML2MetadataParserConfig)context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
 
+    EntitiesDescriptorDocument doc = null;
     try {
-      EntitiesDescriptorDocument doc = Utils.parseSAML2Metadata(config.getMetadataURL(), config.getWho());
-      EntityDescriptorType[] entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
+      // Load the metadata from the URL
+      doc = Utils.parseSAML2Metadata(config.getMetadataURL(), config.getWho());
+    }
+    catch(GuanxiException ge) {
+      logger.error("Error parsing metadata. Loading from cache", ge);
+      try {
+        // Load the metadata from the cache
+        doc = Utils.parseSAML2Metadata("file:///" + config.getMetadataCacheFile(), config.getWho());
+      }
+      catch(GuanxiException gex) {
+        logger.error("Could not load metadata from cache : " + config.getMetadataCacheFile(), gex);
+      }
+    }
 
-      SPMetadataManager manager = SPMetadataManager.getManager(config.getServletContext());
-      manager.removeMetadata(config.getMetadataURL());
+    // Only proceed if we loaded the metadata from either the URL or the cache
+    if (doc == null) {
+      logger.error("No metadata available");
+      return;
+    }
 
+    EntityDescriptorType[] entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
+
+    // Cache the metadata locally
+    try {
+      Utils.writeSAML2MetadataToDisk(doc, config.getMetadataCacheFile());
+    }
+    catch(GuanxiException ge) {
+      logger.error("Could not cache metadata to : " + config.getMetadataCacheFile(), ge);
+    }
+
+    EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    EntityManager manager = farm.getEntityManagerForSource(config.getMetadataURL());
+    manager.removeMetadata();
+
+    //@todo add TrustEngine setup
+
+    try {
       for (EntityDescriptorType entityDescriptor : entityDescriptors) {
         // Look for Service Providers
         if (entityDescriptor.getSPSSODescriptorArray().length > 0) {
-          config.getLog().info("Loading SP metadata for : " + entityDescriptor.getEntityID());
-          manager.addMetadata(config.getMetadataURL(), new SPMetadataImpl(entityDescriptor));
+          logger.info("Loading SP metadata for : " + entityDescriptor.getEntityID());
+
+          Metadata metadataHandler = manager.createNewEntityHandler();
+          metadataHandler.setPrivateData(entityDescriptor);
+          
+          manager.addMetadata(metadataHandler);
         }
       }
     }
     catch(GuanxiException ge) {
-      config.getLog().error("Error parsing metadata", ge);
+      logger.error("Could not get an entity handler from the metadata manager", ge);
     }
   }
 }
