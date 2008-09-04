@@ -8,14 +8,10 @@
     <property name="configFile"><value>/WEB-INF/guanxi_idp/config/idp.xml</value></property>
     <property name="gxJobs">
       <list>
-        <ref bean="ukFederationMetadataParser" />
+        <ref bean="idpUKFederationMetadataParser" />
       </list>
     </property>
-    <property name="metadataCacheFile">
-    	<value>/WEB-INF/guanxi_idp/config/metadata-cache.xml</value>
-    </property>
+    <property name="entityFarm"><ref bean="idpEntityFarm"/></property>
   </bean>
-
-  <bean id="idpLogger" class="org.guanxi.common.log.Log4JLogger" />
 
 </beans>
