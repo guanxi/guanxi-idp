@@ -26,8 +26,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiPrincipalFactory;
-import org.guanxi.common.metadata.SPMetadataManager;
+import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.metadata.SPMetadata;
+import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.idp.farm.authenticators.Authenticator;
 import org.guanxi.xal.idp.AuthPage;
@@ -104,15 +105,19 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     IdpDocument.Idp idpConfig = (IdpDocument.Idp)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
 
     boolean spSupported = false;
-    SPMetadataManager manager = SPMetadataManager.getManager(servletContext);
-    SPMetadata metadata = manager.getMetadata(request.getParameter(spIDRequestParam));
-    // Verify the SSO endpoint via the metadata : internet2-mace-shibboleth-arch-protocols-200509 : 3.1.1.3 Processing Rules
-    if (metadata != null) {
-      if (metadata.getAssertionConsumerServiceURL().equals(request.getParameter("shire"))) {
-        spSupported = true;
+    EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    EntityManager manager = farm.getEntityManagerForID(request.getParameter(spIDRequestParam));
+    if (manager != null) {
+      SPMetadata metadata = (SPMetadata)manager.getMetadata(request.getParameter(spIDRequestParam));
+      // Apply the trust rules to the SP
+      if (metadata != null) {
+        if (manager.getTrustEngine().trustEntity(metadata, request.getParameter("shire"))) {
+          spSupported = true;
+        }
       }
     }
-    
+
+    // Check the locally registered SPs
     if (!spSupported) {
       ServiceProvider[] spList = idpConfig.getServiceProviderArray();
       for (int c=0; c < spList.length; c++) {
