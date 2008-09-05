@@ -227,7 +227,7 @@ public class AttributeMap implements ServletContextAware {
       // Sort out the path to the ARP file
       String mapFile = null;
       if ((mapXMLFile.startsWith("WEB-INF")) ||
-          (mapXMLFile.startsWith("/"))) {
+          (mapXMLFile.startsWith("/WEB-INF"))) {
         mapFile = servletContext.getRealPath(mapXMLFile);
       }
       else
