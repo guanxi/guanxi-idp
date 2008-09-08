@@ -369,7 +369,5 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
     catch(ParseException pe) {
       logger.error("Error parsing job cronline", pe);
     }
-
-
   }
 }
