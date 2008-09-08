@@ -16,17 +16,17 @@
 
 package org.guanxi.idp.job;
 
-import org.quartz.Job;
-import org.quartz.JobExecutionException;
-import org.quartz.JobExecutionContext;
 import org.apache.log4j.Logger;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
-import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.job.SAML2MetadataParserConfig;
+import org.guanxi.common.Utils;
 import org.guanxi.common.job.GuanxiJobConfig;
+import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.SimpleGuanxiJobConfig;
+import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
 /**
  * Parses the UK Federation metadata
@@ -40,7 +40,9 @@ public class SAML2MetadataParser implements Job {
     Logger logger;
     
     config = (SAML2MetadataParserConfig)context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
-    logger = SimpleGuanxiJobConfig.createLogger(config.getServletContext().getRealPath(config.getLoggerConfigurationFile()), SAML2MetadataParser.class.getName());
+    logger = SimpleGuanxiJobConfig.createLogger(config.getServletContext().getRealPath(config.getLoggerConfigurationFile()), 
+                                                SAML2MetadataParser.class.getName(),
+                                                SAML2MetadataParser.class.getName());
     
     try {
       EntitiesDescriptorDocument doc = Utils.parseSAML2Metadata(config.getMetadataURL(), config.getWho());
