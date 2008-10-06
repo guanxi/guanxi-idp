@@ -22,13 +22,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.context.event.ContextStartedEvent;
-import org.springframework.context.event.ContextStoppedEvent;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.context.support.RequestHandledEvent;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.metadata.SPMetadataManager;
+import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.xal.idp.IdpDocument;
 import org.apache.log4j.Logger;
@@ -65,14 +63,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private boolean okToUnloadBCProvider = false;
   /** The background jobs to start */
   private GuanxiJobConfig[] gxJobs = null;
-  /** Where the metadata manager get initialised and saved */
-  private String metadataCacheFile = null;
-
-  public void setConfigFile(String configFile) { this.configFile = configFile; }
-  public String getConfigFile() { return configFile; }
-  public void setGxJobs(GuanxiJobConfig[] gxJobs) { this.gxJobs = gxJobs; }
-  public String getMetadataCacheFile() { return metadataCacheFile; }
-  public void setMetadataCacheFile(String metadataCacheFile) { this.metadataCacheFile = metadataCacheFile; }
+  /** The MetadataFarm instance to use */
+  private EntityFarm entityFarm = null;
 
   /**
    * Initialise the interceptor
@@ -156,26 +148,11 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
    * @param applicationEvent Spring application event
    */
   public void onApplicationEvent(ApplicationEvent applicationEvent) {
-    if (applicationEvent instanceof ContextStartedEvent) {
-      try {
-        loadMetadata();
-      }
-      catch (Exception e) {
-        logger.error("Unable to load cached metadata", e);
-      }
-    }
-
-    if (applicationEvent instanceof ContextStoppedEvent) {
-      try {
-        saveMetadata();
-      }
-      catch (Exception e) {
-        logger.error("Unable to save metadata to cache", e);
-      }
-    }
-
     if (applicationEvent instanceof ContextRefreshedEvent) {
       logger.info("Bootstrap init");
+
+      // Inject the metadata farm to handle all source of metadata
+      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, entityFarm);
     }
 
     if (applicationEvent instanceof ContextClosedEvent) {
@@ -392,39 +369,9 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
     }
   }
 
-  private void loadMetadata() throws IOException, XmlException {
-    File metadata_file = new File(sanitisePath(metadataCacheFile));
-    if (metadata_file.exists()) {
-      InputStream in = new FileInputStream(metadata_file);
-      try {
-        SPMetadataManager.getManager(servletContext).read(in);
-      }
-      finally {
-        in.close();
-      }
-    }
-  }
-
-  private void saveMetadata() throws IOException {
-    File metadata_file = new File(sanitisePath(metadataCacheFile));
-    if (metadata_file.exists()) {
-      OutputStream out = new FileOutputStream(metadata_file);
-      try {
-        SPMetadataManager.getManager(servletContext).write(out);
-      }
-      finally {
-        out.close();
-      }
-    }
-  }
-
-  private String sanitisePath(String path) {
-    if ((path.startsWith("WEB-INF")) ||
-        (path.startsWith(File.separator + "WEB-INF"))) {
-      return servletContext.getRealPath(path);
-    }
-    else {
-      return path;
-    }
-  }
+  public void setConfigFile(String configFile) { this.configFile = configFile; }
+  public String getConfigFile() { return configFile; }
+  public void setGxJobs(GuanxiJobConfig[] gxJobs) { this.gxJobs = gxJobs; }
+  public EntityFarm getEntityFarm() { return entityFarm; }
+  public void setEntityFarm(EntityFarm entityFarm) { this.entityFarm = entityFarm; }
 }

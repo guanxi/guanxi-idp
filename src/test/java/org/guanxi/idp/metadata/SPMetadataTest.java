@@ -11,16 +11,18 @@ import static org.junit.Assert.fail;
 import org.guanxi.idp.job.SAML2MetadataParser;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
-import org.guanxi.common.metadata.SPMetadataManager;
-import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.metadata.SPMetadata;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
+import org.guanxi.common.definitions.Guanxi;
 import org.quartz.*;
 import org.quartz.spi.TriggerFiredBundle;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.calendar.BaseCalendar;
-import org.apache.log4j.Logger;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import java.io.File;
+import java.util.HashMap;
 
 /**
  * Unit test to give the metadata management a good going over
@@ -29,20 +31,37 @@ public class SPMetadataTest extends MetadataTest {
   @Test
   public void test() {
     try {
-      SAML2MetadataParserConfig config = new SAML2MetadataParserConfig();
-      config.setMetadataURL("file:///" + new File(SPMetadataTest.class.getResource("/metadata.xml").getPath()).getCanonicalPath());
+      // Initialise Spring
+      XmlWebApplicationContext ctx = new XmlWebApplicationContext();
+      ctx.setConfigLocations(metadataConfigFiles);
+      ctx.setServletContext(servletContext);
+      ctx.refresh();
+
+      // Get the parser job from Spring and reconfigure it with the test settings
+      SAML2MetadataParserConfig config = (SAML2MetadataParserConfig)ctx.getBean("idpUKFederationMetadataParser");
+      String metadataURL = "file:///" + new File(SPMetadataTest.class.getResource("/metadata.xml").getPath()).getCanonicalPath();
+      config.setMetadataURL(metadataURL);
       config.setWho("TEST");
       config.setKey("TEST_KEY");
       config.setCronLine("10 0/59 * * * ?");
       config.setServletContext(servletContext);
-      config.setLog(Logger.getLogger(SPMetadataTest.class));
+      config.init();
 
+      // Get the metdata farm from Spring and reconfigure it with the test settings
+      EntityFarm farm = (EntityFarm)ctx.getBean("idpEntityFarm");
+      HashMap<String, EntityManager> managers = new HashMap<String, EntityManager>();
+      managers.put(metadataURL, (EntityManager)ctx.getBean("idpEntityManager"));
+      farm.setEntityManagers(managers);
+      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, farm);
+
+      // Initialise the test job settings
       JobDetail jobDetail = new JobDetail("TEST_KEY", Scheduler.DEFAULT_GROUP,
                                           Class.forName("org.guanxi.idp.job.SAML2MetadataParser"));
       JobDataMap jobDataMap = new JobDataMap();
       jobDataMap.put(GuanxiJobConfig.JOB_KEY_JOB_CONFIG, config);
       jobDetail.setJobDataMap(jobDataMap);
 
+      // Get Quartz ready
       Trigger trigger = new CronTrigger(config.getKey(), Scheduler.DEFAULT_GROUP);
       Scheduler scheduler = new StdSchedulerFactory().getScheduler();
 
@@ -56,13 +75,17 @@ public class SPMetadataTest extends MetadataTest {
       parserJob.execute(new JobExecutionContext(scheduler, bundle, new SAML2MetadataParser()));
 
       // Test the metadata management
-      SPMetadataManager manager = SPMetadataManager.getManager(servletContext);
+      File metadataCacheFile = new File(config.getMetadataCacheFile());
+      Assert.assertTrue(metadataCacheFile.exists());
+      metadataCacheFile.delete();
+      EntityManager manager = farm.getEntityManagerForSource(metadataURL);
       Assert.assertNotNull(manager);
-
-      SPMetadata spMetadata = manager.getMetadata("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk");
+      manager = farm.getEntityManagerForID("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk");
+      Assert.assertNotNull(manager);
+      SPMetadata spMetadata = (SPMetadata)manager.getMetadata("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk");
       Assert.assertNotNull(spMetadata);
-
       Assert.assertEquals("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk", spMetadata.getEntityID());
+      Assert.assertEquals("https://target.iay.org.uk/Shibboleth.sso/SAML/POST", spMetadata.getAssertionConsumerServiceURL());
     }
     catch(Exception e) {
       fail(e.getMessage());

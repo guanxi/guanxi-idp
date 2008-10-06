@@ -159,7 +159,7 @@ public class ARPEngine implements ServletContextAware {
       // Sort out the path to the ARP file
       String arpFile = null;
       if ((arpXMLFile.startsWith("WEB-INF")) ||
-          (arpXMLFile.startsWith(File.separator + "WEB-INF"))) {
+          (arpXMLFile.startsWith("/WEB-INF"))) {
         arpFile = servletContext.getRealPath(arpXMLFile);
       }
       else

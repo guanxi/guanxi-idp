@@ -10,7 +10,7 @@
 
   <context-param>
     <param-name>webAppRootKey</param-name>
-    <param-value>guanxi_idp.root</param-value>
+    <param-value>guanxi-idp.root</param-value>
   </context-param>
   
   <context-param>
