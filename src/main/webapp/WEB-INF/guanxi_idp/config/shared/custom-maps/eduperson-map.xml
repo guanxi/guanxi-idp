@@ -1,0 +1,13 @@
+<AttributeMap xmlns="urn:guanxi:idp">
+  <map name="urn:mace:dir:attribute-def:eduPersonTargetedID"
+       attrName="dn" attrValue=".*" mappedName="urn:mace:dir:attribute-def:eduPersonTargetedID" mappedRule="encrypt" scoped="true" persistent="true"/>
+
+  <map name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-member"
+       attrName="mail" attrValue=".*" mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation" mappedValue="member" scoped="true"/>
+
+  <map name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-student"
+       attrName="dn" attrValue=".*tudent.*" mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation" mappedValue="student" scoped="true"/>
+
+  <map name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-staff"
+       attrName="dn" attrValue=".*taff.*" mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation" mappedValue="staff" scoped="true"/>
+</AttributeMap>

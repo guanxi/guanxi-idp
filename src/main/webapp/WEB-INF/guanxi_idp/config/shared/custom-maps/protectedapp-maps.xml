@@ -1,0 +1,33 @@
+<!-- These attribute mappings are for the protectedapp Guard in the Guanxi localhost version -->
+<AttributeMap xmlns="urn:guanxi:idp">
+  <!-- id attribute mapped four times -->
+  <map name="protectedAppFFIdMapping" attrName="id" attrValue=".*" mappedName="protectedApp_ID" />
+  <map name="protectedAppFFIdMapping2" attrName="id" attrValue=".*" mappedName="protectedApp_ID" mappedValue="alternative id"/>
+  <map name="protectedAppFFIdMappingWithDomain"
+       attrName="id" attrValue=".*"
+       mappedName="idWithDomain"
+       mappedRule="append_domain" />
+  <map name="protectedAppFFIdMappingEncrypted"
+       attrName="id" attrValue=".*"
+       mappedName="idEncrypted"
+       mappedRule="encrypt" />
+
+  <map name="protectedAppFFFirstNameMapping" attrName="firstName" attrValue=".*" mappedName="protectedApp_FirstName" />
+  <map name="protectedAppFFSurnameMapping" attrName="surname" attrValue=".*" mappedName="protectedApp_Surname" />
+
+  <!-- email attribute mapped twice -->
+  <map name="protectedAppFFEmailMapping" attrName="email" attrValue=".*" mappedName="protectedApp_Email" />
+  <map name="protectedAppFFEmailMapping2" attrName="email" attrValue=".*" mappedName="mail" mappedValue="alternative email" />
+
+  <!-- Persistent attribute -->
+  <map name="protectedAppFFPersistentIDMapping" attrName="id" attrValue=".*"
+       mappedName="protectedApp_PersistentID" mappedRule="encrypt"
+       persistent="true"/>
+
+  <!-- eduPersonScopedAffiliation -->
+  <map name="protectedAppEduPersonScopedAffiliation-staff"
+       attrName="group" attrValue="heidbangers"
+       mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation"
+       mappedValue="staff"
+       scoped="true"/>
+</AttributeMap>
