@@ -1,120 +1,56 @@
 <EntitiesDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="http://ukfederation.org.uk" xsi:schemaLocation="urn:oasis:names:tc:SAML:2.0:metadata sstc-saml-schema-metadata-2.0.xsd   urn:mace:shibboleth:metadata:1.0 shibboleth-metadata-1.0.xsd   http://www.w3.org/2001/04/xmlenc# xenc-schema.xsd   http://www.w3.org/2000/09/xmldsig# xmldsig-core-schema.xsd">
 
-<EntityDescriptor ID="uk000001" entityID="urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk">
-    <!--
-        This is an SDSS project test SP running outside the University environment.
-    -->
-    <Extensions>
-        <SDSSPolicy xmlns="http://ukfederation.org.uk/2006/11/label"></SDSSPolicy>
-        <UKFederationMember xmlns="http://ukfederation.org.uk/2006/11/label"></UKFederationMember>
-    </Extensions>
-    <SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol">
-        <KeyDescriptor use="signing">
-            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-                <ds:KeyName>target.iay.org.uk</ds:KeyName>
-                <ds:X509Data>
-                    <ds:X509Certificate>
-                        MIIDBzCCAnCgAwIBAgIBBTANBgkqhkiG9w0BAQUFADBIMQswCQYDVQQGEwJHQjEn
-                        MCUGA1UEChMeSklTQyBDb3JlIE1pZGRsZXdhcmUgUHJvZ3JhbW1lMRAwDgYDVQQD
-                        EwdTRFNTIENBMB4XDTA0MDkyMjExMzMxMVoXDTA4MTIzMTAwMDAwMFowaTELMAkG
-                        A1UEBhMCR0IxJzAlBgNVBAoTHkpJU0MgQ29yZSBNaWRkbGV3YXJlIFByb2dyYW1t
-                        ZTEVMBMGA1UECxMMU0RTUyBQcm9qZWN0MRowGAYDVQQDExF0YXJnZXQuaWF5Lm9y
-                        Zy51azCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA34CHuV6Jl29eJJfZKowR
-                        7sTjBDUjSfJ3/Bnr84Zsl7GKyN6Lk39Xlf429KYECVEqJc3bBvXajoWkIOyZa9Db
-                        5qxS8iFLMIdRgEYdrUBCJXSgQrjRb+duaVEJVigSnhAFFXTsPib8UFI1HtJ9v2N5
-                        g0PQC0qTF3/BoFz5lOt7U7kCAwEAAaOB3zCB3DAJBgNVHRMEAjAAMAsGA1UdDwQE
-                        AwIEsDAxBgNVHR8EKjAoMCagJKAihiBodHRwOi8vc2Rzcy5hYy51ay9jYS9zZHNz
-                        LWNhLmNybDAdBgNVHQ4EFgQUciNzXnxVmc0BV758CYOesfhLzucwcAYDVR0jBGkw
-                        Z4AUvq0gh0kHZ3Eez9e6q0CKdxYdK8ChTKRKMEgxCzAJBgNVBAYTAkdCMScwJQYD
-                        VQQKEx5KSVNDIENvcmUgTWlkZGxld2FyZSBQcm9ncmFtbWUxEDAOBgNVBAMTB1NE
-                        U1MgQ0GCAQAwDQYJKoZIhvcNAQEFBQADgYEACoQ25YbR7bYo0nRKsXOEGDE7urlL
-                        R+F7c/VnF11t1iPK3aeP/ndQo1WbPDb4CXaS5HERVocmAS8F8wdTDFjIjN2yyf+I
-                        kkfQOueJ1tVBRnpciNO6emQ3i0C5FrGJjtZK/kpt9zOAX9rxmTQmjuQzF9M74jVm
-                        iFR3yx2meMGHQPk=
-                    </ds:X509Certificate>
-                </ds:X509Data>
-            </ds:KeyInfo>
-        </KeyDescriptor>
-        <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
-        <AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://target.iay.org.uk/Shibboleth.sso/SAML/POST" index="3"></AssertionConsumerService>
-        <AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:artifact-01" Location="https://target.iay.org.uk/Shibboleth.sso/SAML/Artifact" index="4"></AssertionConsumerService>
-    </SPSSODescriptor>
-    <Organization>
-        <OrganizationName xml:lang="en">Ian A. Young</OrganizationName>
-        <OrganizationDisplayName xml:lang="en">SDSS Fountainhall</OrganizationDisplayName>
-        <OrganizationURL xml:lang="en">http://sdss.ac.uk/</OrganizationURL>
-    </Organization>
-    <ContactPerson contactType="support">
-        <GivenName>Ian</GivenName>
-        <SurName>Young</SurName>
-        <EmailAddress>mailto:ian@iay.org.uk</EmailAddress>
-    </ContactPerson>
-    <ContactPerson contactType="technical">
-        <GivenName>Ian</GivenName>
-        <SurName>Young</SurName>
-        <EmailAddress>mailto:ian@iay.org.uk</EmailAddress>
-    </ContactPerson>
-    <ContactPerson contactType="administrative">
-        <GivenName>Ian</GivenName>
-        <SurName>Young</SurName>
-        <EmailAddress>mailto:ian@iay.org.uk</EmailAddress>
-    </ContactPerson>
-</EntityDescriptor>
-
-
-  <EntityDescriptor ID="DUNDEE" entityID="https://idp.dundee.ac.uk/shibboleth">
-      <!--
-          This is the Identity Provider for the University of Dundee.
-      -->
-      <Extensions>
-          <shibmeta:Scope xmlns:shibmeta="urn:mace:shibboleth:metadata:1.0" regexp="false">dundee.ac.uk</shibmeta:Scope>
-          <AccountableUsers xmlns="http://ukfederation.org.uk/2006/11/label"/>
-          <UKFederationMember xmlns="http://ukfederation.org.uk/2006/11/label"/>
-      </Extensions>
-      <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:mace:shibboleth:1.0">
-          <Extensions>
-              <shibmeta:Scope xmlns:shibmeta="urn:mace:shibboleth:metadata:1.0" regexp="false">dundee.ac.uk</shibmeta:Scope>
-          </Extensions>
+  <EntityDescriptor ID="007" entityID="urn:bond:hq">
+      <SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol">
           <KeyDescriptor use="signing">
               <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-                  <ds:KeyName>idp.dundee.ac.uk</ds:KeyName>
+                  <ds:KeyName>bond.hq.ac.uk</ds:KeyName>
+                  <ds:X509Data>
+                      <ds:X509Certificate>
+                          MIIDBzCCAnCgAwIBAgIBBTANBgkqhkiG9w0BAQUFADBIMQswCQYDVQQGEwJHQjEn
+                          MCUGA1UEChMeSklTQyBDb3JlIE1pZGRsZXdhcmUgUHJvZ3JhbW1lMRAwDgYDVQQD
+                          EwdTRFNTIENBMB4XDTA0MDkyMjExMzMxMVoXDTA4MTIzMTAwMDAwMFowaTELMAkG
+                          A1UEBhMCR0IxJzAlBgNVBAoTHkpJU0MgQ29yZSBNaWRkbGV3YXJlIFByb2dyYW1t
+                          ZTEVMBMGA1UECxMMU0RTUyBQcm9qZWN0MRowGAYDVQQDExF0YXJnZXQuaWF5Lm9y
+                          Zy51azCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA34CHuV6Jl29eJJfZKowR
+                          7sTjBDUjSfJ3/Bnr84Zsl7GKyN6Lk39Xlf429KYECVEqJc3bBvXajoWkIOyZa9Db
+                          5qxS8iFLMIdRgEYdrUBCJXSgQrjRb+duaVEJVigSnhAFFXTsPib8UFI1HtJ9v2N5
+                          g0PQC0qTF3/BoFz5lOt7U7kCAwEAAaOB3zCB3DAJBgNVHRMEAjAAMAsGA1UdDwQE
+                          AwIEsDAxBgNVHR8EKjAoMCagJKAihiBodHRwOi8vc2Rzcy5hYy51ay9jYS9zZHNz
+                          LWNhLmNybDAdBgNVHQ4EFgQUciNzXnxVmc0BV758CYOesfhLzucwcAYDVR0jBGkw
+                          Z4AUvq0gh0kHZ3Eez9e6q0CKdxYdK8ChTKRKMEgxCzAJBgNVBAYTAkdCMScwJQYD
+                          VQQKEx5KSVNDIENvcmUgTWlkZGxld2FyZSBQcm9ncmFtbWUxEDAOBgNVBAMTB1NE
+                          U1MgQ0GCAQAwDQYJKoZIhvcNAQEFBQADgYEACoQ25YbR7bYo0nRKsXOEGDE7urlL
+                          R+F7c/VnF11t1iPK3aeP/ndQo1WbPDb4CXaS5HERVocmAS8F8wdTDFjIjN2yyf+I
+                          kkfQOueJ1tVBRnpciNO6emQ3i0C5FrGJjtZK/kpt9zOAX9rxmTQmjuQzF9M74jVm
+                          iFR3yx2meMGHQPk=
+                      </ds:X509Certificate>
+                  </ds:X509Data>
               </ds:KeyInfo>
           </KeyDescriptor>
-          <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.dundee.ac.uk:8443/shibboleth-idp/Artifact" index="1"/>
           <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
-          <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.dundee.ac.uk/shibboleth-idp/SSO"/>
-      </IDPSSODescriptor>
-      <AttributeAuthorityDescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol">
-          <Extensions>
-              <shibmeta:Scope xmlns:shibmeta="urn:mace:shibboleth:metadata:1.0" regexp="false">dundee.ac.uk</shibmeta:Scope>
-          </Extensions>
-          <KeyDescriptor use="signing">
-              <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-                  <ds:KeyName>idp.dundee.ac.uk</ds:KeyName>
-              </ds:KeyInfo>
-          </KeyDescriptor>
-          <AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.dundee.ac.uk:8443/shibboleth-idp/AA"/>
-          <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
-      </AttributeAuthorityDescriptor>
+          <AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://bond.hq.ac.uk/SSO/SAML/BrowserPost" index="3"></AssertionConsumerService>
+          <AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:artifact-01" Location="https://bond.hq.ac.uk/SSO/SAML/Artifact" index="4"></AssertionConsumerService>
+      </SPSSODescriptor>
       <Organization>
-          <OrganizationName xml:lang="en">University of Dundee</OrganizationName>
-          <OrganizationDisplayName xml:lang="en">University of Dundee</OrganizationDisplayName>
-          <OrganizationURL xml:lang="en">http://www.dundee.ac.uk/</OrganizationURL>
+          <OrganizationName xml:lang="en">MI5</OrganizationName>
+          <OrganizationDisplayName xml:lang="en">MI5 Bond HQ</OrganizationDisplayName>
+          <OrganizationURL xml:lang="en">http://bond.hq.ac.uk/</OrganizationURL>
       </Organization>
       <ContactPerson contactType="support">
-          <GivenName>ICS Service Desk</GivenName>
-          <EmailAddress>mailto:ics-servicedesk@dundee.ac.uk</EmailAddress>
+          <GivenName>Q</GivenName>
+          <SurName>UNKNOWN</SurName>
+          <EmailAddress>mailto:q@bond.hq.ac.uk</EmailAddress>
       </ContactPerson>
       <ContactPerson contactType="technical">
-          <GivenName>Andy</GivenName>
-          <SurName>Swiffin</SurName>
-          <EmailAddress>mailto:a.l.swiffin@dundee.ac.uk</EmailAddress>
+          <GivenName>James</GivenName>
+          <SurName>Bond</SurName>
+          <EmailAddress>mailto:james.bond@bond.hq.ac.uk</EmailAddress>
       </ContactPerson>
       <ContactPerson contactType="administrative">
-          <GivenName>Andy</GivenName>
-          <SurName>Swiffin</SurName>
-          <EmailAddress>mailto:a.l.swiffin@dundee.ac.uk</EmailAddress>
+          <GivenName>M</GivenName>
+          <SurName>UNKNOWN</SurName>
+          <EmailAddress>mailto:m@bond.hq.ac.uk</EmailAddress>
       </ContactPerson>
   </EntityDescriptor>
-  
 </EntitiesDescriptor>
