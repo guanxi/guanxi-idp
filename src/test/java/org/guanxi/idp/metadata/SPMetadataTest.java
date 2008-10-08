@@ -80,12 +80,12 @@ public class SPMetadataTest extends MetadataTest {
       metadataCacheFile.delete();
       EntityManager manager = farm.getEntityManagerForSource(metadataURL);
       Assert.assertNotNull(manager);
-      manager = farm.getEntityManagerForID("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk");
+      manager = farm.getEntityManagerForID("urn:bond:hq");
       Assert.assertNotNull(manager);
-      SPMetadata spMetadata = (SPMetadata)manager.getMetadata("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk");
+      SPMetadata spMetadata = (SPMetadata)manager.getMetadata("urn:bond:hq");
       Assert.assertNotNull(spMetadata);
-      Assert.assertEquals("urn:mace:ac.uk:sdss.ac.uk:provider:service:target.iay.org.uk", spMetadata.getEntityID());
-      Assert.assertEquals("https://target.iay.org.uk/Shibboleth.sso/SAML/POST", spMetadata.getAssertionConsumerServiceURL());
+      Assert.assertEquals("urn:bond:hq", spMetadata.getEntityID());
+      Assert.assertEquals("https://bond.hq.ac.uk/SSO/SAML/BrowserPost", spMetadata.getAssertionConsumerServiceURL());
     }
     catch(Exception e) {
       fail(e.getMessage());
