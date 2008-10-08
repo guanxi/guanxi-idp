@@ -21,9 +21,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.security.PublicKey;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -41,6 +38,8 @@ import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.EduPerson;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
@@ -49,6 +48,7 @@ import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.xal.idp.IdpDocument;
 import org.guanxi.xal.idp.UserAttributesDocument;
+import org.guanxi.xal.idp.ServiceProvider;
 import org.guanxi.xal.saml_1_0.assertion.AssertionDocument;
 import org.guanxi.xal.saml_1_0.assertion.AssertionType;
 import org.guanxi.xal.saml_1_0.assertion.AttributeStatementDocument;
@@ -99,10 +99,9 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     // Load up the config file
     IdpDocument.Idp idpConfig = (IdpDocument.Idp)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
     
-    isRequesterSupported(request);
-
     String nameIdentifier = null;
     RequestType samlRequest = null;
+    RequestDocument samlRequestDoc = null;
     try {
       /* Parse the SOAP message that contains the SAML Request...
        * XMLBeans 2.2.0 has problems parsing from an InputStream though
@@ -119,7 +118,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
       Body soapBody = soapEnvelopeDoc.getEnvelope().getBody();
       // ...and extract the SAML Request
-      RequestDocument samlRequestDoc = RequestDocument.Factory.parse(soapBody.getDomNode().getFirstChild());
+      samlRequestDoc = RequestDocument.Factory.parse(soapBody.getDomNode().getFirstChild());
       samlRequest = samlRequestDoc.getRequest();
     }
     catch(XmlException xe) {
@@ -128,13 +127,13 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
     // The first thing we need to do is find out what Principal is being referred to by the requesting SP
 
+    // Get the SP's providerId from the attribute query
+    String spProviderId = samlRequest.getAttributeQuery().getResource();
+    
     // Get the NameIdentifier of the query...
     nameIdentifier = samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getStringValue();
     // ...and retrieve their SP specific details from the session
     GuanxiPrincipal principal = (GuanxiPrincipal)servletContext.getAttribute(nameIdentifier);
-
-    // Get the SP's providerId from the attribute query
-    String spProviderId = samlRequest.getAttributeQuery().getResource();
 
     HashMap<String, String> namespaces = new HashMap<String, String>();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
@@ -164,6 +163,65 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     StatusCodeType topLevelStatusCode = status.addNewStatusCode();
 
     // From now on, any exceptions will be propagated to the SP using <Status>
+
+    // Is this a locally registered SP?
+    String spID = null;
+    ServiceProvider[] spList = idpConfig.getServiceProviderArray();
+    for (int c=0; c < spList.length; c++) {
+      if (spList[c].getName().equals(spProviderId)) {
+        // We trust locally registered SPs
+        spID = spProviderId;
+      }
+    }
+
+    /* Not a locally registered SP, so full validation rules.
+     *
+     * The client's X509Certificate chain will only be available if the server is configured to ask for it.
+     * In Tomcat's case, this means configuring client authentication:
+     * clientAuth="want"
+     * If you use clientAuth="true" you'll need to put the AA on a different port from the SSO as the SSO
+     * doesn't use certificates as it's accessed by a browser. The AA is only accessed by a machine (SP).
+     */
+    if (spID == null) {
+      EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+      EntityManager manager = farm.getEntityManagerForID(spID);
+
+      if (manager != null) {
+        if (manager.getMetadata(spProviderId) != null) {
+          if (manager.getTrustEngine() != null) {
+            if (!manager.getTrustEngine().trustEntity(manager.getMetadata(spProviderId),
+                                                     (X509Certificate[])request.getAttribute("javax.servlet.request.X509Certificate"))) {
+              logger.error("Failed to trust SP '" + spProviderId);
+              topLevelStatusCode.setValue(new QName("", Shibboleth.SAMLP_ERROR));
+              samlResponse.setStatus(status);
+              samlResponseDoc.save(response.getOutputStream());
+              return false;
+            }
+          }
+          else {
+            logger.error("Manager could not find trust engine for SP '" + spProviderId);
+            topLevelStatusCode.setValue(new QName("", Shibboleth.SAMLP_ERROR));
+            samlResponse.setStatus(status);
+            samlResponseDoc.save(response.getOutputStream());
+            return false;
+          }
+        }
+        else {
+          logger.error("Manager could not find metadata for SP '" + spProviderId);
+          topLevelStatusCode.setValue(new QName("", Shibboleth.SAMLP_ERROR));
+          samlResponse.setStatus(status);
+          samlResponseDoc.save(response.getOutputStream());
+          return false;
+        }
+      }
+      else {
+        logger.error("Could not find manager for SP '" + spProviderId);
+        topLevelStatusCode.setValue(new QName("", Shibboleth.SAMLP_ERROR));
+        samlResponse.setStatus(status);
+        samlResponseDoc.save(response.getOutputStream());
+        return false;
+      }
+    }
 
     // Did we get the principal from the request?
     if (principal == null) {
@@ -283,38 +341,6 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     soapResponseDoc.save(response.getOutputStream(), xmlOptions);
 
     return false;
-  }
-
-  private boolean isRequesterSupported(HttpServletRequest request) {
-    // Get the client's X509 and any cert chain
-    X509Certificate[] x509s = (X509Certificate[])servletContext.getAttribute("javax.servlet.request.X509Certificate");
-
-    //X509Certificate[] x = (X509Certificate[])request.getAttribute("javax.servlet.request.X509Certificate");
-    //X509Certificate[] x = (X509Certificate[])request.getAttribute("org.apache.coyote.request.X509Certificate");
-    //x = (X509Certificate[])request.getAttribute("X509Certificate");
-
-    if (x509s == null)
-      return false;
-
-    // See if we support a client with this certificate
-    X509Certificate x509 = null;
-    PublicKey publicKey = null;
-    //byte[] encodedBytes = null;
-    for (int count=0; count > x509s.length; count++) {
-      try {
-        x509 = x509s[count];
-
-        // Reject the cert if it has expired - will throw one of two exceptions
-        x509.checkValidity();
-
-        publicKey = x509.getPublicKey();
-        /*encodedBytes = */publicKey.getEncoded();// no assignment needed, the byte array is not used
-      }
-      catch(CertificateExpiredException cee) {return false; }
-      catch(CertificateNotYetValidException cnyve) {return false; }
-    }
-
-    return true;
   }
 
   private AttributeStatementDocument addAttributesFromFarm(UserAttributesDocument guanxiAttrFarmOutput) {
