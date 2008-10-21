@@ -184,7 +184,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
      */
     if (spID == null) {
       EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
-      EntityManager manager = farm.getEntityManagerForID(spID);
+      EntityManager manager = farm.getEntityManagerForID(spProviderId);
 
       if (manager != null) {
         if (manager.getMetadata(spProviderId) != null) {
