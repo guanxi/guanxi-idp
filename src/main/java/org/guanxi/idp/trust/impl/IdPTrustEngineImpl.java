@@ -17,8 +17,13 @@
 package org.guanxi.idp.trust.impl;
 
 import org.guanxi.common.trust.impl.SimpleTrustEngine;
+import org.guanxi.common.trust.TrustUtils;
 import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.metadata.SPMetadata;
+import org.guanxi.common.GuanxiException;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+
+import java.security.cert.X509Certificate;
 
 /**
  * Identity Provider trust engine
@@ -34,11 +39,26 @@ public class IdPTrustEngineImpl extends SimpleTrustEngine {
    * internet2-mace-shibboleth-arch-protocols-200509 : 3.1.1.3 Processing Rules
    *
    * @param entityMetadata the metadata for the SP
-   * @param entityData a String containing the shire parameter from the intitial GET request
+   * @param entityData This can be either a String containing the shire parameter from the intitial GET request
+   * or an array of X509Certificate objects representing the SP client certs from a request to the AA
    *
    * @see org.guanxi.common.trust.TrustEngine#trustEntity(org.guanxi.common.metadata.Metadata, Object) */
-  public boolean trustEntity(Metadata entityMetadata, Object entityData) {
-    String shireURL = (String)entityData;
-    return ((SPMetadata)entityData).getAssertionConsumerServiceURL().equals(shireURL);
+  public boolean trustEntity(Metadata entityMetadata, Object entityData) throws GuanxiException {
+    if (entityData instanceof String) {
+      String shireURL = (String)entityData;
+      return ((SPMetadata)entityMetadata).getAssertionConsumerServiceURL().equals(shireURL);
+    }
+
+    if (entityData instanceof X509Certificate[]) {
+      // Handler private data is raw SAML2 metadata
+      EntityDescriptorType saml2Metadata = (EntityDescriptorType)entityMetadata.getPrivateData();
+
+      // Entity data is the client certificates
+      X509Certificate[] clientCerts = (X509Certificate[])entityData;
+
+      return TrustUtils.validateClientCert(saml2Metadata, clientCerts);
+    }
+
+    return false;
   }
 }
