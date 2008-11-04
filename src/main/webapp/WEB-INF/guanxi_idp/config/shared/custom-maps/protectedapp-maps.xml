@@ -26,8 +26,9 @@
 
   <!-- eduPersonScopedAffiliation -->
   <map name="protectedAppEduPersonScopedAffiliation-staff"
-       attrName="group" attrValue="heidbangers"
-       mappedName="urn:mace:dir:attribute-def:eduPersonScopedAffiliation"
-       mappedValue="staff"
-       scoped="true"/>
+       attrName="${local.attribute.group.name}"
+       attrValue="${local.attribute.group.value}"
+       mappedName="${eduPersonScopedAffiliation}"
+       mappedValue="${affiliation.staff}"
+       scope="${scope.uni.ac.uk}"/>
 </AttributeMap>
