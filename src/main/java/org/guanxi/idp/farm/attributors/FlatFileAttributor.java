@@ -89,8 +89,6 @@ public class FlatFileAttributor extends SimpleAttributor {
               attrName = mapper.getMappedNames()[mapCount];
               attrValue = mapper.getMappedValues()[mapCount];
 
-              if (attrValue.endsWith("@")) attrValue += ffConfig.getDomain();
-
               // ...then run the original or mapped attribute through the ARP
               if (arpEngine.release(relyingParty, attrName, attrValue)) {
                 AttributorAttribute attribute = attributes.addNewAttribute();

@@ -168,7 +168,6 @@ public class LDAPAttributor extends SimpleAttributor {
                       if (arpEngine.release(relyingParty, mapper.getMappedNames()[mapCount],
                                             mapper.getMappedValues()[mapCount])) {
                         String mappedValue = mapper.getMappedValues()[mapCount];
-                        if (mappedValue.endsWith("@")) mappedValue += ldapConfig.getDomain();
 
                         AttributorAttribute attribute = attributes.addNewAttribute();
                         attribute.setName(mapper.getMappedNames()[mapCount]);
