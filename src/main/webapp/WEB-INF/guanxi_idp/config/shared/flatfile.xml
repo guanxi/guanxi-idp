@@ -2,9 +2,6 @@
      This file is used by FlatFileAuthenticator and FlatFileAttributor
 -->
 <FlatFileAuthenticatorConfig xmlns="urn:guanxi:idp">
-  <!-- The domain to use for scoped attributes -->
-  <Domain>uni.ac.uk</Domain>
-
   <!-- Each User has Username, Password and multiple UserAttribute nodes -->
   <User>
     <!-- Harry McDesperate. The world's most violent programmer! -->

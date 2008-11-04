@@ -20,9 +20,6 @@ Alistair Young alistair@smo.uhi.ac.uk
 -->
 
 <ldap xmlns="urn:guanxi:idp">
-  <!-- The domain to use for scoped attributes. -->
-  <domain>uni.ac.uk</domain>
-
   <!-- LDAP specific options
 	     Each server will be tried in turn until successful authentication occurs, or you run out of servers
 	-->
