@@ -21,6 +21,7 @@ import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.xal.idp.AttributeMapDocument;
 import org.guanxi.xal.idp.Map;
 import org.guanxi.xal.idp.MapProvider;
+import org.guanxi.xal.idp.MapVar;
 import org.guanxi.idp.persistence.PersistenceEngine;
 import org.guanxi.idp.farm.rule.AttributeRule;
 import org.apache.xmlbeans.XmlException;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Vector;
+import java.util.HashMap;
 
 /**
  * <p>AttributeMap</p>
@@ -41,6 +43,10 @@ import java.util.Vector;
  * @author Aggie Booth bmb6agb@ds.leeds.ac.uk
  */
 public class AttributeMap implements ServletContextAware {
+  /** The token that denotes a map variable in a map value */
+  public static final String MAP_VARIABLE_TOKEN_START = "${";
+  public static final String MAP_VARIABLE_TOKEN_END = "}";
+
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
   /** Our provider groupings and mapping rules */
@@ -50,6 +56,8 @@ public class AttributeMap implements ServletContextAware {
   private Vector<String> mappedNames = null;
   /** The new values of the attribute passed to map() */
   private Vector<String> mappedValues = null;
+  /** List of map variables */
+  private HashMap<String,String> mapVariables = null;
   /** The map file to use */
   private String mapFile = null;
   /** The persistence engine to use */
@@ -62,6 +70,7 @@ public class AttributeMap implements ServletContextAware {
     providers = new Vector<MapProvider>();
     mappedNames = new Vector<String>();
     mappedValues = new Vector<String>();
+    mapVariables = new HashMap<String, String>();
 
     try {
       loadMaps(mapFile);
@@ -112,8 +121,8 @@ public class AttributeMap implements ServletContextAware {
             Map map = (Map)maps.get(mapsCount);
             if (map.getName().equals(provider.getMapRefArray(mapRefsCount).getName())) {
               // Have we got the correct attribute to map?
-              if (attrName.equals(map.getAttrName())) {
-                pattern = Pattern.compile(map.getAttrValue());
+              if (attrName.equals(interpolate(map.getAttrName()))) {
+                pattern = Pattern.compile(interpolate(map.getAttrValue()));
                 matcher = pattern.matcher(attrValue);
 
                 // Match the value of the attribute before mapping
@@ -124,7 +133,7 @@ public class AttributeMap implements ServletContextAware {
                   // Rename the attribute...
                   String mappedAttrName = null;
                   if (map.getMappedName() != null)
-                    mappedAttrName = map.getMappedName();
+                    mappedAttrName = interpolate(map.getMappedName());
                   else
                     mappedAttrName = attrName;
                   mappedNames.add(mappedAttrName);
@@ -134,6 +143,7 @@ public class AttributeMap implements ServletContextAware {
                   String mappedAttrValue = null;
                   if (map.getPersistent()) {
                     if (persistenceEngine.attributeExists(principal, spProviderId, mappedAttrName)) {
+                      // No interpolation required for database values as they're absolute
                       mappedAttrValue = persistenceEngine.getAttributeValue(principal, spProviderId, mappedAttrName);
                       retrievedPersistentAttribute = true;
                     }
@@ -142,7 +152,7 @@ public class AttributeMap implements ServletContextAware {
                   if ((!map.getPersistent()) || ((map.getPersistent()) && (!retrievedPersistentAttribute))) {
                     // Attribute value is what it says in the map...
                     if (map.getMappedValue() != null)
-                      mappedAttrValue = map.getMappedValue();
+                      mappedAttrValue = interpolate(map.getMappedValue());
                     // ...or just use the original attribute value
                     else
                       mappedAttrValue = attrValue;
@@ -179,8 +189,8 @@ public class AttributeMap implements ServletContextAware {
                   }
 
                   // Finally, scope the attribute if required
-                  if (map.getScoped()) {
-                    mappedValues.set(index, mappedAttrValue + "@");
+                  if (map.getScope() != null) {
+                    mappedValues.set(index, mappedAttrValue + "@" + interpolate(map.getScope()));
                   }
 
                   //return true;
@@ -236,6 +246,16 @@ public class AttributeMap implements ServletContextAware {
       // Load up the root map file
       AttributeMapDocument attrMapDoc = AttributeMapDocument.Factory.parse(new File(mapFile));
 
+      // Load any map variables
+      if ((attrMapDoc.getAttributeMap().getVarArray() != null) && (attrMapDoc.getAttributeMap().getVarArray().length > 0)) {
+        MapVar[] mapVars = attrMapDoc.getAttributeMap().getVarArray();
+        for (MapVar mapVar : mapVars) {
+          mapVariables.put(mapVar.getName(), mapVar.getValue());
+        }
+        
+        return;
+      }
+
       // Cache all the maps...
       for (int c = 0; c < attrMapDoc.getAttributeMap().getMapArray().length; c++ ) {
         maps.add(attrMapDoc.getAttributeMap().getMapArray(c));
@@ -259,6 +279,33 @@ public class AttributeMap implements ServletContextAware {
     }
     catch(IOException ioe) {
       throw new GuanxiException(ioe);
+    }
+  }
+
+  /**
+   * Interpolates a map variable if present in a map value.
+   * Map variables start with the recognised token:
+   * MAP_VARIABLE_TOKENuni.ac.uk
+   * e.g.
+   * #uni.ac.uk
+   *
+   * @param value the map value
+   * @return the interpolated value if a map variable is present, otherwise the original value.
+   * If a map variable is present but not defined, the original value including the token is
+   * returned.${x}
+   */
+  private String interpolate(String value) {
+    if ((value.startsWith(MAP_VARIABLE_TOKEN_START)) && (value.endsWith(MAP_VARIABLE_TOKEN_END))) {
+      String var = value.substring(MAP_VARIABLE_TOKEN_START.length(), (value.length() - 1));
+      if (mapVariables.get(var) != null) {
+        return mapVariables.get(var);
+      }
+      else {
+        return value;
+      }
+    }
+    else {
+      return value;
     }
   }
 
