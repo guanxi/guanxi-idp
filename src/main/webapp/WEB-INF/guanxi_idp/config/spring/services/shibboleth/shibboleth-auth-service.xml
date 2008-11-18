@@ -17,7 +17,6 @@
         <value>providerId</value>
         <value>shire</value>
         <value>target</value>
-        <value>time</value>
       </list>
     </property>
   </bean>
