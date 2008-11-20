@@ -5,6 +5,7 @@
        mappedName="${eduPersonTargetedID}"
        mappedRule="encrypt"
        scope="${scope.uni.ac.uk}"
+       unique="true"
        persistent="true"/>
 
   <map name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-member"
