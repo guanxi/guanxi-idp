@@ -122,7 +122,7 @@ public class AttributeMap implements ServletContextAware {
             String[] providerExceptions = provider.getMapRefArray(mapRefsCount).getExceptArray();
             for (String providerException : providerExceptions) {
               if (providerException != null) {
-                if (providerException.equals(spProviderId)) {
+                if (interpolate(providerException).equals(spProviderId)) {
                    blockedFromMap = true;
                 }
               }
