@@ -10,6 +10,13 @@
 	     The attribute mapping rules referenced here can be found in global-maps.xml. -->
   <provider providerId="*">
     <mapRef name="globalGroupMapping" />
+    <!-- This map reference says apply the globalRoleMapping map to all
+         service providers except the one with an id of protectedapp-guard.
+         Although the map creates an attribute 'function' which is releasable
+         via the ARP, it never gets that far as the map is not applied. -->
+    <mapRef name="globalRoleMapping">
+      <except>protectedapp-guard</except>
+    </mapRef>
   </provider>
 
 	<!-- This represents the attribute set that the service provider with a providerId of
