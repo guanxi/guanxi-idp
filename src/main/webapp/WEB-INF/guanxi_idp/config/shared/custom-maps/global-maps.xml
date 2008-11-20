@@ -4,5 +4,10 @@
   <map name="globalGroupMapping"
        attrName="group" attrValue=".*"
        mappedName="memberOf" />
+
+  <!-- Rename the "role" attribute to be the "function" attribute. -->
+  <map name="globalRoleMapping"
+       attrName="role" attrValue=".*"
+       mappedName="function" />
 </AttributeMap>
 
