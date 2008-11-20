@@ -25,4 +25,6 @@
   -->
   <var name="local.attribute.group.name" value="group" />
   <var name="local.attribute.group.value" value="heidbangers" />
+
+  <var name="protectedGuard" value="protectedapp-guard" />
 </AttributeMap>
