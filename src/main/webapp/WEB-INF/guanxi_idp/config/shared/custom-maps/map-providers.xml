@@ -15,7 +15,7 @@
          Although the map creates an attribute 'function' which is releasable
          via the ARP, it never gets that far as the map is not applied. -->
     <mapRef name="globalRoleMapping">
-      <except>protectedapp-guard</except>
+      <except>${protectedGuard}</except>
     </mapRef>
   </provider>
 
