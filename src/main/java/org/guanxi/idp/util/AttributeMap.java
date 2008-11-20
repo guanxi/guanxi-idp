@@ -18,10 +18,7 @@ package org.guanxi.idp.util;
 
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.GuanxiPrincipal;
-import org.guanxi.xal.idp.AttributeMapDocument;
-import org.guanxi.xal.idp.Map;
-import org.guanxi.xal.idp.MapProvider;
-import org.guanxi.xal.idp.MapVar;
+import org.guanxi.xal.idp.*;
 import org.guanxi.idp.persistence.PersistenceEngine;
 import org.guanxi.idp.farm.rule.AttributeRule;
 import org.apache.xmlbeans.XmlException;
@@ -116,6 +113,23 @@ public class AttributeMap implements ServletContextAware {
       if ((provider.getProviderId().equals(spProviderId)) || provider.getProviderId().equals("*")) {
         // Load up the mapping references for this provider
         for (int mapRefsCount = 0; mapRefsCount < provider.getMapRefArray().length; mapRefsCount++) {
+
+          /* Look for exceptions to the mapping process. If we find the current service provider
+           * as an exception in the mapping rules, we ignore the rule.
+           */
+          boolean blockedFromMap = false;
+          if (provider.getMapRefArray(mapRefsCount).getExceptArray() != null) {
+            String[] providerExceptions = provider.getMapRefArray(mapRefsCount).getExceptArray();
+            for (String providerException : providerExceptions) {
+              if (providerException != null) {
+                if (providerException.equals(spProviderId)) {
+                   blockedFromMap = true;
+                }
+              }
+            }
+          }
+          if (blockedFromMap) continue;
+
           // Look for the map in the maps cache
           for (int mapsCount = 0; mapsCount < maps.size(); mapsCount++) {
             Map map = (Map)maps.get(mapsCount);
