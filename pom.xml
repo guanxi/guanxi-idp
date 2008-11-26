@@ -29,12 +29,6 @@
 
   <packaging>war</packaging>
 
-  <scm>
-    <connection>scm:cvs:ext:alistairskye@guanxi.cvs.sourceforge.net:/cvsroot/guanxi:IdP2</connection>
-    <developerConnection>scm:cvs:ext:alistairskye@guanxi.cvs.sourceforge.net:/cvsroot/guanxi:IdP2</developerConnection>
-    <url>http://guanxi.cvs.sourceforge.net</url>
-  </scm>
-
   <dependencies>
 
     <!-- **************************************************** -->
