@@ -1,0 +1,97 @@
+Guanxi::IdP
+===========
+This file provides information on what Guanxi::IdP is as well as instructions
+on how to install and configure it.
+
+Contents
+--------
+o What is Guanxi::IdP?
+o How do I install it?
+o How do I configure it?
+o Contributors
+
+What is Guanxi::IdP?
+=====================
+Guanxi::IdP is the Identity Provider component of the Guanxi system. 
+It provides Shibboleth compatible Handle Service (HS) and 
+Attribute Authority (AA) functionality.
+
+Guanxi::IdP Handle Service
+--------------------------
+The HS takes requests from a Shibboleth compatible WAYF (such as Guanxi::WAYF) 
+or direct from a Shibboleth compatible Service Provider. It displays a default 
+Guanxi login page which gathers the user's credentials. What happens after that
+is controlled by a configurable chain of Authenticator objects. For example, 
+if you are running Guanxi inside the Bodington VLE and it also uses LDAP 
+authentication for it's local users, you can chain a BodingtonAuthenticator 
+and LDAPAuthenticator together to provide failover in case the VLE is down 
+for routine maintenance perhaps. Whichever Authenticator returns success 
+stops the chain. The HS will then create a server side object to represent 
+that user and returns appropriate data to the requesting Shibboleth compliant 
+Service Provider.
+
+Guanxi::IdP Attribute Authority
+-------------------------------
+The AA takes requests from a Shibboleth compliant Service Provider and 
+returns appropriate attributes for a user, based on a chain of Attributor 
+objects. You can chain as many Attributor objects together as you want, to 
+link distributed attribute stores such as the native user store in the 
+Bodington VLE and Novell eDirectory using BodingtonAttributor and 
+LDAPAttributor respectively.  Each Attributor first applies it's Attribute 
+Release Policy to the set of attributes for the user to allow for user 
+control of what should and should not be released.
+
+How do I install it?
+====================
+Before you can build the IdP, you must first obtain Guanxi::Common, 
+Guanxi::gx_lib and SAMUEL, all of which the IdP uses. You can get binary or 
+source distributions of these components from the Guanxi sourceforge site. If 
+you are reading this, you've obviously got hold of the IdP, uncompressed the 
+distribution and are now staring at a load of files:
+
+/resources        -- contains normally accessible JSP pages
+/src              -- the IdP source
+/WEB-INF/config   -- contains the IdP's config files
+/WEB-INF/jsp      -- servlet accessed JSP files
+/WEB-INF/keystore -- the auto generated keystore and certificate will be stored here
+
+To build the IdP, find the file build.properties in the root folder of the 
+distribution and change the paths accordingly:
+
+build.properties:
+These won't need changed if you've downloaded Guanxi as a whole:
+guanxi-common.home=../Common
+samuel.home=../../samuel
+gx_lib.home=../../gx_lib
+
+You'll have to tell the build where your servlet environment is:
+servlet-api-jar=/usr/local/tomcat/common/lib/servlet-api.jar
+
+If you're building the IdP for use with the Bodington VLE, you'll have to 
+point the build to your bodserver.jar 
+bodington.jar=/usr/local/tomcat/webapps/bodington/WEB-INF/lib/bodserver.jar
+
+If you set bodington.jar, you must remove org/Guanxi/IdP/*/Bodington* from
+the list of excludes:
+excludes=
+
+then just type:
+ant
+
+and the IdP will be built to:
+/dist/webapp
+
+To install the IdP, copy everything in /dist/webapp to whereever you want 
+to deploy it, e.g. /usr/local/tomcat/webapps/IdP.
+
+How do I configure it?
+======================
+For detailed configuration information, please consult the Guanxi Wiki:
+http://guanxi.uhi.ac.uk/xwiki
+
+Contributors
+============
+Alistair Young Lead developer alistair@smo.uhi.ac.uk
+Andrew Booth a.g.booth@leeds.ac.uk
+Antony Corfield antony@smo.uhi.ac.uk
+Sean Mehan sean@smo.uhi.ac.uk

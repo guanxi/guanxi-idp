@@ -1,0 +1,44 @@
+<!-- map-providers.xml
+     This is list of service providers that require attributes to be mapped.
+     If you want to remove mappings for a service provider, just comment out
+     it's grouping in the list.
+-->
+<AttributeMap xmlns="urn:guanxi:idp">
+	<!-- This represents all service providers. What it says is that every service provider
+	     that the IdP recognises will have attributes mapped according to the rules defined
+	     in the map with the name of "globalMapping".
+	     The attribute mapping rules referenced here can be found in global-maps.xml. -->
+  <provider providerId="*">
+    <mapRef name="globalGroupMapping" />
+    <!-- This map reference says apply the globalRoleMapping map to all
+         service providers except the one with an id of protectedapp-guard.
+         Although the map creates an attribute 'function' which is releasable
+         via the ARP, it never gets that far as the map is not applied. -->
+    <mapRef name="globalRoleMapping">
+      <except>${protectedGuard}</except>
+    </mapRef>
+  </provider>
+
+	<!-- This represents the attribute set that the service provider with a providerId of
+	     "protectedapp-guard" will receive if they are also defined in the ARP. Note that
+	     this service provider will also receive the attributes defined in the "globalMapping"
+	     set too, as defined above.
+	     The attribute mapping rules referenced here can be found in protectedapp-maps.xml. -->
+  <provider providerId="protectedapp-guard">
+    <!-- Flat file attributes -->
+    <mapRef name="protectedAppFFIdMapping" />
+    <mapRef name="protectedAppFFIdMapping2" />
+    <mapRef name="protectedAppFFIdMappingWithDomain" />
+    <mapRef name="protectedAppFFIdMappingEncrypted" />
+    <mapRef name="protectedAppFFFirstNameMapping" />
+    <mapRef name="protectedAppFFSurnameMapping" />
+    <mapRef name="protectedAppFFEmailMapping" />
+    <mapRef name="protectedAppFFEmailMapping2" />
+    <mapRef name="protectedAppFFPersistentIDMapping" />
+    <mapRef name="protectedAppEduPersonScopedAffiliation-staff" />
+    <!-- LDAP attributes defined in eduperson-map.xml -->
+    <mapRef name="urn:mace:dir:attribute-def:eduPersonTargetedID" />
+    <mapRef name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-member" />
+    <mapRef name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-staff" />
+  </provider>
+</AttributeMap>
