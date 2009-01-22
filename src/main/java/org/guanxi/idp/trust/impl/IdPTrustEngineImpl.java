@@ -46,7 +46,14 @@ public class IdPTrustEngineImpl extends SimpleTrustEngine {
   public boolean trustEntity(Metadata entityMetadata, Object entityData) throws GuanxiException {
     if (entityData instanceof String) {
       String shireURL = (String)entityData;
-      return ((SPMetadata)entityMetadata).getAssertionConsumerServiceURL().equals(shireURL);
+      String[] urls = ((SPMetadata)entityMetadata).getAssertionConsumerServiceURLs();
+      for (String url : urls) {
+        if (shireURL.equals(url)) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     if (entityData instanceof X509Certificate[]) {
