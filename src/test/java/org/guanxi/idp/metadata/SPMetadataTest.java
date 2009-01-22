@@ -86,7 +86,7 @@ public class SPMetadataTest extends MetadataTest {
       SPMetadata spMetadata = (SPMetadata)manager.getMetadata("urn:bond:hq");
       Assert.assertNotNull(spMetadata);
       Assert.assertEquals("urn:bond:hq", spMetadata.getEntityID());
-      Assert.assertEquals("https://bond.hq.ac.uk/SSO/SAML/BrowserPost", spMetadata.getAssertionConsumerServiceURL());
+      Assert.assertEquals("https://bond.hq.ac.uk/SSO/SAML/BrowserPost", spMetadata.getAssertionConsumerServiceURLs()[0]);
     }
     catch(Exception e) {
       fail(e.getMessage());
