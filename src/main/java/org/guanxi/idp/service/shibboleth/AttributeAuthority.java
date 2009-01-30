@@ -377,6 +377,12 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       if  ((attribute.getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
            (attribute.getAttributeName().equals(EduPerson.EDUPERSON_PRINCIPAL_NAME))     ||
            (attribute.getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID))) {
+        // Check if the scope is present...
+        if (!attributorAttr.getValue().contains(EduPerson.EDUPERSON_SCOPED_DELIMITER)) {
+          // ...if not, add the error scope
+          logger.error(attribute.getAttributeName() + " has no scope, adding " + EduPerson.EDUPERSON_NO_SCOPE_DEFINED);
+          attributorAttr.setValue(attributorAttr.getValue() + EduPerson.EDUPERSON_SCOPED_DELIMITER + EduPerson.EDUPERSON_NO_SCOPE_DEFINED);
+        }
         String[] parts = attributorAttr.getValue().split(EduPerson.EDUPERSON_SCOPED_DELIMITER);
         Attr scopeAttribute = attrValue.getDomNode().getOwnerDocument().createAttribute(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE);
         scopeAttribute.setValue(parts[1]);
