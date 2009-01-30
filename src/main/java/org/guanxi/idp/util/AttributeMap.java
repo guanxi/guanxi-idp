@@ -273,8 +273,6 @@ public class AttributeMap implements ServletContextAware {
         for (MapVar mapVar : mapVars) {
           mapVariables.put(mapVar.getName(), mapVar.getValue());
         }
-        
-        return;
       }
 
       // Cache all the maps...
