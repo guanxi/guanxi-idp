@@ -28,6 +28,8 @@ import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.job.ShibbolethSAML2MetadataParser;
 
+import java.util.ArrayList;
+
 /**
  * Parses the UK Federation metadata
  */
@@ -61,7 +63,7 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
 
     loadAndCacheEntities();
 
-    EntityManager manager = loadEmptyEntityManager(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    EntityManager manager = loadEntityManager(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
 
     if (!loadCAListFromMetadata(manager)) {
       logger.error("Failed to load root CA list from metadata");
@@ -69,6 +71,9 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
     }
 
     try {
+      // Store the new entity IDs for cleaning out old ones later
+      ArrayList<String> newEntityIDs = new ArrayList<String>();
+      
       for (EntityDescriptorType entityDescriptor : entityDescriptors) {
         // Look for Service Providers
         if (entityDescriptor.getSPSSODescriptorArray().length > 0) {
@@ -78,6 +83,16 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
           metadataHandler.setPrivateData(entityDescriptor);
           
           manager.addMetadata(metadataHandler);
+          
+          newEntityIDs.add(entityDescriptor.getEntityID());
+        }
+      }
+
+      // Remove expired entities from the manager
+      String[] oldEntityIDs = manager.getEntityIDs();
+      for (String oldEntityID : oldEntityIDs) {
+        if (!newEntityIDs.contains(oldEntityID)) {
+          manager.removeMetadata(oldEntityID);
         }
       }
     }
