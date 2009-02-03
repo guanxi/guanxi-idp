@@ -110,7 +110,7 @@ public class AttributeMap implements ServletContextAware {
     for (int providersCount = 0; providersCount < providers.size(); providersCount++) {
       MapProvider provider = (MapProvider)providers.get(providersCount);
 
-      if ((provider.getProviderId().equals(spProviderId)) || provider.getProviderId().equals("*")) {
+      if ((interpolate(provider.getProviderId()).equals(spProviderId)) || provider.getProviderId().equals("*")) {
         // Load up the mapping references for this provider
         for (int mapRefsCount = 0; mapRefsCount < provider.getMapRefArray().length; mapRefsCount++) {
 
