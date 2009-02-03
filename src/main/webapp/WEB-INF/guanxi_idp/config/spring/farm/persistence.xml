@@ -25,7 +25,7 @@
         init-method="init" destroy-method="destroy">
 
     <property name="driver"><value>com.mysql.jdbc.Driver</value></property>
-    <property name="connectionString"><value>jdbc:mysql://localhost/guanxiidp</value></property>
+    <property name="connectionString"><value>jdbc:mysql://localhost/guanxiidp?autoReconnect=true</value></property>
     <property name="usernameProperty"><value>user</value></property>
     <property name="usernameValue"><value>guanxiidp</value></property>
     <property name="passwordProperty"><value>password</value></property>
