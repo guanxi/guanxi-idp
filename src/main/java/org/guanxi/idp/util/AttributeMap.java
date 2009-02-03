@@ -191,7 +191,7 @@ public class AttributeMap implements ServletContextAware {
                           if (attributeRule.getRuleName().equals(rule)) {
                             String valueToBeModified = null;
                             if (map.getUnique()) {
-                              valueToBeModified += spProviderId;
+                              valueToBeModified = (String)mappedValues.get(index) + spProviderId;
                             }
                             else {
                               valueToBeModified = (String)mappedValues.get(index);
