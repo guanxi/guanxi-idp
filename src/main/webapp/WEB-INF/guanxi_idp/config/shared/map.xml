@@ -1,0 +1,17 @@
+<!-- map.xml
+     This is the root Map file for the Guanxi IdP. You can put all providers and mappings in this file
+     although it's more logical to define each class of mappings in it's own map file and define
+     all the service providers that require attributes to be mapped in their own map file.
+-->
+<AttributeMap xmlns="urn:guanxi:idp">
+  <!-- List of Service Providers that require attributes to be mapped -->
+  <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/map-providers.xml" />
+
+	<!-- List of attribute mappings referenced by the service providers in the list above -->
+  <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/protectedapp-maps.xml" />
+  <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/eduperson-map.xml" />
+  <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/global-maps.xml" />
+
+  <!-- List of map variables -->
+  <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/map-vars.xml" />
+</AttributeMap>
