@@ -94,7 +94,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
     
     String missingParams = checkRequestParameters(request);
     if (missingParams != null) {
-      logger.info("Missing param(s)");
+      logger.info("Missing param(s) : " + missingParams);
       request.setAttribute("message", messageSource.getMessage("missing.param",
                                                                new Object[] {missingParams},
                                                                request.getLocale()));
