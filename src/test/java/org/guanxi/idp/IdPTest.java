@@ -18,13 +18,10 @@ package org.guanxi.idp;
 
 import org.springframework.mock.web.MockServletContext;
 import org.junit.BeforeClass;
-import static org.junit.Assert.fail;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
 
 import java.util.ResourceBundle;
-import java.io.File;
-import java.io.IOException;
 
 /**
  * The root of the IdP test hierarchy
@@ -33,8 +30,6 @@ public abstract class IdPTest {
   protected static MockServletContext servletContext = null;
   protected static GuanxiPrincipal principal = null;
   protected static ResourceBundle idpProperties = null;
-  protected static String idpHome = null;
-  protected static String[] persistenceFiles = null;
 
   protected static final String TEST_USER_NAME = "harrymcd";
   protected static final String TEST_RELYING_PARTY = "protectedapp-guard";
@@ -42,15 +37,7 @@ public abstract class IdPTest {
   @BeforeClass
   public static void initIdPTest() {
     idpProperties = ResourceBundle.getBundle("test");
-    try {
-      idpHome = "file:///" + new File(".").getCanonicalPath() + "/src/main/webapp";
-    }
-    catch(IOException ioe) {
-      fail(ioe.getMessage());
-    }
-    servletContext = new MockServletContext(idpHome);
-
-    persistenceFiles = new String[] {idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/persistence.xml"};
+    servletContext = new MockServletContext(Paths.path("servlet.context.home"));
 
     principal = new GuanxiPrincipal();
     principal.setName(TEST_USER_NAME);

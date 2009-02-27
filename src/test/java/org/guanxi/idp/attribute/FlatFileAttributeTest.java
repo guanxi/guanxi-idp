@@ -12,6 +12,8 @@ import static org.junit.Assert.fail;
 import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.idp.farm.attributors.Attributor;
+import org.guanxi.idp.util.VarEngine;
+import org.guanxi.idp.Paths;
 import org.guanxi.common.GuanxiException;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
@@ -30,7 +32,16 @@ public class FlatFileAttributeTest extends AttributeTest {
     ctx.setServletContext(servletContext);
     ctx.refresh();
 
+    VarEngine varEngine = (VarEngine)ctx.getBean("idpVarEngine");
+    varEngine.setVarFile(Paths.path("vars.xml"));
+    varEngine.init();
+
     Attributor ffAttributor = (Attributor)ctx.getBean("flatFileAttributor");
+    ffAttributor.setAttributorConfig(Paths.path("flatfile.xml"));
+    ffAttributor.getArpEngine().setArpFile(Paths.path("arp.xml"));
+    ffAttributor.getArpEngine().init();
+    ffAttributor.init();
+    
     try {
       ffAttributor.getAttributes(principal, TEST_RELYING_PARTY, attributes);
       assertTrue(attributes.getAttributeArray().length > 0);

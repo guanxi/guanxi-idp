@@ -21,6 +21,7 @@ import org.junit.runners.Suite;
 import org.guanxi.idp.persistence.PersistenceTestSuite;
 import org.guanxi.idp.attribute.AttributeTestSuite;
 import org.guanxi.idp.metadata.MetadataTestSuite;
+import org.guanxi.idp.vars.VarsTestSuite;
 
 /**
  * This is the root of all tests. It will invoke the various test suites that handle
@@ -29,6 +30,7 @@ import org.guanxi.idp.metadata.MetadataTestSuite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses( { PersistenceTestSuite.class,
                        AttributeTestSuite.class,
-                       MetadataTestSuite.class } )
+                       MetadataTestSuite.class,
+                       VarsTestSuite.class } )
 public class IdPTestSuite {
 }

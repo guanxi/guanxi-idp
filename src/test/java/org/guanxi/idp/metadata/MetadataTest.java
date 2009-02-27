@@ -6,6 +6,7 @@
 package org.guanxi.idp.metadata;
 
 import org.guanxi.idp.IdPTest;
+import org.guanxi.idp.Paths;
 import org.junit.BeforeClass;
 
 public abstract class MetadataTest extends IdPTest {
@@ -13,7 +14,7 @@ public abstract class MetadataTest extends IdPTest {
   
   @BeforeClass
   public static void initMetadataTest() {
-    metadataConfigFiles = new String[] {idpHome + "/WEB-INF/guanxi_idp/config/spring/application/jobs/ukFederationMetadataParser.xml",
-                                        idpHome + "/WEB-INF/guanxi_idp/config/spring/application/entity.xml"};
+    metadataConfigFiles = new String[] {Paths.path("ukFederationMetadataParser.xml"),
+                                        Paths.path("entity.xml")};
   }
 }

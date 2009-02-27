@@ -6,6 +6,7 @@
 package org.guanxi.idp.attribute;
 
 import org.guanxi.idp.IdPTest;
+import org.guanxi.idp.Paths;
 import org.junit.BeforeClass;
 
 /**
@@ -16,9 +17,10 @@ public abstract class AttributeTest extends IdPTest {
 
   @BeforeClass
   public static void initAttributeTest() {
-    attributorConfigFiles = new String[] {idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/attributors.xml",
-                                          idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/mapper.xml",
-                                          idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/rules.xml",
-                                          idpHome + "/WEB-INF/guanxi_idp/config/spring/farm/persistence.xml"};
+    attributorConfigFiles = new String[] {Paths.path("attributors.xml"),
+                                          Paths.path("mapper.xml"),
+                                          Paths.path("rules.xml"),
+                                          Paths.path("persistence.xml"),
+                                          Paths.path("var-engine.xml")};
   }
 }

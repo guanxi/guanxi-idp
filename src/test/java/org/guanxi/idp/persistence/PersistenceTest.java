@@ -17,6 +17,8 @@
 package org.guanxi.idp.persistence;
 
 import org.guanxi.idp.IdPTest;
+import org.guanxi.idp.Paths;
+import org.junit.BeforeClass;
 
 /**
  * Base class for persistence tests
@@ -24,4 +26,11 @@ import org.guanxi.idp.IdPTest;
 public abstract class PersistenceTest extends IdPTest {
   protected static final String TEST_ATTRIBUTE_NAME = "eduPersonTargetedId";
   protected static final String TEST_ATTRIBUTE_VALUE = "666";
+
+  protected static String[] persistenceConfigFiles = null;
+
+  @BeforeClass
+  public static void initPersistenceTest() {
+    persistenceConfigFiles = new String[] {Paths.path("persistence.xml")};
+  }
 }
