@@ -39,6 +39,8 @@ public class ARPEngine implements ServletContextAware {
   private Vector<Arp> arpFiles = null;
   /** The map file to use */
   private String arpFile = null;
+  /** The engine that handles variable interpolation */
+  private VarEngine varEngine = null;
 
   public void init() {
     arpFiles = new Vector<Arp>();
@@ -52,6 +54,7 @@ public class ARPEngine implements ServletContextAware {
 
   public void setArpFile(String arpFile) { this.arpFile = arpFile; }
   public String getArpFile() { return arpFile; }
+  public void setVarEngine(VarEngine varEngine) { this.varEngine = varEngine; }
 
   /**
    * Determines whether to release an attribute to a provider based on rules in
@@ -70,8 +73,8 @@ public class ARPEngine implements ServletContextAware {
       ArpDocument.Arp arp = (ArpDocument.Arp)arpFiles.get(arpFilesCount);
 
       for (int count = 0; count < arp.getProviderArray().length; count++) {
-        if ((arp.getProviderArray(count).getName().equals(provider)) ||
-            (arp.getProviderArray(count).getName().equals("*")))
+        if ((varEngine.interpolate(arp.getProviderArray(count).getName()).equals(provider)) ||
+            (varEngine.interpolate(arp.getProviderArray(count).getName()).equals("*")))
           // There must be at least one rule. If none are present, release nothing
           if (arp.getProviderArray(count).getAllowArray().length > 0) {
             spProviders.add(arp.getProviderArray(count));
@@ -103,12 +106,12 @@ public class ARPEngine implements ServletContextAware {
 
       for (Provider provider : providers) {
         for (int count = 0; count < provider.getAllowArray().length; count++) {
-          String bagName = provider.getAllowArray(count);
+          String bagName = varEngine.interpolate(provider.getAllowArray(count));
 
           // Load up the bag from the list of <bag> nodes in the ARP file
           Bag bag = null;
           for (int bagCount = 0; bagCount < arp.getBagArray().length; bagCount++) {
-            if (arp.getBagArray(bagCount).getName().equals(bagName)) {
+            if (varEngine.interpolate(arp.getBagArray(bagCount).getName()).equals(bagName)) {
               bag = arp.getBagArray(bagCount);
             }
           }
@@ -120,8 +123,8 @@ public class ARPEngine implements ServletContextAware {
           // Now look for the attribute in the Bag, or an attribute with a name of *
           Attribute attribute = null;
           for (int attrCount = 0; attrCount < bag.getAttributeArray().length; attrCount++) {
-            if ((bag.getAttributeArray(attrCount).getName().equals(attributeName)) ||
-                (bag.getAttributeArray(attrCount).getName().equals("*"))) {
+            if ((varEngine.interpolate(bag.getAttributeArray(attrCount).getName()).equals(attributeName)) ||
+                (varEngine.interpolate(bag.getAttributeArray(attrCount).getName()).equals("*"))) {
               attribute = bag.getAttributeArray(attrCount);
             }
           }
