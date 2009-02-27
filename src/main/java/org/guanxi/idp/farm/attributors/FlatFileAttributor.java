@@ -37,8 +37,14 @@ public class FlatFileAttributor extends SimpleAttributor {
   public void init() {
     try {
       super.init();
+
+      // Sort out the path to the ARP file
+      if ((attributorConfig.startsWith("WEB-INF")) ||
+          (attributorConfig.startsWith("/WEB-INF"))) {
+        attributorConfig = servletContext.getRealPath(attributorConfig);
+      }
       
-      FlatFileAuthenticatorConfigDocument configDoc = FlatFileAuthenticatorConfigDocument.Factory.parse(new File(servletContext.getRealPath(attributorConfig)));
+      FlatFileAuthenticatorConfigDocument configDoc = FlatFileAuthenticatorConfigDocument.Factory.parse(new File(attributorConfig));
       ffConfig = configDoc.getFlatFileAuthenticatorConfig();
     }
     catch(IOException me) {

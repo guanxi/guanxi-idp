@@ -54,7 +54,13 @@ public class LDAPAttributor extends SimpleAttributor {
     try {
       super.init();
 
-      LdapDocument configDoc = LdapDocument.Factory.parse(new File(servletContext.getRealPath(attributorConfig)));
+      // Sort out the path to the ARP file
+      if ((attributorConfig.startsWith("WEB-INF")) ||
+          (attributorConfig.startsWith("/WEB-INF"))) {
+        attributorConfig = servletContext.getRealPath(attributorConfig);
+      }
+
+      LdapDocument configDoc = LdapDocument.Factory.parse(new File(attributorConfig));
       ldapConfig = configDoc.getLdap();
     }
     catch(IOException me) {
