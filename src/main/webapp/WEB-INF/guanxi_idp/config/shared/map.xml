@@ -11,7 +11,4 @@
   <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/protectedapp-maps.xml" />
   <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/eduperson-map.xml" />
   <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/global-maps.xml" />
-
-  <!-- List of map variables -->
-  <include mapFile="/WEB-INF/guanxi_idp/config/shared/custom-maps/map-vars.xml" />
 </AttributeMap>
