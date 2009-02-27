@@ -16,6 +16,7 @@
 
   <bean id="ffARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
     <property name="arpFile"><value>/WEB-INF/guanxi_idp/config/shared/arp.xml</value></property>
+    <property name="varEngine"><ref bean="idpVarEngine"/></property>
   </bean>
   <!-- ***************************************************************************** -->
 
@@ -30,6 +31,7 @@
 
   <bean id="ldapARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
     <property name="arpFile"><value>/WEB-INF/guanxi_idp/config/shared/arp.xml</value></property>
+    <property name="varEngine"><ref bean="idpVarEngine"/></property>
   </bean>
   -->
   <!-- ***************************************************************************** -->
