@@ -66,8 +66,7 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
     EntityManager manager = loadEntityManager(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
 
     if (!loadCAListFromMetadata(manager)) {
-      logger.error("Failed to load root CA list from metadata");
-      return;
+      logger.info("No CA list in metadata");
     }
 
     try {
