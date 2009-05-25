@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Vector;
+import java.util.HashMap;
 
 /**
  * <p>AttributeMap</p>
@@ -56,6 +57,8 @@ public class AttributeMap implements ServletContextAware {
   private AttributeRule[] attributeRules = null;
   /** The engine that handles variable interpolation */
   private VarEngine varEngine = null;
+  /** All attributes and their values for the current user */
+  private HashMap<String, String[]> currentUserAttributes = null;
 
   public void init() {
     maps = new Vector<Map>();
@@ -68,6 +71,16 @@ public class AttributeMap implements ServletContextAware {
     }
     catch(GuanxiException ge) {
     }
+  }
+
+  /**
+   * Sets the current user attributes for this mapping session. This allows maps to
+   * access the value of other attributes.
+   *
+   * @param currentUserAttributes HashMap of attributes and their values for the user
+   */
+  public void setCurrentUserAttributes(HashMap<String, String[]> currentUserAttributes) {
+    this.currentUserAttributes = currentUserAttributes;
   }
 
   /**
@@ -159,8 +172,16 @@ public class AttributeMap implements ServletContextAware {
 
                   if ((!map.getPersistent()) || ((map.getPersistent()) && (!retrievedPersistentAttribute))) {
                     // Attribute value is what it says in the map...
-                    if (map.getMappedValue() != null)
-                      mappedAttrValue = varEngine.interpolate(map.getMappedValue());
+                    if (map.getMappedValue() != null) {
+                      // Are we referencing the value of another attribute?
+                      if (map.getMappedValue().startsWith("#")) {
+                        String name = varEngine.interpolate(map.getMappedValue().replaceAll("#", ""));
+                        mappedAttrValue = varEngine.interpolate((String)currentUserAttributes.get(name)[0]);
+                      }
+                      else {
+                        mappedAttrValue = varEngine.interpolate(map.getMappedValue());
+                      }
+                    }
                     // ...or just use the original attribute value
                     else
                       mappedAttrValue = attrValue;
