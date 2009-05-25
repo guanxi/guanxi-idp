@@ -23,6 +23,7 @@ import org.apache.xmlbeans.XmlException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * <h1>FlatFileAttributor</h1>
@@ -73,6 +74,9 @@ public class FlatFileAttributor extends SimpleAttributor {
       if (users[c].getUsername().equals(username)) {
         // Load up their attributes from the config file
         UserAttribute[] attrs = users[c].getUserAttributeArray();
+
+        setCurrentUserAttrbiutesInMapper(attrs);
+
         for (int cc=0; cc < attrs.length; cc++) {
           // This is the default name and value for the attribute
           String attrName = attrs[cc].getName();
@@ -108,5 +112,19 @@ public class FlatFileAttributor extends SimpleAttributor {
         } // for (int cc=0; cc < attrs.length; cc++)
       } // if (users[c].getUsername().equals(username))
     } // for (int c=0; c < users.length; c++)
+  }
+
+  /**
+   * Passes all the attributes and values for the user to the mapper to
+   * allow cross attribute mapping and referencing.
+   *
+   * @param attrs All the attributes for the user
+   */
+  private void setCurrentUserAttrbiutesInMapper(UserAttribute[] attrs) {
+    HashMap<String, String[]> attributes = new HashMap<String, String[]>();
+    for (int cc=0; cc < attrs.length; cc++) {
+      attributes.put(attrs[cc].getName(), new String[]{attrs[cc].getValue()});
+    }
+    mapper.setCurrentUserAttributes(attributes);
   }
 }
