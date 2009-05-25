@@ -13,6 +13,8 @@
   <var name="affiliation.student" value="student" />
   <var name="scope.uni.ac.uk" value="uni.ac.uk" />
 
+  <var name="ePPN.attribute" value="cn" />
+
   <!-- eduPerson attributes
        <map ... mappedName="${eduPersonTargetedID}"
   -->
