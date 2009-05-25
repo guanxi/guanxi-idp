@@ -27,6 +27,7 @@ import com.novell.ldap.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.HashMap;
 
 /**
  * <p>LDAPAttributor</p>
@@ -117,6 +118,8 @@ public class LDAPAttributor extends SimpleAttributor {
 
           // Inject the DN into the attribute set in case we need to process it
           attrs.add(new LDAPAttribute("dn", attrGroup.getDN()));
+
+          setCurrentUserAttrbiutesInMapper(attrs);
 
           if (attrs != null) {
             LDAPAttribute attr = null;
@@ -214,5 +217,25 @@ public class LDAPAttributor extends SimpleAttributor {
 
   public String getErrorMessage() {
     return errorMessage;
+  }
+
+  /**
+   * Passes all the attributes and values for the user to the mapper to
+   * allow cross attribute mapping and referencing.
+   *
+   * @param attrs All the LDAP attributes for the user
+   */
+  private void setCurrentUserAttrbiutesInMapper(LDAPAttributeSet attrs) {
+    HashMap<String, String[]> attributes = new HashMap<String, String[]>();
+    LDAPAttribute attr = null;
+    Iterator<?> entries = attrs.iterator();
+    while (entries.hasNext()) {
+      attr = (LDAPAttribute)entries.next();
+      String[] attrValues = attr.getStringValueArray();
+      if (attrValues != null) {
+        attributes.put(attr.getName(), attrValues);
+      }
+    }
+    mapper.setCurrentUserAttributes(attributes);
   }
 }
