@@ -375,7 +375,6 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
       // Deal with scoped eduPerson attributes
       if  ((attribute.getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
-           (attribute.getAttributeName().equals(EduPerson.EDUPERSON_PRINCIPAL_NAME))     ||
            (attribute.getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID))) {
         // Check if the scope is present...
         if (!attributorAttr.getValue().contains(EduPerson.EDUPERSON_SCOPED_DELIMITER)) {
