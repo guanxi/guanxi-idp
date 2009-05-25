@@ -31,4 +31,11 @@
        mappedName="${eduPersonScopedAffiliation}"
        mappedValue="${affiliation.staff}"
        scope="${scope.uni.ac.uk}"/>
+
+  <map name="groupMembershipMap"
+       attrName="groupMembership"
+       attrValue="cn=testGroup"
+       mappedName="${eduPersonPrincipalName}"
+       mappedValue="#${ePPN.attribute}"
+       scope="${scope.uni.ac.uk}"/>
 </AttributeMap>
