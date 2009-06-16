@@ -296,25 +296,28 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
 
     // Do we need to sign the assertion?
     boolean samlAddedToResponse = false;
-    EntityDescriptorType sp = (EntityDescriptorType)servletContext.getAttribute(request.getParameter(samlRequest.getAttributeQuery().getResource()));
-    if (sp != null) {
-      if (sp.getSPSSODescriptorArray(0) != null) {
-        if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned()) {
-          // Break out to DOM land to get the SAML Response signed...
-          Document signedDoc = null;
-          try {
-            // Add a signed assertion to the response
-            samlAddedToResponse = true;
-            // Need to use newDomNode to preserve namespace information
-            signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)samlResponseDoc.newDomNode(xmlOptions), "");
-            // Add the SAML Response to the SOAP message
-            soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(signedDoc.getDocumentElement(), true));
-          }
-          catch(GuanxiException ge) {
-            logger.error(ge);
-          }
-        } // if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned())
-      } // if (sp.getSPSSODescriptorArray(0) != null)
+    String resource = request.getParameter(samlRequest.getAttributeQuery().getResource());
+    if (resource != null) {
+      EntityDescriptorType sp = (EntityDescriptorType)servletContext.getAttribute(resource);
+      if (sp != null) {
+        if (sp.getSPSSODescriptorArray(0) != null) {
+          if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned()) {
+            // Break out to DOM land to get the SAML Response signed...
+            Document signedDoc = null;
+            try {
+              // Add a signed assertion to the response
+              samlAddedToResponse = true;
+              // Need to use newDomNode to preserve namespace information
+              signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)samlResponseDoc.newDomNode(xmlOptions), "");
+              // Add the SAML Response to the SOAP message
+              soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(signedDoc.getDocumentElement(), true));
+            }
+            catch(GuanxiException ge) {
+              logger.error(ge);
+            }
+          } // if (sp.getSPSSODescriptorArray(0).getWantAssertionsSigned())
+        } // if (sp.getSPSSODescriptorArray(0) != null)
+      }
     }
 
     if (!samlAddedToResponse) {
