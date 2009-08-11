@@ -1,0 +1,31 @@
+<AttributeMap xmlns="urn:guanxi:idp">
+  <map name="urn:mace:dir:attribute-def:eduPersonTargetedID"
+       attrName="dn"
+       attrValue=".*"
+       mappedName="${eduPersonTargetedID}"
+       mappedRule="encrypt"
+       scope="${scope.uni.ac.uk}"
+       unique="true"
+       persistent="true"/>
+
+  <map name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-member"
+       attrName="mail"
+       attrValue=".*"
+       mappedName="${eduPersonScopedAffiliation}"
+       mappedValue="${affiliation.member}"
+       scope="${scope.uni.ac.uk}"/>
+
+  <map name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-student"
+       attrName="dn"
+       attrValue=".*tudent.*"
+       mappedName="${eduPersonScopedAffiliation}"
+       mappedValue="${affiliation.student}"
+       scope="${scope.uni.ac.uk}"/>
+
+  <map name="urn:mace:dir:attribute-def:eduPersonScopedAffiliation-staff"
+       attrName="dn"
+       attrValue=".*taff.*"
+       mappedName="${eduPersonScopedAffiliation}"
+       mappedValue="${affiliation.staff}"
+       scope="${scope.uni.ac.uk}"/>
+</AttributeMap>

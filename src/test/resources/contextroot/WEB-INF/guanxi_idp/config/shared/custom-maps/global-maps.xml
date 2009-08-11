@@ -1,0 +1,13 @@
+<!-- These attribute mappings are for all service providers that the Guanxi IdP recognises. -->
+<AttributeMap xmlns="urn:guanxi:idp">
+	<!-- Rename the "group" attribute to be the "memberOf" attribute. -->
+  <map name="globalGroupMapping"
+       attrName="group" attrValue=".*"
+       mappedName="memberOf" />
+
+  <!-- Rename the "role" attribute to be the "function" attribute. -->
+  <map name="globalRoleMapping"
+       attrName="role" attrValue=".*"
+       mappedName="function" />
+</AttributeMap>
+
