@@ -114,7 +114,16 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
         if (manager.getTrustEngine().trustEntity(metadata, request.getParameter("shire"))) {
           spSupported = true;
         }
+        else {
+            logger.error("Trust failure for " + request.getParameter(spIDRequestParam) + " --> " + request.getParameter("shire"));
+        }
       }
+      else {
+        logger.error("No Metadata Manager found for " + request.getParameter(spIDRequestParam));
+      }
+    }
+    else {
+      logger.error("No Metadata Manager");
     }
 
     // Check the locally registered SPs
