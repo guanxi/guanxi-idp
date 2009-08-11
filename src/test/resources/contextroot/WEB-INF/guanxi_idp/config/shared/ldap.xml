@@ -1,0 +1,59 @@
+<!--
+ldap.xml
+
+This configuration file is used by LDAPAuthenticator and LDAPAttributor
+
+LDAP authentication and why you may need a privileged user
+==========================================================
+If your LDAP system is locked down such that anonymous searching is not allowed, which is a good idea, you will have to
+specify the full DN of a user that has enough privileges to logon to your LDAP system and search for other users. The
+reason for this is LDAP authentication works with a user's DN, not their CN (search-attribute). As you don't expect the
+user to have to know, let alone remember their DN, it must be constructed when they login using their normal login ID:
+
+	> User logs in to system as "jbloggs"
+	> Authenticator builds search string as : <search-attribute>"=jbloggs", e.g. "cn=jbloggs"
+	> Authenticator binds to the LDAP store as the privileged user and searches for the user who has "cn=jbloggs"
+	> Authenticator gets the DN for "cn=jbloggs" if the user is found
+	> Authenticator then binds to the LDAP store using the DN just found, e.g. "cn=jbloggs,ou=staff,ou=org,o=uni"
+
+Alistair Young alistair@smo.uhi.ac.uk
+-->
+
+<ldap xmlns="urn:guanxi:idp">
+  <!-- LDAP specific options
+	     Each server will be tried in turn until successful authentication occurs, or you run out of servers
+	-->
+	<server>
+		<!-- Name or IP address of the LDAP server -->
+		<address>ldap1.uni.ac.uk</address>
+		<!-- Port to use on the server. Defaults to 389 if not specified -->
+		<port>389</port>
+		<!-- How many seconds to wait while searching or authenticating before failing with a timeout condition -->
+		<timeout>30</timeout>
+
+		<!-- Privileged user details for searching the LDAP store. See the note on privileged users above -->
+		<privileged-dn>cn=admin,o=org</privileged-dn>
+		<privileged-dn-password>adminpass</privileged-dn-password>
+
+		<!-- Where to start searching from in your LDAP tree -->
+		<search-base-dn>o=org</search-base-dn>
+		<!-- How to search the store. Can be recursive (whole tree from search base down) -->
+		<search-scope>recursive</search-scope>
+		<!-- The identifier of users in your LDAP store, e.g. cn -->
+		<search-attribute>cn</search-attribute>
+	</server>
+
+	<!-- Add more <server> configurations here if required -->
+	<server>
+		<address>ldap2.uni.ac.uk</address>
+		<port>389</port>
+		<timeout>30</timeout>
+
+		<privileged-dn>cn=admin,o=org</privileged-dn>
+		<privileged-dn-password>adminpass</privileged-dn-password>
+
+		<search-base-dn>o=org</search-base-dn>
+		<search-scope>Recursive</search-scope>
+		<search-attribute>cn</search-attribute>
+	</server>
+</ldap>
