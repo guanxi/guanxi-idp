@@ -32,6 +32,7 @@ public abstract class IdPTest {
   protected static ResourceBundle idpProperties = null;
 
   protected static final String TEST_USER_NAME = "harrymcd";
+  protected static final String TEST_USER_EMAIL = "harrymcd@jumpingupanddown.net";
   protected static final String TEST_RELYING_PARTY = "protectedapp-guard";
 
   @BeforeClass
