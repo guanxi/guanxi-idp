@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="attributeMapper" class="org.guanxi.idp.util.AttributeMap" scope="prototype" init-method="init">
+    <property name="mapFile"><value>/WEB-INF/guanxi_idp/config/shared/map.xml</value></property>
+    <property name="persistenceEngine"><ref bean="idpPersistenceEngine"/></property>
+    <property name="varEngine"><ref bean="idpVarEngine"/></property>
+    <property name="attributeRules">
+      <list>
+        <ref bean="attrEncrypter" />
+        <ref bean="domainAppender" />
+      </list>
+    </property>
+  </bean>
+
+</beans>
