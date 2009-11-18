@@ -18,8 +18,6 @@ package org.guanxi.idp.farm.attributors;
 
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.idp.util.ARPEngine;
-import org.guanxi.idp.util.AttributeMap;
 import org.guanxi.xal.idp.*;
 import org.apache.xmlbeans.XmlException;
 
@@ -38,29 +36,12 @@ import java.util.HashMap;
 public class LDAPAttributor extends SimpleAttributor {
   /** The version of LDAP to use */
   static final int LDAP_VERSION = LDAPConnection.LDAP_V3;
-  /** Our ARP engine */
-  private ARPEngine arpEngine = null;
-  /** Our attribute mapper */
-  private AttributeMap mapper = null;
   /** Our configuration information */
   private LdapDocument.Ldap ldapConfig = null;
-
-  public void setMapper(AttributeMap mapper) { this.mapper = mapper; }
-  public AttributeMap getMapper() { return mapper; }
-
-  public void setArpEngine(ARPEngine arpEngine) { this.arpEngine = arpEngine; }
-  public ARPEngine getArpEngine() { return arpEngine; }
 
   public void init() {
     try {
       super.init();
-
-      // Sort out the path to the ARP file
-      if ((attributorConfig.startsWith("WEB-INF")) ||
-          (attributorConfig.startsWith("/WEB-INF"))) {
-        attributorConfig = servletContext.getRealPath(attributorConfig);
-      }
-
       LdapDocument configDoc = LdapDocument.Factory.parse(new File(attributorConfig));
       ldapConfig = configDoc.getLdap();
     }
@@ -72,15 +53,9 @@ public class LDAPAttributor extends SimpleAttributor {
     }
   }
 
-  /**
-   * Retrieves attributes for a user from all available LDAP servers.
-   *
-   * @param principal GuanxiPrincipal identifying the previously authenticated user
-   * @param relyingParty The providerId of the relying party the attribute are for
-   * @param attributes The document into whic to put the attributes
-   * @throws GuanxiException if an error occurs
-   */
-  public void getAttributes(GuanxiPrincipal principal, String relyingParty, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
+  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty,
+                            UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     // Try to get the user's attributes from one of the available servers
     LDAPConnection lc = new LDAPConnection();
 
@@ -157,40 +132,13 @@ public class LDAPAttributor extends SimpleAttributor {
                     valueCount = attrValues.length - 1;
                   }
 
-                  logger.debug("Obtained attribute " + attr.getName());
+                  logger.debug("Obtained attribute " + attrName);
 
                   // Can we release the original attributes without mapping?
-                  if (arpEngine.release(relyingParty, attrName, attrValue)) {
-                    logger.debug("Released attribute " + attrName);
-                    AttributorAttribute attribute = attributes.addNewAttribute();
-                    attribute.setName(attrName);
-                    attribute.setValue(attrValue);
-                  }
-                  else {
-                    logger.debug("Attribute release blocked by ARP : " + attrName + " to " + relyingParty);
-                  }
+                  arp(relyingParty, attrName, attrValue, attributes);
 
-                  // Sort out any mappings. This will change the default name/value if necessary...
-                  if (mapper.map(principal, relyingParty, attr.getName(), attrValue)) {
-                    for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-                      // Release the mapped attribute if appropriate
-                      if (arpEngine.release(relyingParty, mapper.getMappedNames()[mapCount],
-                                            mapper.getMappedValues()[mapCount])) {
-                        String mappedValue = mapper.getMappedValues()[mapCount];
-
-                        AttributorAttribute attribute = attributes.addNewAttribute();
-                        attribute.setName(mapper.getMappedNames()[mapCount]);
-                        attribute.setValue(mappedValue);
-
-                        logger.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
-                                  " -> " + mappedValue + " to " + relyingParty);
-                      }
-                      else {
-                        logger.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
-                                  " to " + relyingParty);
-                      }
-                    } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-                  }
+                  // Sort out any mappings. This will change the default name/value if necessary
+                  map(principal, relyingParty, attrName, attrValue, attributes);
                 } // while (values.hasMoreElements())
               } // if (values != null) {
             } // while (entries.hasNext()) {

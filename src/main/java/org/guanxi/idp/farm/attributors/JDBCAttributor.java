@@ -17,7 +17,6 @@
 package org.guanxi.idp.farm.attributors;
 
 import org.guanxi.xal.idp.UserAttributesDocument;
-import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiException;
 
@@ -58,15 +57,9 @@ public class JDBCAttributor extends SimpleAttributor {
     }
   }
 
-  /**
-   * Retrieves attributes for a user from a database
-   *
-   * @param principal GuanxiPrincipal identifying the previously authenticated user
-   * @param relyingParty The providerId of the relying party the attribute are for
-   * @param attributes The document into whic to put the attributes
-   * @throws GuanxiException if an error occurs
-   */
-  public void getAttributes(GuanxiPrincipal principal, String relyingParty, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
+  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty,
+                            UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     try {
       String userQuery = query.replaceAll("__USERID__", principal.getName());
 
@@ -84,31 +77,10 @@ public class JDBCAttributor extends SimpleAttributor {
           String attrValue = results.getString(columnName);
 
           // Can we release the original attributes without mapping?
-          if (arpEngine.release(relyingParty, attrName, attrValue)) {
-            AttributorAttribute attribute = attributes.addNewAttribute();
-            attribute.setName(attrName);
-            attribute.setValue(attrValue);
-            logger.debug("Released attribute " + attrName);
-          }
+          arp(relyingParty, attrName, attrValue, attributes);
 
-          // Sort out any mappings. This will change the default name/value if necessary...
-          if (mapper.map(principal, relyingParty, attrName, attrValue)) {
-            for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-              logger.debug("Mapped attribute " + attrName + " to " + mapper.getMappedNames()[mapCount]);
-
-              attrName = mapper.getMappedNames()[mapCount];
-              attrValue = mapper.getMappedValues()[mapCount];
-
-              // ...then run the original or mapped attribute through the ARP
-              if (arpEngine.release(relyingParty, attrName, attrValue)) {
-                AttributorAttribute attribute = attributes.addNewAttribute();
-                attribute.setName(attrName);
-                attribute.setValue(attrValue);
-
-                logger.debug("Released attribute " + attrName);
-              }
-            } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-          } // if (mapper.map(principal.getProviderID(), attrName, attrValue)) {
+          // Sort out any mappings. This will change the default name/value if necessary
+          map(principal, relyingParty, attrName, attrValue, attributes);
         }
       }
 

@@ -38,13 +38,6 @@ public class FlatFileAttributor extends SimpleAttributor {
   public void init() {
     try {
       super.init();
-
-      // Sort out the path to the ARP file
-      if ((attributorConfig.startsWith("WEB-INF")) ||
-          (attributorConfig.startsWith("/WEB-INF"))) {
-        attributorConfig = servletContext.getRealPath(attributorConfig);
-      }
-      
       FlatFileAuthenticatorConfigDocument configDoc = FlatFileAuthenticatorConfigDocument.Factory.parse(new File(attributorConfig));
       ffConfig = configDoc.getFlatFileAuthenticatorConfig();
     }
@@ -56,15 +49,9 @@ public class FlatFileAttributor extends SimpleAttributor {
     }
   }
 
-  /**
-   * Retrieves attributes for a user from a flat file.
-   *
-   * @param principal GuanxiPrincipal identifying the previously authenticated user
-   * @param relyingParty The providerId of the relying party the attribute are for
-   * @param attributes The document into whic to put the attributes
-   * @throws GuanxiException if an error occurs
-   */
-  public void getAttributes(GuanxiPrincipal principal, String relyingParty, UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
+  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty,
+                            UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     // GuanxiPrincipal is storing their username, put there by the authenticator
     String username = (String)principal.getPrivateProfileDataEntry("username");
 
@@ -83,32 +70,10 @@ public class FlatFileAttributor extends SimpleAttributor {
           String attrValue = attrs[cc].getValue();
 
           // Can we release the original attributes without mapping?
-          if (arpEngine.release(relyingParty, attrName, attrValue)) {
-            AttributorAttribute attribute = attributes.addNewAttribute();
-            attribute.setName(attrName);
-            attribute.setValue(attrValue);
+          arp(relyingParty, attrName, attrValue, attributes);
 
-            logger.debug("Released attribute " + attrName);
-          }
-
-          // Sort out any mappings. This will change the default name/value if necessary...
-          if (mapper.map(principal, relyingParty, attrName, attrValue)) {
-            for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-              logger.debug("Mapped attribute " + attrs[cc].getName() + " to " + mapper.getMappedNames()[mapCount]);
-
-              attrName = mapper.getMappedNames()[mapCount];
-              attrValue = mapper.getMappedValues()[mapCount];
-
-              // ...then run the original or mapped attribute through the ARP
-              if (arpEngine.release(relyingParty, attrName, attrValue)) {
-                AttributorAttribute attribute = attributes.addNewAttribute();
-                attribute.setName(attrName);
-                attribute.setValue(attrValue);
-
-                logger.debug("Released attribute " + attrName);
-              }
-            } // for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
-          } // if (mapper.map(principal.getProviderID(), attrName, attrValue)) {
+          // Sort out any mappings. This will change the default name/value if necessary
+          map(principal, relyingParty, attrName, attrValue, attributes);
         } // for (int cc=0; cc < attrs.length; cc++)
       } // if (users[c].getUsername().equals(username))
     } // for (int c=0; c < users.length; c++)
