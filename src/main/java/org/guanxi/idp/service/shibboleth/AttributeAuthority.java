@@ -114,6 +114,9 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
         stringBuffer.append(line);
       }
       in.close();
+      
+      logger.debug("Parsing attribute query : " + stringBuffer.length() + " bytes " + stringBuffer.toString());
+      
       EnvelopeDocument soapEnvelopeDoc = EnvelopeDocument.Factory.parse(stringBuffer.toString());
 
       Body soapBody = soapEnvelopeDoc.getEnvelope().getBody();
