@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <!-- ********************************************************************************************* -->
+  <bean id="saml2WebSSOervice"
+        class="org.guanxi.idp.service.saml2.WebBrowserSSO"
+        init-method="init">
+    <property name="errorView"><value>sso_error</value></property>
+    <property name="responseView"><value>/shibboleth/ists/browser_post_response</value></property>
+  </bean>
+
+  <!-- ********************************************************************************************* -->
+</beans>
