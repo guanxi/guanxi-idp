@@ -16,10 +16,7 @@
 
 package org.guanxi.idp.service.shibboleth;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
@@ -106,14 +103,13 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       /* Parse the SOAP message that contains the SAML Request...
        * XMLBeans 2.2.0 has problems parsing from an InputStream though
        */
-      InputStream in = request.getInputStream();
-      BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
+      BufferedReader buffer = request.getReader();
       StringBuffer stringBuffer = new StringBuffer();
       String line = null;
       while ((line = buffer.readLine()) != null) {
         stringBuffer.append(line);
       }
-      in.close();
+      buffer.close();
       
       logger.debug("Parsing attribute query : " + stringBuffer.length() + " bytes " + stringBuffer.toString());
       
@@ -123,6 +119,15 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       // ...and extract the SAML Request
       samlRequestDoc = RequestDocument.Factory.parse(soapBody.getDomNode().getFirstChild());
       samlRequest = samlRequestDoc.getRequest();
+    }
+    catch(UnsupportedEncodingException uee) {
+      logger.error("Can't parse input text", uee);
+    }
+    catch(IOException ioe) {
+      logger.error("Can't read the input", ioe);
+    }
+    catch(IllegalStateException ise) {
+      logger.error("Can't read input - already read", ise);
     }
     catch(XmlException xe) {
       logger.error("Can't parse SOAP AttributeQuery", xe);
