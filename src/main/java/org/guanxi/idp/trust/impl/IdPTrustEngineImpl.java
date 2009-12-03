@@ -63,7 +63,7 @@ public class IdPTrustEngineImpl extends SimpleTrustEngine {
       // Entity data is the client certificates
       X509Certificate[] clientCerts = (X509Certificate[])entityData;
 
-      return TrustUtils.validateClientCert(saml2Metadata, clientCerts);
+      return TrustUtils.validateClientCert(saml2Metadata, clientCerts, caCerts, entityMetadata.getHostName());
     }
 
     return false;
