@@ -89,7 +89,6 @@ public class JDBCAttributor extends SimpleAttributor {
     }
     catch(SQLException se) {
       logger.error("Can't query the database", se);
-      throw new GuanxiException(se);
     }
   }
 
