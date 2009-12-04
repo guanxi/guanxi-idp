@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="authCookieHandlerLogger" class="org.guanxi.common.log.Log4JLogger" />
+
+  <!-- ***************************************************************************** -->
+  <!-- Flat file attributor -->
+  <!--
+  <bean id="bodingtonCookieHandler" class="org.guanxi.idp.farm.authcookiehandlers.BodingtonCookieHandler" init-method="init">
+    <property name="idpConfig"><ref bean="idpConfig"/></property>
+    <property name="cookieHandlerConfig"><value>NOT_NEEDED</value></property>
+    <property name="bodingtonCookieName"><value>ORG_BODINGTON_SERVLET_SESSION_ID</value></property>
+  </bean>
+  -->
+  <!-- ***************************************************************************** -->
+
+</beans>
