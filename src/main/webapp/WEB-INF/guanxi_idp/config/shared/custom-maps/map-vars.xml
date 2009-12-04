@@ -1,0 +1,30 @@
+<!-- This file defines variables that can be used in attribute mapping definitions.
+     Standard values can be grouped here and applied to mapping rules using the
+     Guanxi variable syntax:
+     ${var.name}
+-->
+<AttributeMap xmlns="urn:guanxi:idp">
+  <!-- Standard affiliation roles
+       <map ... mappedName="${eduPersonScopedAffiliation}"
+                mappedValue="${affiliation.member}"
+  -->
+  <var name="affiliation.member" value="member" />
+  <var name="affiliation.staff" value="staff" />
+  <var name="affiliation.student" value="student" />
+  <var name="scope.uni.ac.uk" value="uni.ac.uk" />
+
+  <!-- eduPerson attributes
+       <map ... mappedName="${eduPersonTargetedID}"
+  -->
+  <var name="eduPersonTargetedID" value="urn:mace:dir:attribute-def:eduPersonTargetedID" />
+  <var name="eduPersonScopedAffiliation" value="urn:mace:dir:attribute-def:eduPersonScopedAffiliation" />
+
+  <!-- eduPersonScopedAffiliation attribute mappings
+       <map ... attrName="${local.attribute.group.name}"
+                attrValue="${local.attribute.group.value}"
+  -->
+  <var name="local.attribute.group.name" value="group" />
+  <var name="local.attribute.group.value" value="heidbangers" />
+
+  <var name="protectedGuard" value="protectedapp-guard" />
+</AttributeMap>
