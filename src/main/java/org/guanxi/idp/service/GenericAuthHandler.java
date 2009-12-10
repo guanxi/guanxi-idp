@@ -45,13 +45,13 @@ public abstract class GenericAuthHandler extends HandlerInterceptorAdapter imple
   /** The IdP's config */
   protected IdpDocument.Idp idpConfig = null;
   /** Our logger */
-  protected static final Logger logger = Logger.getLogger(AuthHandler.class.getName());
+  protected static final Logger logger = Logger.getLogger(GenericAuthHandler.class.getName());
   /** The error page to use */
   private String errorPage = null;
   /** The authenticator to use */
   private Authenticator authenticator = null;
   /** The localised messages */
-  private MessageSource messageSource = null;
+  protected MessageSource messageSource = null;
   /** The factory to use to create new GuanxiPrincipal objects */
   private GuanxiPrincipalFactory gxPrincipalFactory = null;
   /** The URL for the authentication form\s action */
