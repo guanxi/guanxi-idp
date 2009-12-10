@@ -13,9 +13,13 @@
     <property name="entityVerifier"><ref bean="shibbSAML2EntityVerifier" /></property>
     <property name="requiredRequestParams">
       <list>
+        <!-- These come from the SP -->
         <value>SAMLEncoding</value>
         <value>SAMLRequest</value>
         <value>RelayState</value>
+        <!-- These come from this auth handler -->
+        <value>entityID</value>
+        <value>acsURL</value>
       </list>
     </property>
   </bean>
