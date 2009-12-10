@@ -8,8 +8,10 @@
   <bean id="saml2WebSSOervice"
         class="org.guanxi.idp.service.saml2.WebBrowserSSO"
         init-method="init">
-    <property name="errorView"><value>sso_error</value></property>
-    <property name="responseView"><value>/shibboleth/ists/browser_post_response</value></property>
+    <property name="messages" ref="messageSource"/>
+    <property name="httpPOSTView"><value>/saml2/http-post</value></property>
+    <property name="errorView"><value>message</value></property>
+    <property name="errorViewDisplayVar"><value>message</value></property>
   </bean>
 
   <!-- ********************************************************************************************* -->
