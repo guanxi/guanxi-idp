@@ -12,6 +12,11 @@
     <property name="httpPOSTView"><value>/saml2/http-post</value></property>
     <property name="errorView"><value>message</value></property>
     <property name="errorViewDisplayVar"><value>message</value></property>
+    <property name="attributor">
+      <list>
+        <ref bean="flatFileAttributor" />
+      </list>
+    </property>
   </bean>
 
   <!-- ********************************************************************************************* -->
