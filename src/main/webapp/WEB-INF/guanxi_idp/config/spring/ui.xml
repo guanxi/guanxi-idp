@@ -21,16 +21,22 @@
 
   <!-- Convenience service for publishing friendly URLs. They get mapped here -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <!-- This will redirect the request based on the config in services/url-rewriter.xml -->
     <property name="interceptors">
       <list>
         <ref bean="urlRewriter" />
       </list>
     </property>
 
+    <!-- These controllers are never called as the interceptor gets there first
+         and redirects the request to a different URL that is handled by
+         another SimpleUrlHandlerMapping.
+         The URLs here have to match those in services/url-rewriter.xml. -->
     <property name="mappings">
       <props>
         <prop key="SSO">urlRewriter</prop>
         <prop key="AA">urlRewriter</prop>
+        <prop key="WBSSO">urlRewriter</prop>
       </props>
     </property>
   </bean>
