@@ -73,10 +73,10 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
    * wbsso-handler-error-message
    * is present then we must display the error text it contains and go no further.
    * 
-   * @param request
-   * @param response
-   * @return
-   * @throws Exception
+   * @param request Servlet request
+   * @param response Servlet response
+   * @return the view to display
+   * @throws Exception if an error occurs
    */
   public ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
     ModelAndView mAndV = new ModelAndView();
@@ -120,12 +120,12 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
 
     // HTTP POST or HTTP Artifact
 
+    // Assemble the attributes
     UserAttributesDocument attributesDoc = UserAttributesDocument.Factory.newInstance();
     UserAttributesDocument.UserAttributes attributes = attributesDoc.addNewUserAttributes();
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
       attr.getAttributes(gxPrincipal, spProviderId, attributes);
     }
-
     AttributeStatementDocument attrStatementDoc = addAttributesFromFarm(attributesDoc);
 
     // If a user has no attributes we shouldn't add an Assertion or Subject

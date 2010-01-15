@@ -17,7 +17,6 @@
 package org.guanxi.idp.service.saml2;
 
 import org.guanxi.idp.service.GenericAuthHandler;
-import org.guanxi.idp.service.SAML2EntityVerifier;
 import org.guanxi.common.Utils;
 import org.guanxi.common.metadata.SPMetadata;
 import org.guanxi.common.definitions.Guanxi;
@@ -29,7 +28,6 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.IndexedEndpointType;
 import org.apache.xmlbeans.XmlException;
 import org.apache.log4j.Logger;
-import org.springframework.context.MessageSource;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -44,8 +42,6 @@ import java.security.cert.X509Certificate;
 public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
   /** Our logger */
   private static final Logger logger = Logger.getLogger(WebBrowserSSOAuthHandler.class.getName());
-  /** The verifier instance to use to verify the incoming entity */
-  private SAML2EntityVerifier entityVerifier = null;
 
   /**
    * Takes care of authenticating the user and verifying the requesting entity.
@@ -54,11 +50,11 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
    * if entity verification fails. The main handler can then display an message.
    * The handler can assume everything was ok if that attribute is not present.
    * 
-   * @param request
-   * @param response
-   * @param object
-   * @return
-   * @throws Exception
+   * @param request Servlet request
+   * @param response Servlet response
+   * @param object the object!
+   * @return true to continue with the request otherwise false
+   * @throws Exception if an error occurs
    */
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
     String entityID = null;
@@ -134,7 +130,4 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
       return false;
     }
   }
-
-  // Setters
-  public void setEntityVerifier(SAML2EntityVerifier entityVerifier) { this.entityVerifier = entityVerifier; }
 }
