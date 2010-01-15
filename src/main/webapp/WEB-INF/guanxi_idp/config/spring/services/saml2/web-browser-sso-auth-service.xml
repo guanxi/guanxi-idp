@@ -10,7 +10,6 @@
     <property name="messageSource"><ref bean="messageSource"/></property>
     <property name="gxPrincipalFactory"><ref bean="genericGanxiPrincipalFactory" /></property>
     <property name="authFormAction"><value>s2/wbsso</value></property>
-    <property name="entityVerifier"><ref bean="shibbSAML2EntityVerifier" /></property>
     <property name="requiredRequestParams">
       <list>
         <!-- These come from the SP -->
