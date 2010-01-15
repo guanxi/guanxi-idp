@@ -7,8 +7,12 @@
   <bean id="urlRewriter" class="org.guanxi.idp.service.UrlRewriter" init-method="init">
     <property name="urlMaps">
       <map>
+        <!-- Shibboleth -->
         <entry key="SSO" value="/shibb/sso" />
         <entry key="AA" value="/shibb/aa" />
+        
+        <!-- SAML2 -->
+        <entry key="WBSSO" value="/s2/wbsso" />
       </map>
     </property>
   </bean>
