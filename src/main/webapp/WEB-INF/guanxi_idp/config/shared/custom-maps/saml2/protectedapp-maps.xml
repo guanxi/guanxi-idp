@@ -43,7 +43,7 @@
   <map name="saml2:protectedAppFFEmailMapping2"
        attrName="email" attrValue=".*"
        mappedName="${saml2.mail}"
-       friendlyName="#{saml2.mail.friendly.name}"
+       friendlyName="${saml2.mail.friendly.name}"
        mappedValue="alternative email" />
 
   <!-- Persistent attribute -->
