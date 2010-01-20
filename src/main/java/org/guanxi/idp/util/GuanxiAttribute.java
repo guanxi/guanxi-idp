@@ -25,9 +25,14 @@ import java.util.ArrayList;
  * @author alistair
  */
 public class GuanxiAttribute {
+  /** The list of names of the attribute */
   private ArrayList<String> names = null;
+  /** The list of friendly names of the attribute */
   private ArrayList<String> friendlyNames = null;
+  /** The list of values of the attribute */
   private ArrayList<String> values = null;
+  /** Does this attribute have friendly names? This is profile dependent */
+  private boolean hasFriendlyNames = false;
 
   /**
    * Default constructor
@@ -54,6 +59,7 @@ public class GuanxiAttribute {
    */
   public void addFriendlyName(String friendlyName) {
     friendlyNames.add(friendlyName);
+    hasFriendlyNames = true;
   }
 
   /**
@@ -103,6 +109,15 @@ public class GuanxiAttribute {
    */
   public String getValueAtIndex(int index) {
     return values.get(index);
+  }
+
+  /**
+   * Determines whether the attribute has any friendly names
+   *
+   * @return true if it has friendly names, otherwise false
+   */
+  public boolean hasFriendlyNames() {
+    return hasFriendlyNames;
   }
 
   public ArrayList<String> getNames() { return names; }
