@@ -19,23 +19,20 @@ package org.guanxi.idp.farm.attributors;
 import org.apache.log4j.Logger;
 import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.idp.util.AttributeMap;
+import org.guanxi.idp.util.GuanxiAttribute;
 import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.common.GuanxiPrincipal;
-import org.guanxi.common.GuanxiException;
 import org.springframework.web.context.ServletContextAware;
 
 import javax.servlet.ServletContext;
+import java.util.HashMap;
 
 public abstract class SimpleAttributor implements Attributor, ServletContextAware {
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   ServletContext servletContext = null;
   /** Our logger */
   protected Logger logger = null;
-  /** Our ARP engine */
-  protected ARPEngine arpEngine = null;
-  /** Our attribute mapper */
-  protected AttributeMap mapper = null;
   /** The path/name of our own config file */
   protected String attributorConfig = null;
   /** Current status */
@@ -45,12 +42,13 @@ public abstract class SimpleAttributor implements Attributor, ServletContextAwar
    * Passes an attribute name and value through the ARP engine. If the name/value can be
    * released, they will be added to the attributes document.
    *
+   * @param arpEngine the ARP engine to use
    * @param relyingParty the entityID of the entity looking for attributes
    * @param attributeName the name of the attribute
    * @param attributeValue the value of the attribute
    * @param attributes the attributes document that will hold the released attribute
    */
-  protected void arp(String relyingParty, String attributeName, String attributeValue,
+  protected void arp(ARPEngine arpEngine, String relyingParty, String attributeName, String attributeValue,
                      UserAttributesDocument.UserAttributes attributes) {
     // Can we release the original attributes without mapping?
     if (arpEngine.release(relyingParty, attributeName, attributeValue)) {
@@ -68,46 +66,40 @@ public abstract class SimpleAttributor implements Attributor, ServletContextAwar
    * Passes an attribute name and value through the Mapper and ARP engines. If the name/value can be
    * released after being mapped, they will be added to the attributes document.
    *
+   * @param arpEngine the ARP engine to use
+   * @param mapper the profile specific attribute mapper to use
    * @param principal the GuanxiPrincipal for the user who's attributes are being requested
    * @param relyingParty the entityID of the entity looking for attributes
    * @param attributeName the name of the attribute
    * @param attributeValue the value of the attribute
+   * @param attributeSet The complete set of attributes to allow cross referencing when mapping
    * @param attributes the attributes document that will hold the released attribute
    */
-  protected void map(GuanxiPrincipal principal, String relyingParty, String attributeName, String attributeValue,
+  protected void map(ARPEngine arpEngine, AttributeMap mapper, GuanxiPrincipal principal,
+                     String relyingParty, String attributeName, String attributeValue, HashMap<String, String[]> attributeSet,
                      UserAttributesDocument.UserAttributes attributes) {
-    if (mapper.map(principal, relyingParty, attributeName, attributeValue)) {
-      for (int mapCount = 0; mapCount < mapper.getMappedNames().length; mapCount++) {
+    GuanxiAttribute mappedAttribute = mapper.map(principal, relyingParty, attributeName, attributeValue, attributeSet);
+    if (mappedAttribute != null) {
+      for (int mapCount = 0; mapCount < mappedAttribute.getNames().size(); mapCount++) {
         // Release the mapped attribute if appropriate
-        if (arpEngine.release(relyingParty, mapper.getMappedNames()[mapCount],
-                              mapper.getMappedValues()[mapCount])) {
-          String mappedValue = mapper.getMappedValues()[mapCount];
+        if (arpEngine.release(relyingParty, mappedAttribute.getNameAtIndex(mapCount),
+                              mappedAttribute.getValueAtIndex(mapCount))) {
+          String mappedValue = mappedAttribute.getValueAtIndex(mapCount);
 
           AttributorAttribute attribute = attributes.addNewAttribute();
-          attribute.setName(mapper.getMappedNames()[mapCount]);
+          attribute.setName(mappedAttribute.getNameAtIndex(mapCount));
           attribute.setValue(mappedValue);
 
-          logger.debug("Released attribute " + mapper.getMappedNames()[mapCount] +
+          logger.debug("Released attribute " + mappedAttribute.getNameAtIndex(mapCount) +
                     " -> " + mappedValue + " to " + relyingParty);
         }
         else {
-          logger.debug("Attribute release blocked by ARP : " + mapper.getMappedNames()[mapCount] +
+          logger.debug("Attribute release blocked by ARP : " + mappedAttribute.getNameAtIndex(mapCount) +
                     " to " + relyingParty);
         }
       }
     }
   }
-
-  /**
-   * Retrieves attributes for a user from a database
-   *
-   * @param principal GuanxiPrincipal identifying the previously authenticated user
-   * @param relyingParty The providerId of the relying party the attribute are for
-   * @param attributes The document into which to put the attributes
-   * @throws GuanxiException if an error occurs
-   */
-  public abstract void getAttributes(GuanxiPrincipal principal, String relyingParty,
-                                     UserAttributesDocument.UserAttributes attributes) throws GuanxiException;
 
   /**
    * Initialises the subclass
@@ -138,21 +130,5 @@ public abstract class SimpleAttributor implements Attributor, ServletContextAwar
 
   public String getAttributorConfig() {
     return attributorConfig;
-  }
-
-  public void setMapper(AttributeMap mapper) {
-    this.mapper = mapper;
-  }
-
-  public AttributeMap getMapper() {
-    return mapper;
-  }
-
-  public void setArpEngine(ARPEngine arpEngine) {
-    this.arpEngine = arpEngine;
-  }
-
-  public ARPEngine getArpEngine() {
-    return arpEngine;
   }
 }
