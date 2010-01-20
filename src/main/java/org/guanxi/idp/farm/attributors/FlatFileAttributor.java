@@ -19,6 +19,8 @@ package org.guanxi.idp.farm.attributors;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.xal.idp.*;
+import org.guanxi.idp.util.ARPEngine;
+import org.guanxi.idp.util.AttributeMap;
 import org.apache.xmlbeans.XmlException;
 
 import java.io.File;
@@ -49,8 +51,8 @@ public class FlatFileAttributor extends SimpleAttributor {
     }
   }
 
-  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
-  public void getAttributes(GuanxiPrincipal principal, String relyingParty,
+  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.idp.util.ARPEngine , org.guanxi.idp.util.AttributeMap , org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty, ARPEngine arpEngine, AttributeMap mapper,
                             UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     // GuanxiPrincipal is storing their username, put there by the authenticator
     String username = (String)principal.getPrivateProfileDataEntry("username");
@@ -62,34 +64,34 @@ public class FlatFileAttributor extends SimpleAttributor {
         // Load up their attributes from the config file
         UserAttribute[] attrs = users[c].getUserAttributeArray();
 
-        setCurrentUserAttrbiutesInMapper(attrs);
-
         for (int cc=0; cc < attrs.length; cc++) {
           // This is the default name and value for the attribute
           String attrName = attrs[cc].getName();
           String attrValue = attrs[cc].getValue();
 
           // Can we release the original attributes without mapping?
-          arp(relyingParty, attrName, attrValue, attributes);
+          arp(arpEngine, relyingParty, attrName, attrValue, attributes);
 
           // Sort out any mappings. This will change the default name/value if necessary
-          map(principal, relyingParty, attrName, attrValue, attributes);
+          HashMap<String, String[]> packagedAttributes = packageAttributesForMapper(attrs);
+          map(arpEngine, mapper, principal, relyingParty, attrName, attrValue, packagedAttributes, attributes);
         } // for (int cc=0; cc < attrs.length; cc++)
       } // if (users[c].getUsername().equals(username))
     } // for (int c=0; c < users.length; c++)
   }
 
   /**
-   * Passes all the attributes and values for the user to the mapper to
-   * allow cross attribute mapping and referencing.
+   * Packages up all the attributes in a form the mapper can use to
+   * cross reference them when doing the mapping.
    *
    * @param attrs All the attributes for the user
+   * @return HashMap of all the attributes
    */
-  private void setCurrentUserAttrbiutesInMapper(UserAttribute[] attrs) {
+  private HashMap<String, String[]> packageAttributesForMapper(UserAttribute[] attrs) {
     HashMap<String, String[]> attributes = new HashMap<String, String[]>();
     for (int cc=0; cc < attrs.length; cc++) {
       attributes.put(attrs[cc].getName(), new String[]{attrs[cc].getValue()});
     }
-    mapper.setCurrentUserAttributes(attributes);
+    return attributes;
   }
 }

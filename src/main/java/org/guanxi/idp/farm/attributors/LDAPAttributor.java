@@ -19,6 +19,8 @@ package org.guanxi.idp.farm.attributors;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.xal.idp.*;
+import org.guanxi.idp.util.AttributeMap;
+import org.guanxi.idp.util.ARPEngine;
 import org.apache.xmlbeans.XmlException;
 
 import com.novell.ldap.*;
@@ -53,8 +55,8 @@ public class LDAPAttributor extends SimpleAttributor {
     }
   }
 
-  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
-  public void getAttributes(GuanxiPrincipal principal, String relyingParty,
+  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, ARPEngine, AttributeMap, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty, ARPEngine arpEngine, AttributeMap mapper,
                             UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     // Try to get the user's attributes from one of the available servers
     LDAPConnection lc = new LDAPConnection();
@@ -93,8 +95,6 @@ public class LDAPAttributor extends SimpleAttributor {
 
           // Inject the DN into the attribute set in case we need to process it
           attrs.add(new LDAPAttribute("dn", attrGroup.getDN()));
-
-          setCurrentUserAttrbiutesInMapper(attrs);
 
           if (attrs != null) {
             LDAPAttribute attr = null;
@@ -135,10 +135,11 @@ public class LDAPAttributor extends SimpleAttributor {
                   logger.debug("Obtained attribute " + attrName);
 
                   // Can we release the original attributes without mapping?
-                  arp(relyingParty, attrName, attrValue, attributes);
+                  arp(arpEngine, relyingParty, attrName, attrValue, attributes);
 
                   // Sort out any mappings. This will change the default name/value if necessary
-                  map(principal, relyingParty, attrName, attrValue, attributes);
+                  HashMap<String, String[]> packagedAttributes = packageAttributesForMapper(attrs);
+                  map(arpEngine, mapper, principal, relyingParty, attrName, attrValue, packagedAttributes, attributes);
                 } // while (values.hasMoreElements())
               } // if (values != null) {
             } // while (entries.hasNext()) {
@@ -168,12 +169,13 @@ public class LDAPAttributor extends SimpleAttributor {
   }
 
   /**
-   * Passes all the attributes and values for the user to the mapper to
-   * allow cross attribute mapping and referencing.
+   * Packages up all the attributes in a form the mapper can use to
+   * cross reference them when doing the mapping.
    *
    * @param attrs All the LDAP attributes for the user
+   * @return HashMap of all the attributes
    */
-  private void setCurrentUserAttrbiutesInMapper(LDAPAttributeSet attrs) {
+  private HashMap<String, String[]> packageAttributesForMapper(LDAPAttributeSet attrs) {
     HashMap<String, String[]> attributes = new HashMap<String, String[]>();
     LDAPAttribute attr = null;
     Iterator<?> entries = attrs.iterator();
@@ -184,6 +186,6 @@ public class LDAPAttributor extends SimpleAttributor {
         attributes.put(attr.getName(), attrValues);
       }
     }
-    mapper.setCurrentUserAttributes(attributes);
+    return attributes;
   }
 }
