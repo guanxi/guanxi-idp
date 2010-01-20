@@ -26,6 +26,7 @@ import java.util.ArrayList;
  */
 public class GuanxiAttribute {
   private ArrayList<String> names = null;
+  private ArrayList<String> friendlyNames = null;
   private ArrayList<String> values = null;
 
   /**
@@ -33,6 +34,7 @@ public class GuanxiAttribute {
    */
   public GuanxiAttribute() {
     names = new ArrayList<String>();
+    friendlyNames = new ArrayList<String>();
     values = new ArrayList<String>();
   }
 
@@ -43,6 +45,15 @@ public class GuanxiAttribute {
    */
   public void addName(String name) {
     names.add(name);
+  }
+
+  /**
+   * Adds another friendly name for the attribute
+   *
+   * @param friendlyName the name to add
+   */
+  public void addFriendlyName(String friendlyName) {
+    friendlyNames.add(friendlyName);
   }
 
   /**
@@ -72,6 +83,16 @@ public class GuanxiAttribute {
    */
   public String getNameAtIndex(int index) {
     return names.get(index);
+  }
+
+  /**
+   * Retrieves the attribute friendly name based on index
+   *
+   * @param index the index
+   * @return the attribute friendly name
+   */
+  public String getFriendlyNameAtIndex(int index) {
+    return friendlyNames.get(index);
   }
 
   /**
