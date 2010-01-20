@@ -19,9 +19,12 @@ package org.guanxi.idp.farm.attributors;
 import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.idp.util.ARPEngine;
+import org.guanxi.idp.util.AttributeMap;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * <h1>JDBCAttributor</h1>
@@ -57,8 +60,8 @@ public class JDBCAttributor extends SimpleAttributor {
     }
   }
 
-  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
-  public void getAttributes(GuanxiPrincipal principal, String relyingParty,
+  /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.idp.util.ARPEngine , org.guanxi.idp.util.AttributeMap , org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
+  public void getAttributes(GuanxiPrincipal principal, String relyingParty, ARPEngine arpEngine, AttributeMap mapper,
                             UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
     try {
       String userQuery = query.replaceAll("__USERID__", principal.getName());
@@ -77,10 +80,11 @@ public class JDBCAttributor extends SimpleAttributor {
           String attrValue = results.getString(columnName);
 
           // Can we release the original attributes without mapping?
-          arp(relyingParty, attrName, attrValue, attributes);
+          arp(arpEngine, relyingParty, attrName, attrValue, attributes);
 
           // Sort out any mappings. This will change the default name/value if necessary
-          map(principal, relyingParty, attrName, attrValue, attributes);
+          HashMap<String, String[]> packagedAttributes = packageAttributesForMapper();
+          map(arpEngine, mapper, principal, relyingParty, attrName, attrValue, packagedAttributes, attributes);
         }
       }
 
@@ -90,6 +94,16 @@ public class JDBCAttributor extends SimpleAttributor {
     catch(SQLException se) {
       logger.error("Can't query the database", se);
     }
+  }
+
+  /**
+   * Packages up all the attributes in a form the mapper can use to
+   * cross reference them when doing the mapping.
+   *
+   * @return HashMap of all the attributes
+   */
+  private HashMap<String, String[]> packageAttributesForMapper() {
+    return null;
   }
 
   // Setters
