@@ -16,34 +16,58 @@
 
 package org.guanxi.idp.service.saml2;
 
-import org.springframework.web.servlet.mvc.AbstractController;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.context.ServletContextAware;
 import org.springframework.context.MessageSource;
 import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
 import org.guanxi.xal.saml_2_0.protocol.ResponseType;
+import org.guanxi.xal.saml_2_0.protocol.AuthnRequestDocument;
 import org.guanxi.xal.saml_2_0.assertion.*;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.guanxi.xal.saml_2_0.metadata.KeyDescriptorType;
+import org.guanxi.xal.saml_2_0.metadata.KeyTypes;
 import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.xal.idp.AttributorAttribute;
-import org.guanxi.xal.saml_1_0.assertion.NameIdentifierType;
+import org.guanxi.xal.idp.IdpDocument;
+import org.guanxi.xal.w3.xmlenc.EncryptedDataType;
+import org.guanxi.xal.w3.xmlenc.EncryptedDataDocument;
+import org.guanxi.xal.w3.xmldsig.KeyInfoDocument;
+import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.idp.farm.attributors.Attributor;
+import org.guanxi.idp.service.SSOBase;
+import org.guanxi.idp.util.AttributeMap;
+import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
+import org.guanxi.common.GuanxiException;
+import org.guanxi.common.metadata.SPMetadata;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
+import org.guanxi.common.security.SecUtils;
+import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.EduPerson;
 import org.guanxi.common.definitions.SAML;
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Text;
-import org.w3c.dom.Document;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xml.security.encryption.XMLCipher;
+import org.apache.xml.security.encryption.EncryptedKey;
+import org.apache.xml.security.encryption.EncryptedData;
+import org.apache.xml.security.keys.KeyInfo;
+import org.w3c.dom.*;
+import org.bouncycastle.openssl.PEMWriter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.math.BigInteger;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.security.PublicKey;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 
 /**
  * SAML2 Web Browser SSO Single Sign-On Service.
@@ -52,11 +76,7 @@ import java.util.HashMap;
  *
  * @author alistair
  */
-public class WebBrowserSSO extends AbstractController implements ServletContextAware {
-  /** Our logger */
-  private static final Logger logger = Logger.getLogger(WebBrowserSSO.class.getName());
-  /** The localised messages to use */
-  private MessageSource messages = null;
+public class WebBrowserSSO extends SSOBase {
   /** The JSP to use to POST the response to the SP */
   private String httpPOSTView = null;
   /** The JSP to display if an error occurs */
@@ -65,8 +85,10 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
   private String errorViewDisplayVar = null;
   /** The Attributors to use to get attributes */
   private Attributor[] attributor = null;
-
-  public void init() {}
+  /** Our profile specific attribute mapper */
+  protected AttributeMap mapper = null;
+  /** Our ARP engine */
+  protected ARPEngine arpEngine = null;
 
   /**
    * Handles processing of an AuthnRequest message. If the request attribute:
@@ -81,8 +103,11 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
   public ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
     ModelAndView mAndV = new ModelAndView();
 
+    idpConfig = (IdpDocument.Idp)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
+    loadPersona(request);
+
     GuanxiPrincipal gxPrincipal = (GuanxiPrincipal)request.getAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL);
-    String spProviderId = (String)request.getAttribute("entityID");
+    String spEntityID = (String)request.getAttribute("entityID");
 
     // Display an error message if it exists and go no further
     if (request.getAttribute("wbsso-handler-error-message") != null) {
@@ -92,31 +117,47 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
       return mAndV;
     }
 
+    String requestID = (String)request.getAttribute("requestID");
+
     ResponseDocument responseDoc = ResponseDocument.Factory.newInstance();
     ResponseType wbssoResponse = responseDoc.addNewResponse();
     wbssoResponse.setIssueInstant(Calendar.getInstance());
     Utils.zuluXmlObject(wbssoResponse, 0);
 
-    /*
-    NameIdentifierDocument nameIDDoc = NameIdentifierDocument.Factory.newInstance();
-    NameIdentifierType nameID = nameIDDoc.addNewNameIdentifier();
-    nameID.setNameQualifier("https://idp.test.sgarbh.smo.uhi.ac.uk/shibboleth");
-    nameID.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
-    nameID.setStringValue(gxPrincipal.getUniqueId());
-    */
+    NameIDType issuer = wbssoResponse.addNewIssuer();
+    issuer.setFormat(SAML.URN_SAML2_NAMEID_FORMAT_ENTITY);
+    issuer.setStringValue(idpEntityID);
 
-    NameIDType issuerNameID = NameIDType.Factory.newInstance();
-    issuerNameID.setNameQualifier("https://idp.test.sgarbh.smo.uhi.ac.uk/shibboleth");
-    issuerNameID.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
-    issuerNameID.setStringValue("https://idp.test.sgarbh.smo.uhi.ac.uk/shibboleth");
-
-    // Get a new Assertion ready for the AttributeStatement nodes
     AssertionDocument assertionDoc = AssertionDocument.Factory.newInstance();
     AssertionType assertion = assertionDoc.addNewAssertion();
-    assertion.setIssuer(issuerNameID);
+    assertion.setID(Utils.createNCNameID());
     assertion.setIssueInstant(Calendar.getInstance());
+    assertion.setIssuer(issuer);
     Utils.zuluXmlObject(assertion, 0);
 
+    SubjectType subject = assertion.addNewSubject();
+    SubjectConfirmationType subjectConfirmation = subject.addNewSubjectConfirmation();
+    subjectConfirmation.setMethod(SAML.URN_SAML2_CONFIRMATION_METHOD_BEARER);
+    SubjectConfirmationDataType subjectConfirmationData = subjectConfirmation.addNewSubjectConfirmationData();
+    subjectConfirmationData.setAddress(request.getLocalAddr());
+    subjectConfirmationData.setInResponseTo(requestID);
+    subjectConfirmationData.setNotOnOrAfter(Calendar.getInstance());
+    subjectConfirmationData.setRecipient(spEntityID);
+    Utils.zuluXmlObject(subjectConfirmationData, assertionTimeLimit);
+
+    ConditionsType conditions = assertion.addNewConditions();
+    conditions.setNotBefore(Calendar.getInstance());
+    conditions.setNotOnOrAfter(Calendar.getInstance());
+    AudienceRestrictionType audienceRestriction = conditions.addNewAudienceRestriction();
+    audienceRestriction.addAudience(spEntityID);
+    Utils.zuluXmlObject(conditions, assertionTimeLimit);
+
+    AuthnStatementType authnStatement = assertion.addNewAuthnStatement();
+    authnStatement.setAuthnInstant(Calendar.getInstance());
+    authnStatement.setSessionIndex("");
+    authnStatement.addNewSubjectLocality().setAddress(request.getLocalAddr());
+    authnStatement.addNewAuthnContext().setAuthnContextDeclRef(SAML.URN_SAML2_PASSWORD_PROTECTED_TRANSPORT);
+    Utils.zuluXmlObject(authnStatement, 0);
 
     // HTTP POST or HTTP Artifact
 
@@ -124,14 +165,13 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
     UserAttributesDocument attributesDoc = UserAttributesDocument.Factory.newInstance();
     UserAttributesDocument.UserAttributes attributes = attributesDoc.addNewUserAttributes();
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
-      attr.getAttributes(gxPrincipal, spProviderId, attributes);
+      attr.getAttributes(gxPrincipal, spEntityID, arpEngine, mapper, attributes);
     }
     AttributeStatementDocument attrStatementDoc = addAttributesFromFarm(attributesDoc);
 
     // If a user has no attributes we shouldn't add an Assertion or Subject
     if (attrStatementDoc != null) {
       assertion.setAttributeStatementArray(new AttributeStatementType[] {attrStatementDoc.getAttributeStatement()});
-      wbssoResponse.setAssertionArray(new org.guanxi.xal.saml_2_0.assertion.AssertionType[] {assertion});
     }
 
     // Sort out the namespaces for saving the Response
@@ -146,8 +186,114 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
     xmlOptions.setSaveSuggestedPrefixes(namespaces);
     xmlOptions.setSaveNamespacesFirst();
 
+    // Get the SP's metadata...
+    EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    EntityManager manager = farm.getEntityManagerForID(spEntityID);
+    SPMetadata metadata = (SPMetadata)manager.getMetadata(spEntityID);
+    EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
+
+    // ...and find its encryption key. We'll use this to encrypt the secret key for encrypting the attributes
+    X509Certificate metadataCert = null;
+    PublicKey keyEncryptKey = null;
+    KeyDescriptorType[] keyDescriptors = saml2Metadata.getSPSSODescriptorArray(0).getKeyDescriptorArray();
+    for (KeyDescriptorType keyDescriptor : keyDescriptors) {
+      if (keyDescriptor.getUse().equals(KeyTypes.ENCRYPTION)) {
+        byte[] spCertBytes = keyDescriptor.getKeyInfo().getX509DataArray(0).getX509CertificateArray(0);
+        CertificateFactory certFactory = CertificateFactory.getInstance("x.509");
+        ByteArrayInputStream certByteStream = new ByteArrayInputStream(spCertBytes);
+        metadataCert = (X509Certificate)certFactory.generateCertificate(certByteStream);
+        certByteStream.close();
+        keyEncryptKey = metadataCert.getPublicKey();
+      }
+    }
+
+    // Generate a secret key
+    KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+    keyGenerator.init(128);
+    SecretKey secretKey = keyGenerator.generateKey();
+
+    XMLCipher keyCipher = XMLCipher.getInstance(XMLCipher.RSA_OAEP);
+    keyCipher.init(XMLCipher.WRAP_MODE, keyEncryptKey);
+
+    Document domAssertionDoc = (Document)assertionDoc.newDomNode(xmlOptions);
+    EncryptedKey encryptedKey = keyCipher.encryptKey(domAssertionDoc, secretKey);
+
+    // specify the element to encrypt
+    Element elementToEncrypt = domAssertionDoc.getDocumentElement();
+
+    XMLCipher xmlCipher = XMLCipher.getInstance(XMLCipher.AES_128);
+    xmlCipher.init(XMLCipher.ENCRYPT_MODE, secretKey);
+
+    // add key info to encrypted data element
+    EncryptedData encryptedDataElement = xmlCipher.getEncryptedData();
+    KeyInfo keyInfo = new KeyInfo(domAssertionDoc);
+    keyInfo.add(encryptedKey);
+    encryptedDataElement.setKeyInfo(keyInfo);
+
+    encryptedDataElement.getKeyInfo().getBaseURI();
+
+    // do the actual encryption
+    boolean encryptContentsOnly = false;
+    xmlCipher.doFinal(domAssertionDoc, elementToEncrypt, encryptContentsOnly);
+
+    EncryptedDataDocument encryptedDataDoc = EncryptedDataDocument.Factory.parse(domAssertionDoc);
+    wbssoResponse.addNewEncryptedAssertion().setEncryptedData(encryptedDataDoc.getEncryptedData());
+
+    // Get the config ready for signing
+    SecUtilsConfig secUtilsConfig = new SecUtilsConfig();
+    secUtilsConfig.setKeystoreFile(credsConfig.getKeystoreFile());
+    secUtilsConfig.setKeystorePass(credsConfig.getKeystorePassword());
+    secUtilsConfig.setKeystoreType("JKS");
+    secUtilsConfig.setPrivateKeyAlias(credsConfig.getPrivateKeyAlias());
+    secUtilsConfig.setPrivateKeyPass(credsConfig.getPrivateKeyPassword());
+    secUtilsConfig.setCertificateAlias(credsConfig.getCertificateAlias());
+
+    EncryptedDataType e = responseDoc.getResponse().getEncryptedAssertionArray(0).getEncryptedData();
+    NodeList nodes = e.getKeyInfo().getDomNode().getChildNodes();
+    Node node = null;
+    for (int c=0; c < nodes.getLength(); c++) {
+      node = nodes.item(c);
+      if (node.getLocalName() != null) {
+        if (node.getLocalName().equals("EncryptedKey")) break;
+      }
+    }
+    KeyInfoDocument k = KeyInfoDocument.Factory.newInstance();
+    X509DataType x = k.addNewKeyInfo().addNewX509Data();
+    StringWriter sw = new StringWriter();
+    PEMWriter pemWriter = new PEMWriter(sw);
+    pemWriter.writeObject(metadataCert);
+    pemWriter.close();
+    String s = sw.toString();
+    s = s.replaceAll("-----BEGIN CERTIFICATE-----", "");
+    s = s.replaceAll("-----END CERTIFICATE-----", "");
+    x.addNewX509Certificate().setStringValue(s);
+    node.appendChild(node.getOwnerDocument().importNode(k.getKeyInfo().getDomNode(), true));
+
+    // Break out to DOM land to get the SAML Response signed...
+    Document signedDoc = null;
+    try {
+      // Need to use newDomNode to preserve namespace information
+      signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)responseDoc.newDomNode(xmlOptions), "");
+      // ...and go back to XMLBeans land when it's ready
+      responseDoc = ResponseDocument.Factory.parse(signedDoc);
+    }
+    catch(GuanxiException ge) {
+      logger.error("Could not sign AuthnRequest", ge);
+      mAndV.setViewName(errorView);
+      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+                                                                    null, request.getLocale()));
+      return mAndV;
+    }
+    catch(XmlException xe) {
+      logger.error("Couldn't convert signed AuthnRequest back to XMLBeans", xe);
+      mAndV.setViewName(errorView);
+      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+                                                                    null, request.getLocale()));
+      return mAndV;
+    }
+
     String b64SAMLResponse = Utils.base64((Document)responseDoc.newDomNode(xmlOptions));
-      
+
     // Send the Response to the SP
     request.setAttribute("SAMLResponse", b64SAMLResponse);
     request.setAttribute("RelayState", request.getParameter("RelayState"));
@@ -162,8 +308,8 @@ public class WebBrowserSSO extends AbstractController implements ServletContextA
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
   public void setAttributor(Attributor[] attributor) { this.attributor = attributor; }
-
-
+  public void setMapper(AttributeMap mapper) { this.mapper = mapper; }
+  public void setArpEngine(ARPEngine arpEngine) { this.arpEngine = arpEngine; }
 
 
 
