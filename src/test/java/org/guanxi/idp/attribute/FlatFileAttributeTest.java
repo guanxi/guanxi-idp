@@ -1,8 +1,3 @@
-/* CVS Header
-   $
-   $
-*/
-
 package org.guanxi.idp.attribute;
 
 import org.junit.Test;
@@ -14,6 +9,7 @@ import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.idp.farm.attributors.Attributor;
 import org.guanxi.idp.util.VarEngine;
 import org.guanxi.idp.Paths;
+import org.guanxi.idp.service.shibboleth.AttributeAuthority;
 import org.guanxi.common.GuanxiException;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
@@ -38,12 +34,13 @@ public class FlatFileAttributeTest extends AttributeTest {
 
     Attributor ffAttributor = (Attributor)ctx.getBean("flatFileAttributor");
     ffAttributor.setAttributorConfig(Paths.path("flatfile.xml"));
-    ffAttributor.getArpEngine().setArpFile(Paths.path("arp.xml"));
-    ffAttributor.getArpEngine().init();
-    ffAttributor.init();
-    
+
+    AttributeAuthority aaService = (AttributeAuthority)ctx.getBean("aaService");
+    aaService.getArpEngine().setArpFile(Paths.path("arp.xml"));
+    aaService.getArpEngine().init();
+
     try {
-      ffAttributor.getAttributes(principal, TEST_RELYING_PARTY, attributes);
+      ffAttributor.getAttributes(principal, TEST_RELYING_PARTY, aaService.getArpEngine(), aaService.getMapper(), attributes);
       assertTrue(attributes.getAttributeArray().length > 0);
 
       boolean idEncrypted = false;

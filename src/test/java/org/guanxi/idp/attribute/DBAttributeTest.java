@@ -1,8 +1,3 @@
-/* CVS Header
-   $
-   $
-*/
-
 package org.guanxi.idp.attribute;
 
 import org.junit.Test;
@@ -11,6 +6,7 @@ import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.idp.util.VarEngine;
 import org.guanxi.idp.Paths;
+import org.guanxi.idp.service.shibboleth.AttributeAuthority;
 import org.guanxi.idp.farm.attributors.Attributor;
 import org.guanxi.common.GuanxiException;
 import org.springframework.web.context.support.XmlWebApplicationContext;
@@ -56,15 +52,17 @@ public class DBAttributeTest extends AttributeTest {
     varEngine.init();
 
     Attributor dbAttributor = (Attributor)ctx.getBean("dbAttributor");
-    dbAttributor.getArpEngine().setArpFile(Paths.path("arp.xml"));
-    dbAttributor.getArpEngine().init();
     dbAttributor.init();
+
+    AttributeAuthority aaService = (AttributeAuthority)ctx.getBean("aaService");
+    aaService.getArpEngine().setArpFile(Paths.path("arp.xml"));
+    aaService.getArpEngine().init();
 
     boolean idEncrypted = false;
     boolean email = false;
     
     try {
-      dbAttributor.getAttributes(principal, TEST_RELYING_PARTY, attributes);
+      dbAttributor.getAttributes(principal, TEST_RELYING_PARTY, aaService.getArpEngine(), aaService.getMapper(), attributes);
       assertTrue(attributes.getAttributeArray().length > 0);
       AttributorAttribute[] releasedAttributes = attributes.getAttributeArray();
       for (AttributorAttribute releasedAttribute : releasedAttributes) {
