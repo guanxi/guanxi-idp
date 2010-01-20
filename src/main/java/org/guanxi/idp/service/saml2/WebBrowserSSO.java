@@ -20,7 +20,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.context.MessageSource;
 import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
 import org.guanxi.xal.saml_2_0.protocol.ResponseType;
-import org.guanxi.xal.saml_2_0.protocol.AuthnRequestDocument;
 import org.guanxi.xal.saml_2_0.assertion.*;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.KeyDescriptorType;
@@ -45,8 +44,8 @@ import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.definitions.EduPerson;
 import org.guanxi.common.definitions.SAML;
+import org.guanxi.common.definitions.EduPersonOID;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlException;
@@ -167,7 +166,7 @@ public class WebBrowserSSO extends SSOBase {
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
       attr.getAttributes(gxPrincipal, spEntityID, arpEngine, mapper, attributes);
     }
-    AttributeStatementDocument attrStatementDoc = addAttributesFromFarm(attributesDoc);
+    AttributeStatementDocument attrStatementDoc = addAttributesFromFarm(attributesDoc, spEntityID);
 
     // If a user has no attributes we shouldn't add an Assertion or Subject
     if (attrStatementDoc != null) {
@@ -313,7 +312,7 @@ public class WebBrowserSSO extends SSOBase {
 
 
 
-  private AttributeStatementDocument addAttributesFromFarm(UserAttributesDocument guanxiAttrFarmOutput) {
+  private AttributeStatementDocument addAttributesFromFarm(UserAttributesDocument guanxiAttrFarmOutput, String spEntityID) {
     AttributeStatementDocument attrStatementDoc = AttributeStatementDocument.Factory.newInstance();
     AttributeStatementType attrStatement = attrStatementDoc.addNewAttributeStatement();
 
@@ -337,33 +336,28 @@ public class WebBrowserSSO extends SSOBase {
       // New attribute, not yet processed
       if (attribute == null) {
         attribute = attrStatement.addNewAttribute();
-        attribute.setName(attributorAttr.getName());
-        //attribute.setAttributeNamespace(Shibboleth.NS_ATTRIBUTES);
+        attribute.setName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + attributorAttr.getName());
+        attribute.setFriendlyName(attributorAttr.getFriendlyName());
+        attribute.setNameFormat(SAML.SAML2_ATTRIBUTE_NAME_FORMAT_URI);
       }
 
       XmlObject attrValue = attribute.addNewAttributeValue();
 
       // Deal with scoped eduPerson attributes
-      if  ((attribute.getName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
-           (attribute.getName().equals(EduPerson.EDUPERSON_TARGETED_ID))) {
-        // Check if the scope is present...
-        if (!attributorAttr.getValue().contains(EduPerson.EDUPERSON_SCOPED_DELIMITER)) {
-          // ...if not, add the error scope
-          logger.error(attribute.getName() + " has no scope, adding " + EduPerson.EDUPERSON_NO_SCOPE_DEFINED);
-          attributorAttr.setValue(attributorAttr.getValue() + EduPerson.EDUPERSON_SCOPED_DELIMITER + EduPerson.EDUPERSON_NO_SCOPE_DEFINED);
-        }
-        String[] parts = attributorAttr.getValue().split(EduPerson.EDUPERSON_SCOPED_DELIMITER);
-        Attr scopeAttribute = attrValue.getDomNode().getOwnerDocument().createAttribute(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE);
-        scopeAttribute.setValue(parts[1]);
-        attrValue.getDomNode().getAttributes().setNamedItem(scopeAttribute);
-        Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(parts[0]);
-        attrValue.getDomNode().appendChild(valueNode);
+      if (attribute.getName().equals(EduPersonOID.ATTRIBUTE_NAME_PREFIX + EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
+        NameIDDocument nameIDDoc = NameIDDocument.Factory.newInstance();
+        NameIDType nameID = nameIDDoc.addNewNameID();
+        nameID.setFormat(SAML.SAML2_ATTRIBUTE_FORMAT_NAMEID_PERSISTENT);
+        nameID.setNameQualifier(nameQualifier);
+        nameID.setSPNameQualifier(spEntityID);
+        nameID.setStringValue(attributorAttr.getValue());
+
+        attrValue.getDomNode().appendChild(attrValue.getDomNode().getOwnerDocument().importNode(nameID.getDomNode(), true));
       }
       else {
         Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
         attrValue.getDomNode().appendChild(valueNode);
       }
-
     }
 
     if (hasAttrs)
