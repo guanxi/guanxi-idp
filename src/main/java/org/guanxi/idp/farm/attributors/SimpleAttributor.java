@@ -89,6 +89,9 @@ public abstract class SimpleAttributor implements Attributor, ServletContextAwar
           AttributorAttribute attribute = attributes.addNewAttribute();
           attribute.setName(mappedAttribute.getNameAtIndex(mapCount));
           attribute.setValue(mappedValue);
+          if (mappedAttribute.getFriendlyNameAtIndex(mapCount) != null) {
+            attribute.setFriendlyName(mappedAttribute.getFriendlyNameAtIndex(mapCount));
+          }
 
           logger.debug("Released attribute " + mappedAttribute.getNameAtIndex(mapCount) +
                     " -> " + mappedValue + " to " + relyingParty);

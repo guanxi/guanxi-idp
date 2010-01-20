@@ -142,6 +142,9 @@ public class AttributeMap implements ServletContextAware {
                   else
                     mappedAttrName = attrName;
                   mappedAttribute.addName(mappedAttrName);
+                  if (map.getFriendlyName() != null) {
+                    mappedAttribute.addFriendlyName(varEngine.interpolate(map.getFriendlyName()));
+                  }
 
                   // If it's a persistent attribute, see if its value has been persisted already
                   boolean retrievedPersistentAttribute = false;
