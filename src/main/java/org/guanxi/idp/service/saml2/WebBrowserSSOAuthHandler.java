@@ -64,26 +64,30 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
       entityID = requestDoc.getAuthnRequest().getIssuer().getStringValue();
       // Pass the entityID to the service via the login page if required
       request.setAttribute("entityID", entityID);
+      request.setAttribute("requestID", requestDoc.getAuthnRequest().getID());
 
       EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
       manager = farm.getEntityManagerForID(entityID);
 
-      if (TrustUtils.verifySignature(requestDoc)) {
-        X509Certificate[] x509FromSig = new X509Certificate[] {TrustUtils.getX509CertFromSignature(requestDoc.getAuthnRequest().getSignature().getKeyInfo())};
-        if (!manager.getTrustEngine().trustEntity(manager.getMetadata(entityID), x509FromSig)) {
-          logger.info("failed to trust " + entityID);
+      // Verify the signature if there is one
+      if (requestDoc.getAuthnRequest().getSignature() != null) {
+        if (TrustUtils.verifySignature(requestDoc)) {
+          X509Certificate[] x509FromSig = new X509Certificate[] {TrustUtils.getX509CertFromSignature(requestDoc.getAuthnRequest().getSignature().getKeyInfo())};
+          if (!manager.getTrustEngine().trustEntity(manager.getMetadata(entityID), x509FromSig)) {
+            logger.info("failed to trust " + entityID);
+            request.setAttribute("wbsso-handler-error-message",
+                                 messageSource.getMessage("sp.failed.verification",
+                                                          new Object[] {entityID},
+                                                          request.getLocale()));
+          }
+        }
+        else {
+          logger.error("failed to verify signature from " + entityID);
           request.setAttribute("wbsso-handler-error-message",
-                               messageSource.getMessage("sp.failed.verification",
-                                                        new Object[] {entityID},
+                               messageSource.getMessage("sp.signature.verification.failed",
+                                                        null,
                                                         request.getLocale()));
         }
-      }
-      else {
-        logger.error("failed to verify signature from " + entityID);
-        request.setAttribute("wbsso-handler-error-message",
-                             messageSource.getMessage("sp.signature.verification.failed",
-                                                      null,
-                                                      request.getLocale()));
       }
     }
     catch(XmlException xe) {
@@ -95,7 +99,7 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     }
 
     // Entity verification was successful. Now get its attribute consumer URL
-    SPMetadata metadata = (SPMetadata)manager.getMetadata("https://sp.test.sgarbh.smo.uhi.ac.uk/shibboleth");
+    SPMetadata metadata = (SPMetadata)manager.getMetadata(entityID);
     String acsURL = null;
     EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
     IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
