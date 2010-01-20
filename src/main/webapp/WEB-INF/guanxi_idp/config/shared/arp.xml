@@ -15,4 +15,6 @@
        All attributes, both generated and mapped should be listed in bag files before they can be
        referenced from a provider entry. If they are not then they will not be released. -->
   <include arpFile="/WEB-INF/guanxi_idp/config/shared/custom-arps/arp-bags.xml" />
+
+  <include arpFile="/WEB-INF/guanxi_idp/config/shared/custom-arps/arp-bags-saml2.xml" />
 </arp>
