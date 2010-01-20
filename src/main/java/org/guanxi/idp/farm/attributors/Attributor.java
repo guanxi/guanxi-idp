@@ -35,13 +35,18 @@ public interface Attributor {
   public void setAttributorConfig(String attributorConfig);
   public String getAttributorConfig();
 
-  public void setMapper(AttributeMap mapper);
-  public AttributeMap getMapper();
-
-  public void setArpEngine(ARPEngine arpEngine);
-  public ARPEngine getArpEngine();
-
-  public void getAttributes(GuanxiPrincipal principal, String relyingParty, UserAttributesDocument.UserAttributes attributes) throws GuanxiException;
-
   public String getErrorMessage();
+
+  /**
+   * Retrieves attributes for a user from a database
+   *
+   * @param principal GuanxiPrincipal identifying the previously authenticated user
+   * @param relyingParty The providerId of the relying party the attribute are for
+   * @param arpEngine The ARP engine to use
+   * @param mapper The profile specific attribute mapper to use
+   * @param attributes The document into which to put the attributes
+   * @throws GuanxiException if an error occurs
+   */
+  public abstract void getAttributes(GuanxiPrincipal principal, String relyingParty, ARPEngine arpEngine, AttributeMap mapper,
+                                     UserAttributesDocument.UserAttributes attributes) throws GuanxiException;
 }
