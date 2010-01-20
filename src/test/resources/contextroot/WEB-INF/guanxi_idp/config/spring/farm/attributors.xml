@@ -10,13 +10,6 @@
   <!-- Flat file attributor -->
   <bean id="flatFileAttributor" class="org.guanxi.idp.farm.attributors.FlatFileAttributor" init-method="init">
     <property name="attributorConfig"><value>/WEB-INF/guanxi_idp/config/shared/flatfile.xml</value></property>
-    <property name="mapper"><ref bean="attributeMapper"/></property>
-    <property name="arpEngine"><ref bean="ffARPEngine"/></property>
-  </bean>
-
-  <bean id="ffARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
-    <property name="arpFile"><value>/WEB-INF/guanxi_idp/config/shared/arp.xml</value></property>
-    <property name="varEngine"><ref bean="idpVarEngine"/></property>
   </bean>
   <!-- ***************************************************************************** -->
 
@@ -39,18 +32,11 @@
   <!-- ***************************************************************************** -->
   <!-- Database attributor -->
   <bean id="dbAttributor" class="org.guanxi.idp.farm.attributors.JDBCAttributor" init-method="init">
-    <property name="mapper"><ref bean="attributeMapper"/></property>
-    <property name="arpEngine"><ref bean="dbARPEngine"/></property>
     <property name="driverClass"><value>org.apache.derby.jdbc.EmbeddedDriver</value></property>
     <property name="connectionString"><value>jdbc:derby:dbattrtest</value></property>
     <property name="dbUsername"><value>user</value></property>
     <property name="dbPassword"><value>passwd</value></property>
     <property name="query"><value>SELECT * FROM attrs where userid = '__USERID__'</value></property>
-  </bean>
-
-  <bean id="dbARPEngine" class="org.guanxi.idp.util.ARPEngine" scope="prototype" init-method="init">
-    <property name="arpFile"><value>/WEB-INF/guanxi_idp/config/shared/arp.xml</value></property>
-    <property name="varEngine"><ref bean="idpVarEngine"/></property>
   </bean>
   <!-- ***************************************************************************** -->
 
