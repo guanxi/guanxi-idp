@@ -27,4 +27,99 @@
   <var name="local.attribute.group.value" value="heidbangers" />
 
   <var name="protectedGuard" value="protectedapp-guard" />
+
+  <!-- ************************************************************************************* -->
+  <!-- SAML2 Attribute Profile definitions -->
+  <var name="saml2.eduPersonAffiliation" value="1.3.6.1.4.1.5923.1.1.1.1" />
+  <var name="saml2.eduPersonAffiliation.friendly.name" value="eduPersonAffiliation" />
+  <var name="saml2.eduPersonNickname" value="1.3.6.1.4.1.5923.1.1.1.2" />
+  <var name="saml2.eduPersonNickname.friendly.name" value="eduPersonNickname" />
+  <var name="saml2.eduPersonOrgDN" value="1.3.6.1.4.1.5923.1.1.1.3" />
+  <var name="saml2.eduPersonOrgDN.friendly.name" value="eduPersonOrgDN" />
+  <var name="saml2.eduPersonOrgUnitDN" value="1.3.6.1.4.1.5923.1.1.1.4" />
+  <var name="saml2.eduPersonOrgUnitDN.friendly.name" value="eduPersonOrgUnitDN" />
+  <var name="saml2.eduPersonPrimaryAffiliation" value="1.3.6.1.4.1.5923.1.1.1.5" />
+  <var name="saml2.eduPersonPrimaryAffiliation.friendly.name" value="eduPersonPrimaryAffiliation" />
+  <var name="saml2.eduPersonPrincipalName" value="1.3.6.1.4.1.5923.1.1.1.6" />
+  <var name="saml2.eduPersonPrincipalName.friendly.name" value="eduPersonPrincipalName" />
+  <var name="saml2.eduPersonEntitlement" value="1.3.6.1.4.1.5923.1.1.1.7" />
+  <var name="saml2.eduPersonEntitlement.friendly.name" value="eduPersonEntitlement" />
+  <var name="saml2.eduPersonOrgUnitDN" value="1.3.6.1.4.1.5923.1.1.1.8" />
+  <var name="saml2.eduPersonOrgUnitDN.friendly.name" value="eduPersonOrgUnitDN" />
+  <var name="saml2.eduPersonScopedAffiliation" value="1.3.6.1.4.1.5923.1.1.1.9" />
+  <var name="saml2.eduPersonScopedAffiliation.friendly.name" value="eduPersonScopedAffiliation" />
+  <var name="saml2.eduPersonTargetedID" value="1.3.6.1.4.1.5923.1.1.1.10" />
+  <var name="saml2.eduPersonTargetedID.friendly.name" value="eduPersonTargetedID" />
+  <var name="saml2.eduPersonAssurance" value="1.3.6.1.4.1.5923.1.1.1.11" />
+  <var name="saml2.eduPersonAssurance.friendly.name" value="eduPersonAssurance" />
+
+  <var name="saml2.audio" value="0.9.2342.19200300.100.1.55" />
+  <var name="saml2.audio.friendly.name" value="audio" />
+  <var name="saml2.cn" value="2.5.4.3" />
+  <var name="saml2.cn.friendly.name" value="cn" />
+  <var name="saml2.description" value="2.5.4.13" />
+  <var name="saml2.description.friendly.name" value="description" />
+  <var name="saml2.display.name" value="2.16.840.1.113730.3.1.241" />
+  <var name="saml2.display.name.friendly.name" value="displayName" />
+  <var name="saml2.telephone.number" value="2.5.4.23" />
+  <var name="saml2.telephone.number.friendly.name" value="telephoneNumber" />
+  <var name="saml2.given.name" value="2.5.4.42" />
+  <var name="saml2.given.name.friendly.name" value="givenName" />
+  <var name="saml2.home.phone" value="0.9.2342.19200300.100.1.20" />
+  <var name="saml2.home.phone.friendly.name" value="homePhone" />
+  <var name="saml2.home.postal.address" value="0.9.2342.19200300.100.1.39" />
+  <var name="saml2.home.postal.friendly.name" value="homePostal" />
+  <var name="saml2.initials" value="2.5.4.43" />
+  <var name="saml2.initials.friendly.name" value="initials" />
+  <var name="saml2.jpeg.photo" value="0.9.2342.19200300.100.1.60" />
+  <var name="saml2.jpeg.photo.friendly.name" value="jpegPhoto" />
+  <var name="saml2.l" value="2.5.4.7" />
+  <var name="saml2.l.friendly.name" value="l" />
+  <var name="saml2.labelled.uri" value="1.3.6.1.4.1.250.1.57" />
+  <var name="saml2.labelled.uri.friendly.name" value="labelledUri" />
+  <var name="saml2.mail" value="0.9.2342.19200300.100.1.3" />
+  <var name="saml2.mail.friendly.name" value="mail" />
+  <var name="saml2.manager" value="0.9.2342.19200300.100.1.10" />
+  <var name="saml2.manager.friendly.name" value="manager" />
+  <var name="saml2.mobile" value="0.9.2342.19200300.100.1.41" />
+  <var name="saml2.mobile.friendly.name" value="mobile" />
+  <var name="saml2.o" value="2.5.4.10" />
+  <var name="saml2.o.friendly.name" value="o" />
+  <var name="saml2.ou" value="2.5.4.11" />
+  <var name="saml2.ou.friendly.name" value="ou" />
+  <var name="saml2.pager" value="0.9.2342.19200300.100.1.42" />
+  <var name="saml2.pager.friendly.name" value="pager" />
+  <var name="saml2.postal.address" value="2.5.4.16" />
+  <var name="saml2.postal.address.friendly.name" value="postalAddress" />
+  <var name="saml2.postal.code" value="2.5.4.17" />
+  <var name="saml2.postal.code.friendly.name" value="postalCode" />
+  <var name="saml2.post.office.box" value="2.5.4.18" />
+  <var name="saml2.post.office.box.friendly.name" value="postOfficeBox" />
+  <var name="saml2.preferred.language" value="2.16.840.1.113730.3.1.39" />
+  <var name="saml2.preferred.language.friendly.name" value="preferredLanguage" />
+  <var name="saml2.see.also" value="2.5.4.34" />
+  <var name="saml2.see.also.friendly.name" value="seeAlso" />
+  <var name="saml2.sn" value="2.5.4.4" />
+  <var name="saml2.sn.friendly.name" value="sn" />
+  <var name="saml2.st" value="2.5.4.8" />
+  <var name="saml2.st.friendly.name" value="st" />
+  <var name="saml2.street" value="2.5.4.9" />
+  <var name="saml2.street.friendly.name" value="street" />
+  <var name="saml2.telephone.number" value="2.5.4.20" />
+  <var name="saml2.telephone.number.friendly.name" value="telephoneNumber" />
+  <var name="saml2.title" value="2.5.4.12" />
+  <var name="saml2.title.friendly.name" value="title" />
+  <var name="saml2.uid" value="0.9.2342.19200300.100.1.1" />
+  <var name="saml2.uid.friendly.name" value="uid" />
+  <var name="saml2.unique.identifier" value="0.9.2342.19200300.100.1.44" />
+  <var name="saml2.unique.identifier.friendly.name" value="uniqueIdentifier" />
+  <var name="saml2.user.certificate" value="2.5.4.36" />
+  <var name="saml2.user.certificate.friendly.name" value="userCertificate" />
+  <var name="saml2.user.password" value="2.5.4.35" />
+  <var name="saml2.user.password.friendly.name" value="userPassword" />
+  <var name="saml2.smime.certificate" value="2.16.840.1.113730.3.1.40" />
+  <var name="saml2.smime.certificate.friendly.name" value="smimeCertificate" />
+  <var name="saml2.x500.unique.identifier" value="2.5.4.45" />
+  <var name="saml2.x500.unique.identifier.friendly.name" value="x500UniqueIdentifier" />
+  <!-- ************************************************************************************* -->
 </vars>
