@@ -45,10 +45,6 @@ public class AttributeMap implements ServletContextAware {
   /** Our provider groupings and mapping rules */
   private Vector<Map> maps = null;
   private Vector<MapProvider> providers = null;
-  /** The new names of the attribute passed to map() */
-  private Vector<String> mappedNames = null;
-  /** The new values of the attribute passed to map() */
-  private Vector<String> mappedValues = null;
   /** The map file to use */
   private String mapFile = null;
   /** The persistence engine to use */
@@ -57,30 +53,16 @@ public class AttributeMap implements ServletContextAware {
   private AttributeRule[] attributeRules = null;
   /** The engine that handles variable interpolation */
   private VarEngine varEngine = null;
-  /** All attributes and their values for the current user */
-  private HashMap<String, String[]> currentUserAttributes = null;
 
   public void init() {
     maps = new Vector<Map>();
     providers = new Vector<MapProvider>();
-    mappedNames = new Vector<String>();
-    mappedValues = new Vector<String>();
 
     try {
       loadMaps(mapFile);
     }
     catch(GuanxiException ge) {
     }
-  }
-
-  /**
-   * Sets the current user attributes for this mapping session. This allows maps to
-   * access the value of other attributes.
-   *
-   * @param currentUserAttributes HashMap of attributes and their values for the user
-   */
-  public void setCurrentUserAttributes(HashMap<String, String[]> currentUserAttributes) {
-    this.currentUserAttributes = currentUserAttributes;
   }
 
   /**
@@ -102,16 +84,18 @@ public class AttributeMap implements ServletContextAware {
    * provider element.
    * @param attrName The name of the attribute to map
    * @param attrValue The value to give the mapped attribute
-   * @return true if the attribute was mapped otherwise false
+   * @param attributeSet The complete set of attributes to allow cross referencing when mapping
+   * @return Attribute object describing the mapped attribute
    */
-  public boolean map(GuanxiPrincipal principal, String spProviderId, String attrName, String attrValue) {
+  public GuanxiAttribute map(GuanxiPrincipal principal, String spProviderId, String attrName, String attrValue, HashMap<String, String[]> attributeSet) {
     int index = -1;
     boolean mapped = false;
     Pattern pattern = null;
     Matcher matcher = null;
+    String mappedAttrName = null;
+    String mappedAttrValue = null;
 
-    mappedNames.clear();
-    mappedValues.clear();
+    GuanxiAttribute mappedAttribute = new GuanxiAttribute();
 
     // Look for provider groups that are either specific to this providerId or wildcard
     for (int providersCount = 0; providersCount < providers.size(); providersCount++) {
@@ -152,16 +136,16 @@ public class AttributeMap implements ServletContextAware {
                   mapped = true;
 
                   // Rename the attribute...
-                  String mappedAttrName = null;
+                  mappedAttrName = null;
                   if (map.getMappedName() != null)
                     mappedAttrName = varEngine.interpolate(map.getMappedName());
                   else
                     mappedAttrName = attrName;
-                  mappedNames.add(mappedAttrName);
+                  mappedAttribute.addName(mappedAttrName);
 
                   // If it's a persistent attribute, see if its value has been persisted already
                   boolean retrievedPersistentAttribute = false;
-                  String mappedAttrValue = null;
+                  mappedAttrValue = null;
                   if (map.getPersistent()) {
                     if (persistenceEngine.attributeExists(principal, spProviderId, mappedAttrName)) {
                       // No interpolation required for database values as they're absolute
@@ -176,7 +160,7 @@ public class AttributeMap implements ServletContextAware {
                       // Are we referencing the value of another attribute?
                       if (map.getMappedValue().startsWith("#")) {
                         String name = varEngine.interpolate(map.getMappedValue().replaceAll("#", ""));
-                        mappedAttrValue = varEngine.interpolate((String)currentUserAttributes.get(name)[0]);
+                        mappedAttrValue = varEngine.interpolate((String)attributeSet.get(name)[0]);
                       }
                       else {
                         mappedAttrValue = varEngine.interpolate(map.getMappedValue());
@@ -186,7 +170,7 @@ public class AttributeMap implements ServletContextAware {
                     else
                       mappedAttrValue = attrValue;
                   }
-                  mappedValues.add(mappedAttrValue);
+                  mappedAttribute.addValue(mappedAttrValue);
 
                   // ...and transform the value if required
                   if ((!map.getPersistent()) || ((map.getPersistent()) && (!retrievedPersistentAttribute))) {
@@ -206,13 +190,13 @@ public class AttributeMap implements ServletContextAware {
                           if (attributeRule.getRuleName().equals(rule)) {
                             String valueToBeModified = null;
                             if (map.getUnique()) {
-                              valueToBeModified = (String)mappedValues.get(index) + spProviderId;
+                              valueToBeModified = (String)mappedAttribute.getValues().get(index) + spProviderId;
                             }
                             else {
-                              valueToBeModified = (String)mappedValues.get(index);
+                              valueToBeModified = (String)mappedAttribute.getValues().get(index);
                             }
-                            mappedAttrValue = attributeRule.applyRule((String)mappedNames.get(index), valueToBeModified);
-                            mappedValues.set(index, mappedAttrValue);
+                            mappedAttrValue = attributeRule.applyRule((String)mappedAttribute.getNames().get(index), valueToBeModified);
+                            mappedAttribute.setValue(index, mappedAttrValue);
                           }
                         }
                       }
@@ -226,7 +210,7 @@ public class AttributeMap implements ServletContextAware {
 
                   // Finally, scope the attribute if required
                   if (map.getScope() != null) {
-                    mappedValues.set(index, mappedAttrValue + "@" + varEngine.interpolate(map.getScope()));
+                    mappedAttribute.setValue(index, mappedAttrValue + "@" + varEngine.interpolate(map.getScope()));
                   }
 
                   //return true;
@@ -239,27 +223,12 @@ public class AttributeMap implements ServletContextAware {
     } // for (int providersCount = 0; providersCount < providers.size(); providersCount++)
 
     // No mappings found for the attribute
-    return mapped;
-  }
-
-  /**
-   * Retrieves the new name of the attribute passed to the map method
-   *
-   * @return the new name of the attribute passed to the map method
-   * or null if map has not been called or no mappings were found.
-   */
-  public String[] getMappedNames() {
-    return (String[])mappedNames.toArray(new String[mappedNames.size()]);
-  }
-
-  /**
-   * Retrieves the new value of the attribute passed to the map method
-   *
-   * @return the new value of the attribute passed to the map method
-   * or null if map has not been called or no mappings were found.
-   */
-  public String[] getMappedValues() {
-    return (String[])mappedValues.toArray(new String[mappedValues.size()]);
+    if (mapped) {
+      return mappedAttribute;
+    }
+    else {
+      return null;
+    }
   }
 
   /**
