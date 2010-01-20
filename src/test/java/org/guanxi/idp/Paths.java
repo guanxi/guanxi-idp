@@ -31,6 +31,7 @@ public class Paths {
       paths.put("vars.xml", new File(Paths.class.getResource(ROOT + "/shared/vars.xml").getPath()).getCanonicalPath());
       paths.put("arp.xml", new File(Paths.class.getResource(ROOT + "/shared/arp.xml").getPath()).getCanonicalPath());
       paths.put("flatfile.xml", new File(Paths.class.getResource(ROOT + "/shared/flatfile.xml").getPath()).getCanonicalPath());
+      paths.put("saml2map.xml", new File(Paths.class.getResource(ROOT + "/shared/saml2map.xml").getPath()).getCanonicalPath());
     }
     catch(IOException ioe) {
     }
