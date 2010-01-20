@@ -66,6 +66,8 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.soap.Body;
 import org.guanxi.xal.soap.Envelope;
 import org.guanxi.xal.soap.EnvelopeDocument;
+import org.guanxi.idp.util.AttributeMap;
+import org.guanxi.idp.util.ARPEngine;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.w3c.dom.Attr;
@@ -84,10 +86,10 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
   private static final Logger logger = Logger.getLogger(AttributeAuthority.class.getName());
   /** The attributors to use */
   private org.guanxi.idp.farm.attributors.Attributor[] attributor = null;
-
-  public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
-
-  public void setAttributor(org.guanxi.idp.farm.attributors.Attributor[] attributor) { this.attributor = attributor; }
+  /** Our profile specific attribute mapper */
+  protected AttributeMap mapper = null;
+  /** Our ARP engine */
+  protected ARPEngine arpEngine = null;
 
   public void init() throws ServletException {
   }
@@ -244,7 +246,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     UserAttributesDocument attributesDoc = UserAttributesDocument.Factory.newInstance();
     UserAttributesDocument.UserAttributes attributes = attributesDoc.addNewUserAttributes();
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
-      attr.getAttributes(principal, spProviderId, attributes);
+      attr.getAttributes(principal, spProviderId, arpEngine, mapper, attributes);
     }
 
     // Set the Status for the SAML Response
@@ -412,4 +414,14 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     else
       return null;
   }
+
+  // Getters
+  public ARPEngine getArpEngine() { return arpEngine; }
+  public AttributeMap getMapper() { return mapper; }
+
+  // Setters
+  public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
+  public void setAttributor(org.guanxi.idp.farm.attributors.Attributor[] attributor) { this.attributor = attributor; }
+  public void setMapper(AttributeMap mapper) { this.mapper = mapper; }
+  public void setArpEngine(ARPEngine arpEngine) { this.arpEngine = arpEngine; }
 }
