@@ -7,6 +7,8 @@
   <bean id="aaService"
         class="org.guanxi.idp.service.shibboleth.AttributeAuthority"
         init-method="init">
+    <property name="mapper"><ref bean="shibbolethAttributeMapper"/></property>
+    <property name="arpEngine"><ref bean="idpARPEngine"/></property>
     <property name="attributor">
       <list>
         <ref bean="flatFileAttributor" />
