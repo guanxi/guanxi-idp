@@ -23,9 +23,11 @@ public abstract class AttributeTest extends IdPTest {
   @BeforeClass
   public static void initAttributeTest() {
     attributorConfigFiles = new String[] {Paths.path("attributors.xml"),
+                                          Paths.path("arp-engine.xml"),
                                           Paths.path("mapper.xml"),
                                           Paths.path("rules.xml"),
                                           Paths.path("persistence.xml"),
-                                          Paths.path("var-engine.xml")};
+                                          Paths.path("var-engine.xml"),
+                                          Paths.path("aa-service.xml")};
   }
 }
