@@ -8,8 +8,9 @@ import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.idp.farm.attributors.Attributor;
 import org.guanxi.idp.util.VarEngine;
+import org.guanxi.idp.util.AttributeMap;
+import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.idp.Paths;
-import org.guanxi.idp.service.shibboleth.AttributeAuthority;
 import org.guanxi.common.GuanxiException;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
@@ -35,12 +36,11 @@ public class FlatFileAttributeTest extends AttributeTest {
     Attributor ffAttributor = (Attributor)ctx.getBean("flatFileAttributor");
     ffAttributor.setAttributorConfig(Paths.path("flatfile.xml"));
 
-    AttributeAuthority aaService = (AttributeAuthority)ctx.getBean("aaService");
-    aaService.getArpEngine().setArpFile(Paths.path("arp.xml"));
-    aaService.getArpEngine().init();
+    AttributeMap mapper = (AttributeMap)ctx.getBean("shibbolethAttributeMapper");
+    ARPEngine arpEngine = (ARPEngine)ctx.getBean("idpARPEngine");
 
     try {
-      ffAttributor.getAttributes(principal, TEST_RELYING_PARTY, aaService.getArpEngine(), aaService.getMapper(), attributes);
+      ffAttributor.getAttributes(principal, TEST_RELYING_PARTY, arpEngine, mapper, attributes);
       assertTrue(attributes.getAttributeArray().length > 0);
 
       boolean idEncrypted = false;
