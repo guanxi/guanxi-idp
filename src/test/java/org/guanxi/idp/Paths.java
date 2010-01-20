@@ -1,8 +1,3 @@
-/* CVS Header
-   $
-   $
-*/
-
 package org.guanxi.idp;
 
 import java.util.HashMap;
@@ -22,6 +17,7 @@ public class Paths {
       // Spring needs file:// prepended...
       paths.put("servlet.context.home", "file:///" + new File(Paths.class.getResource("/contextroot").getPath()).getCanonicalPath());
       paths.put("attributors.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/farm/attributors.xml").getPath()).getCanonicalPath());
+      paths.put("arp-engine.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/farm/arp.xml").getPath()).getCanonicalPath());
       paths.put("mapper.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/farm/mapper.xml").getPath()).getCanonicalPath());
       paths.put("rules.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/farm/rules.xml").getPath()).getCanonicalPath());
       paths.put("persistence.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/farm/persistence.xml").getPath()).getCanonicalPath());
@@ -29,6 +25,7 @@ public class Paths {
       paths.put("ukFederationMetadataParser.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/application/jobs/ukFederationMetadataParser.xml").getPath()).getCanonicalPath());
       paths.put("entity.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/application/entity.xml").getPath()).getCanonicalPath());
       paths.put("persistence.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/farm/persistence.xml").getPath()).getCanonicalPath());
+      paths.put("aa-service.xml", "file:///" + new File(Paths.class.getResource(ROOT + "/spring/services/shibboleth/aa-service.xml").getPath()).getCanonicalPath());
 
       // ...which breaks XMLBeans!
       paths.put("vars.xml", new File(Paths.class.getResource(ROOT + "/shared/vars.xml").getPath()).getCanonicalPath());
