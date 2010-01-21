@@ -18,36 +18,21 @@ package org.guanxi.idp.service.saml2;
 
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.context.MessageSource;
-import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
-import org.guanxi.xal.saml_2_0.protocol.ResponseType;
+import org.guanxi.xal.saml_2_0.protocol.*;
 import org.guanxi.xal.saml_2_0.assertion.*;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.guanxi.xal.saml_2_0.metadata.KeyDescriptorType;
-import org.guanxi.xal.saml_2_0.metadata.KeyTypes;
 import org.guanxi.xal.idp.UserAttributesDocument;
-import org.guanxi.xal.idp.AttributorAttribute;
 import org.guanxi.xal.idp.IdpDocument;
 import org.guanxi.xal.w3.xmlenc.EncryptedDataType;
 import org.guanxi.xal.w3.xmlenc.EncryptedDataDocument;
 import org.guanxi.xal.w3.xmldsig.KeyInfoDocument;
 import org.guanxi.xal.w3.xmldsig.X509DataType;
-import org.guanxi.idp.farm.attributors.Attributor;
 import org.guanxi.idp.service.SSOBase;
-import org.guanxi.idp.util.AttributeMap;
-import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.metadata.SPMetadata;
-import org.guanxi.common.entity.EntityFarm;
-import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.security.SecUtils;
-import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.SAML;
-import org.guanxi.common.definitions.EduPersonOID;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.EncryptedKey;
@@ -61,11 +46,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.security.PublicKey;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
 /**
@@ -82,12 +64,6 @@ public class WebBrowserSSO extends SSOBase {
   private String errorView = null;
   /** The request attribute that holds the error message for the error view */
   private String errorViewDisplayVar = null;
-  /** The Attributors to use to get attributes */
-  private Attributor[] attributor = null;
-  /** Our profile specific attribute mapper */
-  protected AttributeMap mapper = null;
-  /** Our ARP engine */
-  protected ARPEngine arpEngine = null;
 
   /**
    * Handles processing of an AuthnRequest message. If the request attribute:
@@ -116,17 +92,28 @@ public class WebBrowserSSO extends SSOBase {
       return mAndV;
     }
 
+    // We need this for reference in the Response
     String requestID = (String)request.getAttribute("requestID");
 
+    // Response
     ResponseDocument responseDoc = ResponseDocument.Factory.newInstance();
     ResponseType wbssoResponse = responseDoc.addNewResponse();
     wbssoResponse.setIssueInstant(Calendar.getInstance());
     Utils.zuluXmlObject(wbssoResponse, 0);
 
+    // Response/Issuer
     NameIDType issuer = wbssoResponse.addNewIssuer();
     issuer.setFormat(SAML.URN_SAML2_NAMEID_FORMAT_ENTITY);
     issuer.setStringValue(idpEntityID);
 
+    // Response/Status
+    StatusDocument statusDoc = StatusDocument.Factory.newInstance();
+    StatusType status = statusDoc.addNewStatus();
+    StatusCodeType topLevelStatusCode = status.addNewStatusCode();
+    topLevelStatusCode.setValue(SAML.SAML2_STATUS_SUCCESS);
+    wbssoResponse.setStatus(status);
+
+    // Response/Assertion
     AssertionDocument assertionDoc = AssertionDocument.Factory.newInstance();
     AssertionType assertion = assertionDoc.addNewAssertion();
     assertion.setID(Utils.createNCNameID());
@@ -134,6 +121,7 @@ public class WebBrowserSSO extends SSOBase {
     assertion.setIssuer(issuer);
     Utils.zuluXmlObject(assertion, 0);
 
+    // Response/Assertion/Subject
     SubjectType subject = assertion.addNewSubject();
     SubjectConfirmationType subjectConfirmation = subject.addNewSubjectConfirmation();
     subjectConfirmation.setMethod(SAML.URN_SAML2_CONFIRMATION_METHOD_BEARER);
@@ -144,6 +132,7 @@ public class WebBrowserSSO extends SSOBase {
     subjectConfirmationData.setRecipient(spEntityID);
     Utils.zuluXmlObject(subjectConfirmationData, assertionTimeLimit);
 
+    // Response/Assertion/Conditions
     ConditionsType conditions = assertion.addNewConditions();
     conditions.setNotBefore(Calendar.getInstance());
     conditions.setNotOnOrAfter(Calendar.getInstance());
@@ -151,6 +140,7 @@ public class WebBrowserSSO extends SSOBase {
     audienceRestriction.addAudience(spEntityID);
     Utils.zuluXmlObject(conditions, assertionTimeLimit);
 
+    // Response/Assertion/AuthnStatement
     AuthnStatementType authnStatement = assertion.addNewAuthnStatement();
     authnStatement.setAuthnInstant(Calendar.getInstance());
     authnStatement.setSessionIndex("");
@@ -158,53 +148,26 @@ public class WebBrowserSSO extends SSOBase {
     authnStatement.addNewAuthnContext().setAuthnContextDeclRef(SAML.URN_SAML2_PASSWORD_PROTECTED_TRANSPORT);
     Utils.zuluXmlObject(authnStatement, 0);
 
-    // HTTP POST or HTTP Artifact
-
     // Assemble the attributes
     UserAttributesDocument attributesDoc = UserAttributesDocument.Factory.newInstance();
     UserAttributesDocument.UserAttributes attributes = attributesDoc.addNewUserAttributes();
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
       attr.getAttributes(gxPrincipal, spEntityID, arpEngine, mapper, attributes);
     }
-    AttributeStatementDocument attrStatementDoc = addAttributesFromFarm(attributesDoc, spEntityID);
+    AttributeStatementDocument attrStatementDoc = getSAML2AttributeStatementFromFarm(attributesDoc, spEntityID);
 
     // If a user has no attributes we shouldn't add an Assertion or Subject
     if (attrStatementDoc != null) {
+      // Response/Assertion/AttributeStatement
       assertion.setAttributeStatementArray(new AttributeStatementType[] {attrStatementDoc.getAttributeStatement()});
     }
 
     // Sort out the namespaces for saving the Response
-    HashMap<String, String> namespaces = new HashMap<String, String>();
-    namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
-    namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
-    XmlOptions xmlOptions = new XmlOptions();
-    xmlOptions.setSavePrettyPrint();
-    xmlOptions.setSavePrettyPrintIndent(2);
-    xmlOptions.setUseDefaultNamespace();
-    xmlOptions.setSaveAggressiveNamespaces();
-    xmlOptions.setSaveSuggestedPrefixes(namespaces);
-    xmlOptions.setSaveNamespacesFirst();
+    xmlOptions.setSaveSuggestedPrefixes(saml2Namespaces);
 
-    // Get the SP's metadata...
-    EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
-    EntityManager manager = farm.getEntityManagerForID(spEntityID);
-    SPMetadata metadata = (SPMetadata)manager.getMetadata(spEntityID);
-    EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
-
-    // ...and find its encryption key. We'll use this to encrypt the secret key for encrypting the attributes
-    X509Certificate metadataCert = null;
-    PublicKey keyEncryptKey = null;
-    KeyDescriptorType[] keyDescriptors = saml2Metadata.getSPSSODescriptorArray(0).getKeyDescriptorArray();
-    for (KeyDescriptorType keyDescriptor : keyDescriptors) {
-      if (keyDescriptor.getUse().equals(KeyTypes.ENCRYPTION)) {
-        byte[] spCertBytes = keyDescriptor.getKeyInfo().getX509DataArray(0).getX509CertificateArray(0);
-        CertificateFactory certFactory = CertificateFactory.getInstance("x.509");
-        ByteArrayInputStream certByteStream = new ByteArrayInputStream(spCertBytes);
-        metadataCert = (X509Certificate)certFactory.generateCertificate(certByteStream);
-        certByteStream.close();
-        keyEncryptKey = metadataCert.getPublicKey();
-      }
-    }
+    // Get the SP's encryption key. We'll use this to encrypt the secret key for encrypting the attributes
+    X509Certificate encryptionCert = getX509CertFromMetadata(getSPMetadata(spEntityID), ENTITY_SP, ENCRYPTION_CERT);
+    PublicKey keyEncryptKey = encryptionCert.getPublicKey();
 
     // Generate a secret key
     KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
@@ -217,56 +180,54 @@ public class WebBrowserSSO extends SSOBase {
     Document domAssertionDoc = (Document)assertionDoc.newDomNode(xmlOptions);
     EncryptedKey encryptedKey = keyCipher.encryptKey(domAssertionDoc, secretKey);
 
-    // specify the element to encrypt
     Element elementToEncrypt = domAssertionDoc.getDocumentElement();
 
     XMLCipher xmlCipher = XMLCipher.getInstance(XMLCipher.AES_128);
     xmlCipher.init(XMLCipher.ENCRYPT_MODE, secretKey);
 
-    // add key info to encrypted data element
+    // Add KeyInfo to the EncryptedData element
     EncryptedData encryptedDataElement = xmlCipher.getEncryptedData();
     KeyInfo keyInfo = new KeyInfo(domAssertionDoc);
     keyInfo.add(encryptedKey);
     encryptedDataElement.setKeyInfo(keyInfo);
 
-    encryptedDataElement.getKeyInfo().getBaseURI();
+    // Encrypt the assertion
+    xmlCipher.doFinal(domAssertionDoc, elementToEncrypt, false);
 
-    // do the actual encryption
-    boolean encryptContentsOnly = false;
-    xmlCipher.doFinal(domAssertionDoc, elementToEncrypt, encryptContentsOnly);
-
+    // Go back into XMLBeans land...
     EncryptedDataDocument encryptedDataDoc = EncryptedDataDocument.Factory.parse(domAssertionDoc);
+    // ...and add the encrypted assertion to the response
     wbssoResponse.addNewEncryptedAssertion().setEncryptedData(encryptedDataDoc.getEncryptedData());
 
-    // Get the config ready for signing
-    SecUtilsConfig secUtilsConfig = new SecUtilsConfig();
-    secUtilsConfig.setKeystoreFile(credsConfig.getKeystoreFile());
-    secUtilsConfig.setKeystorePass(credsConfig.getKeystorePassword());
-    secUtilsConfig.setKeystoreType("JKS");
-    secUtilsConfig.setPrivateKeyAlias(credsConfig.getPrivateKeyAlias());
-    secUtilsConfig.setPrivateKeyPass(credsConfig.getPrivateKeyPassword());
-    secUtilsConfig.setCertificateAlias(credsConfig.getCertificateAlias());
-
-    EncryptedDataType e = responseDoc.getResponse().getEncryptedAssertionArray(0).getEncryptedData();
-    NodeList nodes = e.getKeyInfo().getDomNode().getChildNodes();
-    Node node = null;
+    // Look for the Response/EncryptedAssertion/EncryptedData/KeyInfo/EncryptedKey node...
+    EncryptedDataType encryptedData = responseDoc.getResponse().getEncryptedAssertionArray(0).getEncryptedData();
+    NodeList nodes = encryptedData.getKeyInfo().getDomNode().getChildNodes();
+    Node encryptedKeyNode = null;
     for (int c=0; c < nodes.getLength(); c++) {
-      node = nodes.item(c);
-      if (node.getLocalName() != null) {
-        if (node.getLocalName().equals("EncryptedKey")) break;
+      encryptedKeyNode = nodes.item(c);
+      if (encryptedKeyNode.getLocalName() != null) {
+        if (encryptedKeyNode.getLocalName().equals("EncryptedKey")) break;
       }
     }
-    KeyInfoDocument k = KeyInfoDocument.Factory.newInstance();
-    X509DataType x = k.addNewKeyInfo().addNewX509Data();
+
+    // ...get a new KeyInfo ready...
+    KeyInfoDocument keyInfoDoc = KeyInfoDocument.Factory.newInstance();
+    X509DataType x509Data = keyInfoDoc.addNewKeyInfo().addNewX509Data();
+
+    // ...and a useable version of the SP's encryption certificate...
     StringWriter sw = new StringWriter();
     PEMWriter pemWriter = new PEMWriter(sw);
-    pemWriter.writeObject(metadataCert);
+    pemWriter.writeObject(encryptionCert);
     pemWriter.close();
-    String s = sw.toString();
-    s = s.replaceAll("-----BEGIN CERTIFICATE-----", "");
-    s = s.replaceAll("-----END CERTIFICATE-----", "");
-    x.addNewX509Certificate().setStringValue(s);
-    node.appendChild(node.getOwnerDocument().importNode(k.getKeyInfo().getDomNode(), true));
+    String x509 = sw.toString();
+    x509 = x509.replaceAll("-----BEGIN CERTIFICATE-----", "");
+    x509 = x509.replaceAll("-----END CERTIFICATE-----", "");
+
+    // ...add the encryption cert to the new KeyInfo...
+    x509Data.addNewX509Certificate().setStringValue(x509);
+
+    // ...and insert it into Response/EncryptedAssertion/EncryptedData/KeyInfo/EncryptedKey
+    encryptedKeyNode.appendChild(encryptedKeyNode.getOwnerDocument().importNode(keyInfoDoc.getKeyInfo().getDomNode(), true));
 
     // Break out to DOM land to get the SAML Response signed...
     Document signedDoc = null;
@@ -291,6 +252,7 @@ public class WebBrowserSSO extends SSOBase {
       return mAndV;
     }
 
+    // Base64 encode the response
     String b64SAMLResponse = Utils.base64((Document)responseDoc.newDomNode(xmlOptions));
 
     // Send the Response to the SP
@@ -306,64 +268,4 @@ public class WebBrowserSSO extends SSOBase {
   public void setHttpPOSTView(String httpPOSTView) { this.httpPOSTView = httpPOSTView; }
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
-  public void setAttributor(Attributor[] attributor) { this.attributor = attributor; }
-  public void setMapper(AttributeMap mapper) { this.mapper = mapper; }
-  public void setArpEngine(ARPEngine arpEngine) { this.arpEngine = arpEngine; }
-
-
-
-  private AttributeStatementDocument addAttributesFromFarm(UserAttributesDocument guanxiAttrFarmOutput, String spEntityID) {
-    AttributeStatementDocument attrStatementDoc = AttributeStatementDocument.Factory.newInstance();
-    AttributeStatementType attrStatement = attrStatementDoc.addNewAttributeStatement();
-
-    boolean hasAttrs = false;
-    for (int c=0; c < guanxiAttrFarmOutput.getUserAttributes().getAttributeArray().length; c++) {
-      hasAttrs = true;
-
-      AttributorAttribute attributorAttr = guanxiAttrFarmOutput.getUserAttributes().getAttributeArray(c);
-
-      // Has the attribute already been processed? i.e. does it have multiple values?
-      AttributeType attribute = null;
-      AttributeType[] existingAttrs = attrStatement.getAttributeArray();
-      if (existingAttrs != null) {
-        for (int cc=0; cc < existingAttrs.length; cc++) {
-          if (existingAttrs[cc].getName().equals(attributorAttr.getName())) {
-            attribute = existingAttrs[cc];
-          }
-        }
-      }
-
-      // New attribute, not yet processed
-      if (attribute == null) {
-        attribute = attrStatement.addNewAttribute();
-        attribute.setName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + attributorAttr.getName());
-        attribute.setFriendlyName(attributorAttr.getFriendlyName());
-        attribute.setNameFormat(SAML.SAML2_ATTRIBUTE_NAME_FORMAT_URI);
-      }
-
-      XmlObject attrValue = attribute.addNewAttributeValue();
-
-      // Deal with scoped eduPerson attributes
-      if (attribute.getName().equals(EduPersonOID.ATTRIBUTE_NAME_PREFIX + EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
-        NameIDDocument nameIDDoc = NameIDDocument.Factory.newInstance();
-        NameIDType nameID = nameIDDoc.addNewNameID();
-        nameID.setFormat(SAML.SAML2_ATTRIBUTE_FORMAT_NAMEID_PERSISTENT);
-        nameID.setNameQualifier(nameQualifier);
-        nameID.setSPNameQualifier(spEntityID);
-        nameID.setStringValue(attributorAttr.getValue());
-
-        attrValue.getDomNode().appendChild(attrValue.getDomNode().getOwnerDocument().importNode(nameID.getDomNode(), true));
-      }
-      else {
-        Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
-        attrValue.getDomNode().appendChild(valueNode);
-      }
-    }
-
-    if (hasAttrs)
-      return attrStatementDoc;
-    else
-      return null;
-  }
-
 }
