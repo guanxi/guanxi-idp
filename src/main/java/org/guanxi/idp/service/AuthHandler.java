@@ -44,6 +44,8 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
  */
 public class AuthHandler extends HandlerInterceptorAdapter implements ServletContextAware {
   /** The name of the request attribute that the form action will be stored under */
+  public static final String FORM_METHOD_ATTRIBUTE = "FORM_METHOD_ATTRIBUTE";
+  /** The name of the request attribute that the form action will be stored under */
   public static final String FORM_ACTION_ATTRIBUTE = "FORM_ACTION_ATTRIBUTE";
   /** When passing required parameters to the authenticator page, the request attributes
    *  will be prefixed by this.
