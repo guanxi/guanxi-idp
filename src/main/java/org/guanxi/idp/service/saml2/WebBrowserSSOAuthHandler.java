@@ -59,8 +59,23 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
     String entityID = null;
     EntityManager manager = null;
+    String binding = null;
+
     try {
-      AuthnRequestDocument requestDoc = AuthnRequestDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLRequest"))));
+      AuthnRequestDocument requestDoc = null;
+      if (request.getMethod().equalsIgnoreCase("post")) {
+        // HTTP-POST binding means a base64 encoded SAML Request
+        requestDoc = AuthnRequestDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLRequest"))));
+        binding = "HTTP-POST";
+      }
+      else {
+        // HTTP-Redirect binding means a base64 encoded deflated SAML Request
+        String decodedRequest = Utils.decodeBase64(request.getParameter("SAMLRequest"));
+        requestDoc = AuthnRequestDocument.Factory.parse(Utils.inflate(decodedRequest, Utils.RFC1951_NO_WRAP));
+        binding = "HTTP-Redirect";
+      }
+      request.setAttribute("binding", binding);
+
       entityID = requestDoc.getAuthnRequest().getIssuer().getStringValue();
       // Pass the entityID to the service via the login page if required
       request.setAttribute("entityID", entityID);
@@ -103,8 +118,15 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     String acsURL = null;
     EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
     IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
+    String bindingURN = null;
+    if (binding.equals("HTTP-POST")) {
+      bindingURN = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST";
+    }
+    else if (binding.equals("HTTP-Redirect")) {
+      bindingURN = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
+    }
     for (IndexedEndpointType acs : acss) {
-      if (acs.getBinding().equalsIgnoreCase("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST")) {
+      if (acs.getBinding().equalsIgnoreCase(bindingURN)) {
         acsURL = acs.getLocation();
       }
     }

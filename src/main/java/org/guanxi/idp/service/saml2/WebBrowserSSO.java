@@ -49,6 +49,7 @@ import java.util.Calendar;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.io.StringWriter;
+import java.net.URLEncoder;
 
 /**
  * SAML2 Web Browser SSO Single Sign-On Service.
@@ -60,6 +61,8 @@ import java.io.StringWriter;
 public class WebBrowserSSO extends SSOBase {
   /** The JSP to use to POST the response to the SP */
   private String httpPOSTView = null;
+  /** The JSP to use to GET the response to the SP */
+  private String httpRedirectView = null;
   /** The JSP to display if an error occurs */
   private String errorView = null;
   /** The request attribute that holds the error message for the error view */
@@ -230,35 +233,47 @@ public class WebBrowserSSO extends SSOBase {
     encryptedKeyNode.appendChild(encryptedKeyNode.getOwnerDocument().importNode(keyInfoDoc.getKeyInfo().getDomNode(), true));
 
     // Break out to DOM land to get the SAML Response signed...
-    Document signedDoc = null;
-    try {
-      // Need to use newDomNode to preserve namespace information
-      signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)responseDoc.newDomNode(xmlOptions), "");
-      // ...and go back to XMLBeans land when it's ready
-      responseDoc = ResponseDocument.Factory.parse(signedDoc);
-    }
-    catch(GuanxiException ge) {
-      logger.error("Could not sign AuthnRequest", ge);
-      mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
-                                                                    null, request.getLocale()));
-      return mAndV;
-    }
-    catch(XmlException xe) {
-      logger.error("Couldn't convert signed AuthnRequest back to XMLBeans", xe);
-      mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
-                                                                    null, request.getLocale()));
-      return mAndV;
+    if (request.getAttribute("binding").equals("HTTP-POST")) {
+      Document signedDoc = null;
+      try {
+        // Need to use newDomNode to preserve namespace information
+        signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)responseDoc.newDomNode(xmlOptions), "");
+        // ...and go back to XMLBeans land when it's ready
+        responseDoc = ResponseDocument.Factory.parse(signedDoc);
+      }
+      catch(GuanxiException ge) {
+        logger.error("Could not sign AuthnRequest", ge);
+        mAndV.setViewName(errorView);
+        mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+                                                                      null, request.getLocale()));
+        return mAndV;
+      }
+      catch(XmlException xe) {
+        logger.error("Couldn't convert signed AuthnRequest back to XMLBeans", xe);
+        mAndV.setViewName(errorView);
+        mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+                                                                      null, request.getLocale()));
+        return mAndV;
+      }
     }
 
-    // Base64 encode the response
-    String b64SAMLResponse = Utils.base64((Document)responseDoc.newDomNode(xmlOptions));
+    // Do the profile quickstep
+    String b64SAMLResponse = null;
+    if (request.getAttribute("binding").equals("HTTP-POST")) {
+      b64SAMLResponse = Utils.base64((Document)responseDoc.newDomNode(xmlOptions));
+      mAndV.setViewName(httpPOSTView);
+    }
+    else if (request.getAttribute("binding").equals("HTTP-Redirect")) {
+      String deflatedResponse = Utils.deflate(responseDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
+      b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
+      b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
+      b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
+      mAndV.setViewName(httpRedirectView);
+    }
 
     // Send the Response to the SP
     request.setAttribute("SAMLResponse", b64SAMLResponse);
     request.setAttribute("RelayState", request.getParameter("RelayState"));
-    mAndV.setViewName(httpPOSTView);
     mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
     return mAndV;
   }
@@ -266,6 +281,7 @@ public class WebBrowserSSO extends SSOBase {
   // Setters
   public void setMessages(MessageSource messages) { this.messages = messages; }
   public void setHttpPOSTView(String httpPOSTView) { this.httpPOSTView = httpPOSTView; }
+  public void setHttpRedirectView(String httpRedirectView) { this.httpRedirectView = httpRedirectView; }
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
 }
