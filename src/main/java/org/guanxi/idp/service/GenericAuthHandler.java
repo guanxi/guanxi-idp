@@ -35,6 +35,8 @@ import java.util.List;
 
 public abstract class GenericAuthHandler extends HandlerInterceptorAdapter implements ServletContextAware {
   /** The name of the request attribute that the form action will be stored under */
+  public static final String FORM_METHOD_ATTRIBUTE = "FORM_METHOD_ATTRIBUTE";
+  /** The name of the request attribute that the form action will be stored under */
   public static final String FORM_ACTION_ATTRIBUTE = "FORM_ACTION_ATTRIBUTE";
   /** When passing required parameters to the authenticator page, the request attributes
    *  will be prefixed by this.
@@ -165,6 +167,18 @@ public abstract class GenericAuthHandler extends HandlerInterceptorAdapter imple
    * @param request Standard HttpServletRequest
    */
   protected void addRequiredParamsAsPrefixedAttributes(HttpServletRequest request) {
+    if (request.getAttribute("binding") != null) {
+      if (request.getAttribute("binding").equals("HTTP-POST")) {
+        request.setAttribute(FORM_METHOD_ATTRIBUTE, "post");
+      }
+      else if (request.getAttribute("binding").equals("HTTP-Redirect")) {
+        request.setAttribute(FORM_METHOD_ATTRIBUTE, "get");
+      }
+    }
+    else {
+      request.setAttribute(FORM_METHOD_ATTRIBUTE, "post");
+    }
+
     request.setAttribute(FORM_ACTION_ATTRIBUTE, authFormAction);
     if (requiredRequestParams != null) {
       for (String param : requiredRequestParams) {
