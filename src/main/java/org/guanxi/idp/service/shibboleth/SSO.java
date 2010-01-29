@@ -353,7 +353,9 @@ public class SSO extends AbstractController implements ServletContextAware {
       signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)samlResponseDoc.newDomNode(xmlOptions), "");
     }
     catch(GuanxiException ge) {
-      logger.error(ge);
+      logger.error("Couldn't sign the Response", ge);
+      mAndV.setViewName(errorView);
+      return mAndV;
     }
 
     try {
