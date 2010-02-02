@@ -259,6 +259,7 @@ public class AuthHandler extends HandlerInterceptorAdapter implements ServletCon
    */
   private void addRequiredParamsAsPrefixedAttributes(HttpServletRequest request) {
     request.setAttribute(FORM_ACTION_ATTRIBUTE, authFormAction);
+    request.setAttribute(FORM_METHOD_ATTRIBUTE, "post");
     if (requiredRequestParams != null) {
       for (String param : requiredRequestParams) {
         request.setAttribute(REQUIRED_PARAM_PREFIX + param, request.getParameter(param));
