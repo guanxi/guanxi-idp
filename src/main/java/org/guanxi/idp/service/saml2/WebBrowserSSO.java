@@ -33,7 +33,6 @@ import org.guanxi.common.GuanxiException;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.SAML;
-import org.apache.xmlbeans.XmlException;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.EncryptedData;
@@ -101,6 +100,9 @@ public class WebBrowserSSO extends SSOBase {
     // Response
     ResponseDocument responseDoc = ResponseDocument.Factory.newInstance();
     ResponseType wbssoResponse = responseDoc.addNewResponse();
+    wbssoResponse.setID(Utils.getUniqueID());
+    wbssoResponse.setVersion("2.0");
+    wbssoResponse.setDestination((String)request.getAttribute("acsURL"));
     wbssoResponse.setIssueInstant(Calendar.getInstance());
     Utils.zuluXmlObject(wbssoResponse, 0);
 
@@ -132,7 +134,7 @@ public class WebBrowserSSO extends SSOBase {
     subjectConfirmationData.setAddress(request.getLocalAddr());
     subjectConfirmationData.setInResponseTo(requestID);
     subjectConfirmationData.setNotOnOrAfter(Calendar.getInstance());
-    subjectConfirmationData.setRecipient(spEntityID);
+    subjectConfirmationData.setRecipient((String)request.getAttribute("acsURL"));
     Utils.zuluXmlObject(subjectConfirmationData, assertionTimeLimit);
 
     // Response/Assertion/Conditions
@@ -233,23 +235,14 @@ public class WebBrowserSSO extends SSOBase {
     encryptedKeyNode.appendChild(encryptedKeyNode.getOwnerDocument().importNode(keyInfoDoc.getKeyInfo().getDomNode(), true));
 
     // Break out to DOM land to get the SAML Response signed...
-    if (request.getAttribute("binding").equals("HTTP-POST")) {
-      Document signedDoc = null;
+    Document signedDoc = null;
+    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
       try {
         // Need to use newDomNode to preserve namespace information
         signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)responseDoc.newDomNode(xmlOptions), "");
-        // ...and go back to XMLBeans land when it's ready
-        responseDoc = ResponseDocument.Factory.parse(signedDoc);
       }
       catch(GuanxiException ge) {
-        logger.error("Could not sign AuthnRequest", ge);
-        mAndV.setViewName(errorView);
-        mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
-                                                                      null, request.getLocale()));
-        return mAndV;
-      }
-      catch(XmlException xe) {
-        logger.error("Couldn't convert signed AuthnRequest back to XMLBeans", xe);
+        logger.error("Could not sign Response", ge);
         mAndV.setViewName(errorView);
         mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
                                                                       null, request.getLocale()));
@@ -257,13 +250,13 @@ public class WebBrowserSSO extends SSOBase {
       }
     }
 
-    // Do the profile quickstep
+    // Do the binding quickstep
     String b64SAMLResponse = null;
-    if (request.getAttribute("binding").equals("HTTP-POST")) {
-      b64SAMLResponse = Utils.base64((Document)responseDoc.newDomNode(xmlOptions));
+    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+      b64SAMLResponse = Utils.base64(signedDoc);
       mAndV.setViewName(httpPOSTView);
     }
-    else if (request.getAttribute("binding").equals("HTTP-Redirect")) {
+    else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
       String deflatedResponse = Utils.deflate(responseDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
       b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
       b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
