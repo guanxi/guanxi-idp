@@ -177,6 +177,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
       return statement.executeQuery(sql);
     }
     catch (SQLException sqle) {
+      logger.error("query failed: " + query);
       throw new GuanxiException(sqle);
     }
   }
@@ -200,6 +201,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
       statement.executeUpdate(insertString);
     }
     catch (SQLException sqle) {
+      logger.error("insert failed: " + insertString);
       throw new GuanxiException(sqle);
     }
   }
@@ -218,6 +220,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
       statement.executeUpdate(updateString);
     }
     catch (SQLException sqle) {
+      logger.error("update failed: " + updateString);
       throw new GuanxiException(sqle);
     }
   }
@@ -234,6 +237,7 @@ public class JDBCPersistenceEngine extends SimplePersistenceEngine {
       statement.executeUpdate(deleteString);
     }
     catch (SQLException sqle) {
+      logger.error("delete failed: " + deleteString);
       throw new GuanxiException(sqle);
     }
   }
