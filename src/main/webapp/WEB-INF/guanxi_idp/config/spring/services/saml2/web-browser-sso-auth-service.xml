@@ -10,6 +10,7 @@
     <property name="messageSource"><ref bean="messageSource"/></property>
     <property name="gxPrincipalFactory"><ref bean="genericGanxiPrincipalFactory" /></property>
     <property name="authFormAction"><value>s2/wbsso</value></property>
+    <property name="defaultResponseBinding"><value>urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST</value></property>
     <property name="requiredRequestParams">
       <list>
         <!-- These come from the SP -->
@@ -17,8 +18,7 @@
         <value>SAMLRequest</value>
         <value>RelayState</value>
         <!-- These come from this auth handler -->
-        <value>entityID</value>
-        <value>acsURL</value>
+        <value>requestBinding</value>
       </list>
     </property>
   </bean>
