@@ -182,7 +182,12 @@ public abstract class GenericAuthHandler extends HandlerInterceptorAdapter imple
     request.setAttribute(FORM_ACTION_ATTRIBUTE, authFormAction);
     if (requiredRequestParams != null) {
       for (String param : requiredRequestParams) {
-        request.setAttribute(REQUIRED_PARAM_PREFIX + param, request.getParameter(param));
+        if (request.getParameter(param) != null) {
+          request.setAttribute(REQUIRED_PARAM_PREFIX + param, request.getParameter(param));
+        }
+        if (request.getAttribute(param) != null) {
+          request.setAttribute(REQUIRED_PARAM_PREFIX + param, request.getAttribute(param));
+        }
       }
     }
   }
