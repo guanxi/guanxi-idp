@@ -16,6 +16,7 @@
 
 package org.guanxi.idp.service.saml2;
 
+import org.guanxi.common.definitions.SAML;
 import org.guanxi.idp.service.GenericAuthHandler;
 import org.guanxi.common.Utils;
 import org.guanxi.common.metadata.SPMetadata;
@@ -42,6 +43,8 @@ import java.security.cert.X509Certificate;
 public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
   /** Our logger */
   private static final Logger logger = Logger.getLogger(WebBrowserSSOAuthHandler.class.getName());
+  /** The default binding to use for the Response if none is specified or there's no endpoint match */
+  private String defaultResponseBinding = null;
 
   /**
    * Takes care of authenticating the user and verifying the requesting entity.
@@ -59,25 +62,46 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
     String entityID = null;
     EntityManager manager = null;
-    String binding = null;
+    String requestBinding = null;
+
+    // Sort out the incoming message encoding
+    String encoding = null;
+    // If requestBinding is there, we've already gone through the auth page via this handler
+    if (request.getParameter("requestBinding") == null) {
+      if (request.getMethod().equalsIgnoreCase("post")) {
+        encoding = "post";
+      }
+      else {
+        encoding = "get";
+      }
+    }
+    else {
+      if (request.getParameter("requestBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+        encoding = "post";
+      }
+      else if (request.getParameter("requestBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
+        encoding = "get";
+      }
+    }
 
     try {
       AuthnRequestDocument requestDoc = null;
-      if (request.getMethod().equalsIgnoreCase("post")) {
+      if (encoding.equals("post")) {
         // HTTP-POST binding means a base64 encoded SAML Request
         requestDoc = AuthnRequestDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLRequest"))));
-        binding = "HTTP-POST";
+        requestBinding = SAML.SAML2_BINDING_HTTP_POST;
       }
       else {
         // HTTP-Redirect binding means a base64 encoded deflated SAML Request
         String decodedRequest = Utils.decodeBase64(request.getParameter("SAMLRequest"));
         requestDoc = AuthnRequestDocument.Factory.parse(Utils.inflate(decodedRequest, Utils.RFC1951_NO_WRAP));
-        binding = "HTTP-Redirect";
+        requestBinding = SAML.SAML2_BINDING_HTTP_REDIRECT;
       }
-      request.setAttribute("binding", binding);
 
       entityID = requestDoc.getAuthnRequest().getIssuer().getStringValue();
+      
       // Pass the entityID to the service via the login page if required
+      request.setAttribute("requestBinding", requestBinding);
       request.setAttribute("entityID", entityID);
       request.setAttribute("requestID", requestDoc.getAuthnRequest().getID());
 
@@ -111,6 +135,7 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
                            messageSource.getMessage("sp.failed.verification",
                                                     new Object[] {entityID},
                                                     request.getLocale()));
+      return true;
     }
 
     // Entity verification was successful. Now get its attribute consumer URL
@@ -118,42 +143,38 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     String acsURL = null;
     EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
     IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
-    String bindingURN = null;
-    if (binding.equals("HTTP-POST")) {
-      bindingURN = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST";
-    }
-    else if (binding.equals("HTTP-Redirect")) {
-      bindingURN = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
-    }
+    String defaultAcsURL = null;
     for (IndexedEndpointType acs : acss) {
-      if (acs.getBinding().equalsIgnoreCase(bindingURN)) {
+      if (acs.getBinding().equalsIgnoreCase(requestBinding)) {
         acsURL = acs.getLocation();
       }
+      // Find the default binding endpoint in case we need it
+      if (acs.getBinding().equalsIgnoreCase(defaultResponseBinding)) {
+        defaultAcsURL = acs.getLocation();
+      }
     }
+
+    // If there's no Response endpoint binding to match the binding used for the Request, use the default
     if (acsURL == null) {
-      logger.error("SP does not support WBSSO" + entityID);
-      request.setAttribute("wbsso-handler-error-message",
-                           messageSource.getMessage("error.profile.not.supported",
-                                                    new Object[] {entityID},
-                                                    request.getLocale()));
+      request.setAttribute("acsURL", defaultAcsURL);
+      request.setAttribute("responseBinding", defaultResponseBinding);
     }
     else {
       request.setAttribute("acsURL", acsURL);
+      request.setAttribute("responseBinding", requestBinding);
     }
 
     // Display the error without going through user authentication
     if (request.getAttribute("wbsso-handler-error-message") != null) {
       return true;
     }
-    
+
     /* Redirects to the authentication page as required. This is to authenticate the user.
      * We'll end up back here after the user has logged in.
      */
-    if (auth(entityID, request, response)) {
-      return true;
-    }
-    else {
-      return false;
-    }
+    return auth(entityID, request, response);
   }
+
+  // Setters
+  public void setDefaultResponseBinding(String defaultResponseBinding) { this.defaultResponseBinding = defaultResponseBinding; }
 }
