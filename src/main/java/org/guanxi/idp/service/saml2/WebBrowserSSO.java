@@ -22,10 +22,6 @@ import org.guanxi.xal.saml_2_0.protocol.*;
 import org.guanxi.xal.saml_2_0.assertion.*;
 import org.guanxi.xal.idp.UserAttributesDocument;
 import org.guanxi.xal.idp.IdpDocument;
-import org.guanxi.xal.w3.xmlenc.EncryptedDataType;
-import org.guanxi.xal.w3.xmlenc.EncryptedDataDocument;
-import org.guanxi.xal.w3.xmldsig.KeyInfoDocument;
-import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.idp.service.SSOBase;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
@@ -33,21 +29,12 @@ import org.guanxi.common.GuanxiException;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.SAML;
-import org.apache.xml.security.encryption.XMLCipher;
-import org.apache.xml.security.encryption.EncryptedKey;
-import org.apache.xml.security.encryption.EncryptedData;
-import org.apache.xml.security.keys.KeyInfo;
 import org.w3c.dom.*;
-import org.bouncycastle.openssl.PEMWriter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import java.util.Calendar;
-import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.io.StringWriter;
 import java.net.URLEncoder;
 
 /**
@@ -124,6 +111,7 @@ public class WebBrowserSSO extends SSOBase {
     assertion.setID(Utils.createNCNameID());
     assertion.setIssueInstant(Calendar.getInstance());
     assertion.setIssuer(issuer);
+    assertion.setVersion("2.0");
     Utils.zuluXmlObject(assertion, 0);
 
     // Response/Assertion/Subject
@@ -172,67 +160,13 @@ public class WebBrowserSSO extends SSOBase {
 
     // Get the SP's encryption key. We'll use this to encrypt the secret key for encrypting the attributes
     X509Certificate encryptionCert = getX509CertFromMetadata(getSPMetadata(spEntityID), ENTITY_SP, ENCRYPTION_CERT);
-    PublicKey keyEncryptKey = encryptionCert.getPublicKey();
-
-    // Generate a secret key
-    KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-    keyGenerator.init(128);
-    SecretKey secretKey = keyGenerator.generateKey();
-
-    XMLCipher keyCipher = XMLCipher.getInstance(XMLCipher.RSA_OAEP);
-    keyCipher.init(XMLCipher.WRAP_MODE, keyEncryptKey);
-
-    Document domAssertionDoc = (Document)assertionDoc.newDomNode(xmlOptions);
-    EncryptedKey encryptedKey = keyCipher.encryptKey(domAssertionDoc, secretKey);
-
-    Element elementToEncrypt = domAssertionDoc.getDocumentElement();
-
-    XMLCipher xmlCipher = XMLCipher.getInstance(XMLCipher.AES_128);
-    xmlCipher.init(XMLCipher.ENCRYPT_MODE, secretKey);
-
-    // Add KeyInfo to the EncryptedData element
-    EncryptedData encryptedDataElement = xmlCipher.getEncryptedData();
-    KeyInfo keyInfo = new KeyInfo(domAssertionDoc);
-    keyInfo.add(encryptedKey);
-    encryptedDataElement.setKeyInfo(keyInfo);
-
-    // Encrypt the assertion
-    xmlCipher.doFinal(domAssertionDoc, elementToEncrypt, false);
-
-    // Go back into XMLBeans land...
-    EncryptedDataDocument encryptedDataDoc = EncryptedDataDocument.Factory.parse(domAssertionDoc);
-    // ...and add the encrypted assertion to the response
-    wbssoResponse.addNewEncryptedAssertion().setEncryptedData(encryptedDataDoc.getEncryptedData());
-
-    // Look for the Response/EncryptedAssertion/EncryptedData/KeyInfo/EncryptedKey node...
-    EncryptedDataType encryptedData = responseDoc.getResponse().getEncryptedAssertionArray(0).getEncryptedData();
-    NodeList nodes = encryptedData.getKeyInfo().getDomNode().getChildNodes();
-    Node encryptedKeyNode = null;
-    for (int c=0; c < nodes.getLength(); c++) {
-      encryptedKeyNode = nodes.item(c);
-      if (encryptedKeyNode.getLocalName() != null) {
-        if (encryptedKeyNode.getLocalName().equals("EncryptedKey")) break;
-      }
+    if (encryptionCert != null) {
+      addEncryptedAssertionsToResponse(encryptionCert, assertionDoc, responseDoc);
     }
-
-    // ...get a new KeyInfo ready...
-    KeyInfoDocument keyInfoDoc = KeyInfoDocument.Factory.newInstance();
-    X509DataType x509Data = keyInfoDoc.addNewKeyInfo().addNewX509Data();
-
-    // ...and a useable version of the SP's encryption certificate...
-    StringWriter sw = new StringWriter();
-    PEMWriter pemWriter = new PEMWriter(sw);
-    pemWriter.writeObject(encryptionCert);
-    pemWriter.close();
-    String x509 = sw.toString();
-    x509 = x509.replaceAll("-----BEGIN CERTIFICATE-----", "");
-    x509 = x509.replaceAll("-----END CERTIFICATE-----", "");
-
-    // ...add the encryption cert to the new KeyInfo...
-    x509Data.addNewX509Certificate().setStringValue(x509);
-
-    // ...and insert it into Response/EncryptedAssertion/EncryptedData/KeyInfo/EncryptedKey
-    encryptedKeyNode.appendChild(encryptedKeyNode.getOwnerDocument().importNode(keyInfoDoc.getKeyInfo().getDomNode(), true));
+    else {
+      responseDoc.getResponse().addNewAssertion();
+      responseDoc.getResponse().setAssertionArray(0, assertionDoc.getAssertion());
+    }
 
     // Break out to DOM land to get the SAML Response signed...
     Document signedDoc = null;
