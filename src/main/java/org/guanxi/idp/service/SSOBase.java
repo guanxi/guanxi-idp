@@ -57,9 +57,11 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
@@ -215,8 +217,6 @@ public abstract class SSOBase extends AbstractController implements ServletConte
    */
   protected X509Certificate getX509CertFromMetadata(EntityDescriptorType saml2Metadata, String entityType, String certType) throws GuanxiException {
     try {
-      X509Certificate metadataCert = null;
-
       KeyTypes.Enum keyType;
       if (certType.equals(SIGNING_CERT)) {
         keyType = KeyTypes.SIGNING;
@@ -242,17 +242,15 @@ public abstract class SSOBase extends AbstractController implements ServletConte
       for (KeyDescriptorType keyDescriptor : keyDescriptors) {
         if (keyDescriptor.getUse() != null) {
           if (keyDescriptor.getUse().equals(keyType)) {
-            byte[] spCertBytes = keyDescriptor.getKeyInfo().getX509DataArray(0).getX509CertificateArray(0);
-            CertificateFactory certFactory = CertificateFactory.getInstance("x.509");
-            ByteArrayInputStream certByteStream = new ByteArrayInputStream(spCertBytes);
-            metadataCert = (X509Certificate)certFactory.generateCertificate(certByteStream);
-            certByteStream.close();
-            return metadataCert;
+            return getCertFromKeyDescriptor(keyDescriptor);
           }
         }
       }
 
-      return null;
+      /* If we get here there are no keys specifically marked for this type of usage
+       * so use the first one in the list
+       */
+      return getCertFromKeyDescriptor(keyDescriptors[0]);
     }
     catch(Exception e) {
       throw new GuanxiException(e);
@@ -408,7 +406,32 @@ public abstract class SSOBase extends AbstractController implements ServletConte
       logger.error("Error encyrpting the assertion");
       throw new GuanxiException(e);
     }
+  }
 
+  /**
+   * Extracts the X509 cenrtificate from a KeyDescriptor
+   *
+   * @param keyDescriptor the KeyDescriptor containing the X509 certificate
+   * @return X509Certificate
+   * @throws GuanxiException if an error occurs
+   */
+  private X509Certificate getCertFromKeyDescriptor(KeyDescriptorType keyDescriptor) throws GuanxiException {
+    try {
+      byte[] spCertBytes = keyDescriptor.getKeyInfo().getX509DataArray(0).getX509CertificateArray(0);
+      CertificateFactory certFactory = CertificateFactory.getInstance("x.509");
+      ByteArrayInputStream certByteStream = new ByteArrayInputStream(spCertBytes);
+      X509Certificate metadataCert = (X509Certificate)certFactory.generateCertificate(certByteStream);
+      certByteStream.close();
+      return metadataCert;
+    }
+    catch(CertificateException ce) {
+      logger.error("can't get x509 from KeyDescriptor");
+      throw new GuanxiException(ce);
+    }
+    catch(IOException ioe) {
+      logger.error("can't close cert byte stream");
+      throw new GuanxiException(ioe);
+    }
   }
 
   // Setters
