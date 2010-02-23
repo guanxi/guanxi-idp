@@ -141,9 +141,9 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     // Entity verification was successful. Now get its attribute consumer URL
     // First, try to get the URL and binding from the SAML Request...
     if ((requestDoc.getAuthnRequest().getAssertionConsumerServiceURL() != null) &&
-        (requestDoc.getAuthnRequest().getAssertionConsumerServiceURL().equals("")) &&
+        (!requestDoc.getAuthnRequest().getAssertionConsumerServiceURL().equals("")) &&
         (requestDoc.getAuthnRequest().getProtocolBinding() != null) &&
-        (requestDoc.getAuthnRequest().getProtocolBinding().equals(""))) {
+        (!requestDoc.getAuthnRequest().getProtocolBinding().equals(""))) {
       request.setAttribute("acsURL", requestDoc.getAuthnRequest().getAssertionConsumerServiceURL());
       request.setAttribute("responseBinding", requestDoc.getAuthnRequest().getProtocolBinding());
     }
