@@ -16,6 +16,12 @@
 
 package org.guanxi.idp.service;
 
+import org.apache.xml.security.encryption.EncryptedData;
+import org.apache.xml.security.encryption.EncryptedKey;
+import org.apache.xml.security.encryption.XMLCipher;
+import org.apache.xml.security.encryption.XMLEncryptionException;
+import org.apache.xml.security.keys.KeyInfo;
+import org.bouncycastle.openssl.PEMWriter;
 import org.guanxi.xal.idp.*;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.KeyDescriptorType;
@@ -33,6 +39,11 @@ import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.idp.util.AttributeMap;
 import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.idp.farm.attributors.Attributor;
+import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
+import org.guanxi.xal.w3.xmldsig.KeyInfoDocument;
+import org.guanxi.xal.w3.xmldsig.X509DataType;
+import org.guanxi.xal.w3.xmlenc.EncryptedDataDocument;
+import org.guanxi.xal.w3.xmlenc.EncryptedDataType;
 import org.springframework.web.servlet.mvc.AbstractController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.context.ServletContextAware;
@@ -40,10 +51,17 @@ import org.springframework.context.MessageSource;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlObject;
-import org.w3c.dom.Text;
+import org.w3c.dom.*;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
@@ -199,8 +217,6 @@ public abstract class SSOBase extends AbstractController implements ServletConte
    */
   protected X509Certificate getX509CertFromMetadata(EntityDescriptorType saml2Metadata, String entityType, String certType) throws GuanxiException {
     try {
-      X509Certificate metadataCert = null;
-
       KeyTypes.Enum keyType;
       if (certType.equals(SIGNING_CERT)) {
         keyType = KeyTypes.SIGNING;
@@ -224,17 +240,17 @@ public abstract class SSOBase extends AbstractController implements ServletConte
       }
       
       for (KeyDescriptorType keyDescriptor : keyDescriptors) {
-        if (keyDescriptor.getUse().equals(keyType)) {
-          byte[] spCertBytes = keyDescriptor.getKeyInfo().getX509DataArray(0).getX509CertificateArray(0);
-          CertificateFactory certFactory = CertificateFactory.getInstance("x.509");
-          ByteArrayInputStream certByteStream = new ByteArrayInputStream(spCertBytes);
-          metadataCert = (X509Certificate)certFactory.generateCertificate(certByteStream);
-          certByteStream.close();
-          return metadataCert;
+        if (keyDescriptor.getUse() != null) {
+          if (keyDescriptor.getUse().equals(keyType)) {
+            return getCertFromKeyDescriptor(keyDescriptor);
+          }
         }
       }
 
-      return null;
+      /* If we get here there are no keys specifically marked for this type of usage
+       * so use the first one in the list
+       */
+      return getCertFromKeyDescriptor(keyDescriptors[0]);
     }
     catch(Exception e) {
       throw new GuanxiException(e);
@@ -304,6 +320,118 @@ public abstract class SSOBase extends AbstractController implements ServletConte
       return attrStatementDoc;
     else
       return null;
+  }
+
+  /**
+   * Adds encrypted assertions to a SAML2 Response
+   *
+   * @param encryptionCert the X509 certificate to use for encrypting the assertions
+   * @param assertionDoc the assertions to encrypt
+   * @param responseDoc the SAML2 Response to add the encrypted assertions to
+   * @throws GuanxiException if an error occurs
+   */
+  protected void addEncryptedAssertionsToResponse(X509Certificate encryptionCert, AssertionDocument assertionDoc, ResponseDocument responseDoc) throws GuanxiException {
+    try {
+      PublicKey keyEncryptKey = encryptionCert.getPublicKey();
+
+      // Generate a secret key
+      KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+      keyGenerator.init(128);
+      SecretKey secretKey = keyGenerator.generateKey();
+
+      XMLCipher keyCipher = XMLCipher.getInstance(XMLCipher.RSA_OAEP);
+      keyCipher.init(XMLCipher.WRAP_MODE, keyEncryptKey);
+
+      Document domAssertionDoc = (Document)assertionDoc.newDomNode(xmlOptions);
+      EncryptedKey encryptedKey = keyCipher.encryptKey(domAssertionDoc, secretKey);
+
+      Element elementToEncrypt = domAssertionDoc.getDocumentElement();
+
+      XMLCipher xmlCipher = XMLCipher.getInstance(XMLCipher.AES_128);
+      xmlCipher.init(XMLCipher.ENCRYPT_MODE, secretKey);
+
+      // Add KeyInfo to the EncryptedData element
+      EncryptedData encryptedDataElement = xmlCipher.getEncryptedData();
+      KeyInfo keyInfo = new KeyInfo(domAssertionDoc);
+      keyInfo.add(encryptedKey);
+      encryptedDataElement.setKeyInfo(keyInfo);
+
+      // Encrypt the assertion
+      xmlCipher.doFinal(domAssertionDoc, elementToEncrypt, false);
+
+      // Go back into XMLBeans land...
+      EncryptedDataDocument encryptedDataDoc = EncryptedDataDocument.Factory.parse(domAssertionDoc);
+      // ...and add the encrypted assertion to the response
+      responseDoc.getResponse().addNewEncryptedAssertion().setEncryptedData(encryptedDataDoc.getEncryptedData());
+
+      // Look for the Response/EncryptedAssertion/EncryptedData/KeyInfo/EncryptedKey node...
+      EncryptedDataType encryptedData = responseDoc.getResponse().getEncryptedAssertionArray(0).getEncryptedData();
+      NodeList nodes = encryptedData.getKeyInfo().getDomNode().getChildNodes();
+      Node encryptedKeyNode = null;
+      for (int c=0; c < nodes.getLength(); c++) {
+        encryptedKeyNode = nodes.item(c);
+        if (encryptedKeyNode.getLocalName() != null) {
+          if (encryptedKeyNode.getLocalName().equals("EncryptedKey")) break;
+        }
+      }
+
+      // ...get a new KeyInfo ready...
+      KeyInfoDocument keyInfoDoc = KeyInfoDocument.Factory.newInstance();
+      X509DataType x509Data = keyInfoDoc.addNewKeyInfo().addNewX509Data();
+
+      // ...and a useable version of the SP's encryption certificate...
+      StringWriter sw = new StringWriter();
+      PEMWriter pemWriter = new PEMWriter(sw);
+      pemWriter.writeObject(encryptionCert);
+      pemWriter.close();
+      String x509 = sw.toString();
+      x509 = x509.replaceAll("-----BEGIN CERTIFICATE-----", "");
+      x509 = x509.replaceAll("-----END CERTIFICATE-----", "");
+
+      // ...add the encryption cert to the new KeyInfo...
+      x509Data.addNewX509Certificate().setStringValue(x509);
+
+      // ...and insert it into Response/EncryptedAssertion/EncryptedData/KeyInfo/EncryptedKey
+      encryptedKeyNode.appendChild(encryptedKeyNode.getOwnerDocument().importNode(keyInfoDoc.getKeyInfo().getDomNode(), true));
+    }
+    catch(NoSuchAlgorithmException nsae) {
+      logger.error("AES encryption not available");
+      throw new GuanxiException(nsae);
+    }
+    catch(XMLEncryptionException xea) {
+      logger.error("RSA_OAEP error with WRAP_MODE");
+      throw new GuanxiException(xea);
+    }
+    catch(Exception e) {
+      logger.error("Error encyrpting the assertion");
+      throw new GuanxiException(e);
+    }
+  }
+
+  /**
+   * Extracts the X509 cenrtificate from a KeyDescriptor
+   *
+   * @param keyDescriptor the KeyDescriptor containing the X509 certificate
+   * @return X509Certificate
+   * @throws GuanxiException if an error occurs
+   */
+  private X509Certificate getCertFromKeyDescriptor(KeyDescriptorType keyDescriptor) throws GuanxiException {
+    try {
+      byte[] spCertBytes = keyDescriptor.getKeyInfo().getX509DataArray(0).getX509CertificateArray(0);
+      CertificateFactory certFactory = CertificateFactory.getInstance("x.509");
+      ByteArrayInputStream certByteStream = new ByteArrayInputStream(spCertBytes);
+      X509Certificate metadataCert = (X509Certificate)certFactory.generateCertificate(certByteStream);
+      certByteStream.close();
+      return metadataCert;
+    }
+    catch(CertificateException ce) {
+      logger.error("can't get x509 from KeyDescriptor");
+      throw new GuanxiException(ce);
+    }
+    catch(IOException ioe) {
+      logger.error("can't close cert byte stream");
+      throw new GuanxiException(ioe);
+    }
   }
 
   // Setters

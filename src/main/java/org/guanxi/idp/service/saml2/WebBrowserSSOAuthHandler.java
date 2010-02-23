@@ -63,6 +63,7 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     String entityID = null;
     EntityManager manager = null;
     String requestBinding = null;
+    AuthnRequestDocument requestDoc = null;
 
     // Sort out the incoming message encoding
     String encoding = null;
@@ -85,7 +86,6 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     }
 
     try {
-      AuthnRequestDocument requestDoc = null;
       if (encoding.equals("post")) {
         // HTTP-POST binding means a base64 encoded SAML Request
         requestDoc = AuthnRequestDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLRequest"))));
@@ -139,29 +139,40 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     }
 
     // Entity verification was successful. Now get its attribute consumer URL
-    SPMetadata metadata = (SPMetadata)manager.getMetadata(entityID);
-    String acsURL = null;
-    EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
-    IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
-    String defaultAcsURL = null;
-    for (IndexedEndpointType acs : acss) {
-      if (acs.getBinding().equalsIgnoreCase(requestBinding)) {
-        acsURL = acs.getLocation();
-      }
-      // Find the default binding endpoint in case we need it
-      if (acs.getBinding().equalsIgnoreCase(defaultResponseBinding)) {
-        defaultAcsURL = acs.getLocation();
-      }
-    }
-
-    // If there's no Response endpoint binding to match the binding used for the Request, use the default
-    if (acsURL == null) {
-      request.setAttribute("acsURL", defaultAcsURL);
-      request.setAttribute("responseBinding", defaultResponseBinding);
+    // First, try to get the URL and binding from the SAML Request...
+    if ((requestDoc.getAuthnRequest().getAssertionConsumerServiceURL() != null) &&
+        (!requestDoc.getAuthnRequest().getAssertionConsumerServiceURL().equals("")) &&
+        (requestDoc.getAuthnRequest().getProtocolBinding() != null) &&
+        (!requestDoc.getAuthnRequest().getProtocolBinding().equals(""))) {
+      request.setAttribute("acsURL", requestDoc.getAuthnRequest().getAssertionConsumerServiceURL());
+      request.setAttribute("responseBinding", requestDoc.getAuthnRequest().getProtocolBinding());
     }
     else {
-      request.setAttribute("acsURL", acsURL);
-      request.setAttribute("responseBinding", requestBinding);
+      // ...or if the information is missing, try to work it out from the metadata
+      SPMetadata metadata = (SPMetadata)manager.getMetadata(entityID);
+      String acsURL = null;
+      EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
+      IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
+      String defaultAcsURL = null;
+      for (IndexedEndpointType acs : acss) {
+        if (acs.getBinding().equalsIgnoreCase(requestBinding)) {
+          acsURL = acs.getLocation();
+        }
+        // Find the default binding endpoint in case we need it
+        if (acs.getBinding().equalsIgnoreCase(defaultResponseBinding)) {
+          defaultAcsURL = acs.getLocation();
+        }
+      }
+
+      // If there's no Response endpoint binding to match the binding used for the Request, use the default
+      if (acsURL == null) {
+        request.setAttribute("acsURL", defaultAcsURL);
+        request.setAttribute("responseBinding", defaultResponseBinding);
+      }
+      else {
+        request.setAttribute("acsURL", acsURL);
+        request.setAttribute("responseBinding", requestBinding);
+      }
     }
 
     // Display the error without going through user authentication
