@@ -279,7 +279,7 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     if (attrStatementDoc != null) {
       SubjectType subject = attrStatementDoc.getAttributeStatement().addNewSubject();
       NameIdentifierType nameID = subject.addNewNameIdentifier();
-      nameID.setFormat("urn:mace:shibboleth:1.0:nameIdentifier");
+        nameID.setFormat(samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getFormat());
       nameID.setNameQualifier(samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getNameQualifier());
       nameID.setStringValue(samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getStringValue());
 
