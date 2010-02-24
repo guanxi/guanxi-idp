@@ -1,0 +1,29 @@
+<!-- map-providers.xml
+     This is list of service providers that require attributes to be mapped.
+     If you want to remove mappings for a service provider, just comment out
+     it's grouping in the list.
+-->
+<AttributeMap xmlns="urn:guanxi:idp">
+	<!-- This represents the attribute set that the service provider with a providerId of
+	     "protectedapp-guard" will receive if they are also defined in the ARP. Note that
+	     this service provider will also receive the attributes defined in the "globalMapping"
+	     set too, as defined above.
+	     The attribute mapping rules referenced here can be found in protectedapp-maps.xml. -->
+  <provider providerId="protectedapp-guard">
+    <!-- Flat file attributes -->
+    <mapRef name="saml2:protectedAppFFIdMapping" />
+    <mapRef name="saml2:protectedAppFFIdMapping2" />
+    <mapRef name="saml2:protectedAppFFIdMappingWithDomain" />
+    <mapRef name="saml2:protectedAppFFIdMappingEncrypted" />
+    <mapRef name="saml2:protectedAppFFFirstNameMapping" />
+    <mapRef name="saml2:protectedAppFFSurnameMapping" />
+    <mapRef name="saml2:protectedAppFFEmailMapping" />
+    <mapRef name="saml2:protectedAppFFEmailMapping2" />
+    <mapRef name="saml2:protectedAppFFPersistentIDMapping" />
+    <mapRef name="saml2:protectedAppEduPersonScopedAffiliation-staff" />
+    <!-- LDAP attributes defined in eduperson-map.xml -->
+    <mapRef name="saml2:eduPersonTargetedID" />
+    <mapRef name="saml2:eduPersonScopedAffiliation-member" />
+    <mapRef name="saml2:eduPersonScopedAffiliation-staff" />
+  </provider>
+</AttributeMap>

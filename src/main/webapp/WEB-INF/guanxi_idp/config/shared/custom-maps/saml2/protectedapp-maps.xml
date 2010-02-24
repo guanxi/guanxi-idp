@@ -1,0 +1,73 @@
+<!-- These attribute mappings are for the protectedapp Guard in the Guanxi localhost version -->
+<AttributeMap xmlns="urn:guanxi:idp">
+  <!-- id attribute mapped four times -->
+  <map name="saml2:protectedAppFFIdMapping"
+       attrName="id" attrValue=".*"
+       mappedName="protectedApp_ID"
+       friendlyName="protectedApp_ID" />
+
+  <map name="saml2:protectedAppFFIdMapping2"
+       attrName="id" attrValue=".*"
+       mappedName="protectedApp_ID"
+       friendlyName="protectedApp_ID"
+       mappedValue="alternative id"/>
+
+  <map name="saml2:protectedAppFFIdMappingWithDomain"
+       attrName="id" attrValue=".*"
+       mappedName="idWithDomain"
+       friendlyName="idWithDomain"
+       mappedRule="append_domain" />
+
+  <map name="saml2:protectedAppFFIdMappingEncrypted"
+       attrName="id" attrValue=".*"
+       mappedName="idEncrypted"
+       friendlyName="idEncrypted"
+       mappedRule="encrypt" />
+
+  <map name="saml2:protectedAppFFFirstNameMapping"
+       attrName="firstName" attrValue=".*"
+       mappedName="protectedApp_FirstName"
+       friendlyName="protectedApp_FirstName" />
+
+  <map name="saml2:protectedAppFFSurnameMapping"
+       attrName="surname" attrValue=".*"
+       mappedName="protectedApp_Surname"
+       friendlyName="protectedApp_Surname" />
+
+  <!-- email attribute mapped twice -->
+  <map name="saml2:protectedAppFFEmailMapping"
+       attrName="email" attrValue=".*"
+       mappedName="protectedApp_Email"
+       friendlyName="protectedApp_Email" />
+
+  <map name="saml2:protectedAppFFEmailMapping2"
+       attrName="email" attrValue=".*"
+       mappedName="${saml2.mail}"
+       friendlyName="${saml2.mail.friendly.name}"
+       mappedValue="alternative email" />
+
+  <!-- Persistent attribute -->
+  <map name="saml2:protectedAppFFPersistentIDMapping"
+       attrName="id" attrValue=".*"
+       mappedName="protectedApp_PersistentID"
+       friendlyName="protectedApp_PersistentID"
+       mappedRule="encrypt"
+       persistent="true"/>
+
+  <!-- eduPersonScopedAffiliation -->
+  <map name="saml2:protectedAppEduPersonScopedAffiliation-staff"
+       attrName="${local.attribute.group.name}"
+       attrValue="${local.attribute.group.value}"
+       mappedName="${saml2.eduPersonScopedAffiliation}"
+       friendlyName="${saml2.eduPersonScopedAffiliation.friendly.name}"
+       mappedValue="${affiliation.staff}"
+       scope="${scope.uni.ac.uk}"/>
+
+  <map name="saml2:groupMembershipMap"
+       attrName="groupMembership"
+       attrValue="cn=testGroup"
+       mappedName="${saml2.eduPersonPrincipalName}"
+       friendlyName="${saml2.eduPersonPrincipalName.friendly.name}"
+       mappedValue="#${ePPN.attribute}"
+       scope="${scope.uni.ac.uk}"/>
+</AttributeMap>

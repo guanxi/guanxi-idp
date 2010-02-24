@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="wbssoAuthHandler" class="org.guanxi.idp.service.saml2.WebBrowserSSOAuthHandler" init-method="init">
+    <property name="errorPage"><value>/message.gxIdP</value></property>
+    <property name="authenticator"><ref bean="flatFileAuthenticator" /></property>
+    <property name="messageSource"><ref bean="messageSource"/></property>
+    <property name="gxPrincipalFactory"><ref bean="genericGanxiPrincipalFactory" /></property>
+    <property name="authFormAction"><value>s2/wbsso</value></property>
+    <property name="defaultResponseBinding"><value>urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST</value></property>
+    <property name="requiredRequestParams">
+      <list>
+        <!-- These come from the SP -->
+        <value>SAMLEncoding</value>
+        <value>SAMLRequest</value>
+        <value>RelayState</value>
+        <!-- These come from this auth handler -->
+        <value>requestBinding</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="shibbSAML2EntityVerifier" class="org.guanxi.idp.service.shibboleth.ShibbolethSAML2EntityVerifier" />
+
+</beans>

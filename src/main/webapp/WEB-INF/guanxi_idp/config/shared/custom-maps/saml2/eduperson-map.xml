@@ -1,0 +1,35 @@
+<AttributeMap xmlns="urn:guanxi:idp">
+  <map name="saml2:eduPersonTargetedID"
+       attrName="dn"
+       attrValue=".*"
+       mappedName="${saml2.eduPersonTargetedID}"
+       friendlyName="${saml2.eduPersonTargetedID.friendly.name}"
+       mappedRule="encrypt"
+       scope="${scope.uni.ac.uk}"
+       unique="true"
+       persistent="true"/>
+
+  <map name="saml2:eduPersonScopedAffiliation-member"
+       attrName="mail"
+       attrValue=".*"
+       mappedName="${saml2.eduPersonScopedAffiliation}"
+       friendlyName="${saml2.eduPersonScopedAffiliation.friendly.name}"
+       mappedValue="${affiliation.member}"
+       scope="${scope.uni.ac.uk}"/>
+
+  <map name="saml2:eduPersonScopedAffiliation-student"
+       attrName="dn"
+       attrValue=".*tudent.*"
+       mappedName="${saml2.eduPersonScopedAffiliation}"
+       friendlyName="${saml2.eduPersonScopedAffiliation.friendly.name}"
+       mappedValue="${affiliation.student}"
+       scope="${scope.uni.ac.uk}"/>
+
+  <map name="saml2:eduPersonScopedAffiliation-staff"
+       attrName="dn"
+       attrValue=".*taff.*"
+       mappedName="${saml2.eduPersonScopedAffiliation}"
+       friendlyName="${saml2.eduPersonScopedAffiliation.friendly.name}"
+       mappedValue="${affiliation.staff}"
+       scope="${scope.uni.ac.uk}"/>
+</AttributeMap>
