@@ -100,6 +100,8 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
 
       entityID = requestDoc.getAuthnRequest().getIssuer().getStringValue();
       
+      logger.info(requestBinding + " " + entityID);
+      
       // Pass the entityID to the service via the login page if required
       request.setAttribute("requestBinding", requestBinding);
       request.setAttribute("entityID", entityID);
@@ -113,7 +115,7 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
         if (TrustUtils.verifySignature(requestDoc)) {
           X509Certificate[] x509FromSig = new X509Certificate[] {TrustUtils.getX509CertFromSignature(requestDoc.getAuthnRequest().getSignature().getKeyInfo())};
           if (!manager.getTrustEngine().trustEntity(manager.getMetadata(entityID), x509FromSig)) {
-            logger.info("failed to trust " + entityID);
+            logger.error("failed to trust " + entityID);
             request.setAttribute("wbsso-handler-error-message",
                                  messageSource.getMessage("sp.failed.verification",
                                                           new Object[] {entityID},
