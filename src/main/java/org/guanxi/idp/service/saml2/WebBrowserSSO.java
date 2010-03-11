@@ -33,6 +33,7 @@ import org.w3c.dom.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.StringWriter;
 import java.util.Calendar;
 import java.security.cert.X509Certificate;
 import java.net.URLEncoder;
@@ -157,6 +158,23 @@ public class WebBrowserSSO extends SSOBase {
 
     // Sort out the namespaces for saving the Response
     xmlOptions.setSaveSuggestedPrefixes(saml2Namespaces);
+
+    // Debug syphoning?
+    if (idpConfig.getDebug() != null) {
+      if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
+        if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
+          logger.info("=======================================================");
+          logger.info("Response to SAML2 WBSSO request by " + spEntityID);
+          logger.info("");
+          StringWriter sw = new StringWriter();
+          responseDoc.save(sw, xmlOptions);
+          assertionDoc.save(sw, xmlOptions);
+          logger.info(sw.toString());
+          logger.info("");
+          logger.info("=======================================================");
+        }
+      }
+    }
 
     // Get the SP's encryption key. We'll use this to encrypt the secret key for encrypting the attributes
     X509Certificate encryptionCert = getX509CertFromMetadata(getSPMetadata(spEntityID), ENTITY_SP, ENCRYPTION_CERT);
