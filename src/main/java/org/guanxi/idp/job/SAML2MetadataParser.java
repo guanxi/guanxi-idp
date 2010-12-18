@@ -16,6 +16,7 @@
 
 package org.guanxi.idp.job;
 
+import org.guanxi.common.trust.TrustUtils;
 import org.quartz.Job;
 import org.quartz.JobExecutionException;
 import org.quartz.JobExecutionContext;
@@ -28,6 +29,7 @@ import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.job.ShibbolethSAML2MetadataParser;
 
+import java.security.PublicKey;
 import java.util.ArrayList;
 
 /**
@@ -50,8 +52,16 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
     }
 
     if (config.getSigned()) {
-      if (!verifyMetadataFingerprint()) {
-        logger.error("Metadata fingerprint failed verification");
+      try {
+        PublicKey metadataKey = getX509FromMetadataSignature().getPublicKey();
+        PublicKey fedKey = TrustUtils.pem2x509(config.getPemLocation()).getPublicKey();
+        if (!TrustUtils.compareKeys(metadataKey, fedKey)) {
+          logger.error("Metadata fingerprint failed verification");
+          return;
+        }
+      }
+      catch(GuanxiException ge) {
+        logger.error(ge);
         return;
       }
 
