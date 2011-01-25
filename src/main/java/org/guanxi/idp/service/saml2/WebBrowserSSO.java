@@ -54,6 +54,8 @@ public class WebBrowserSSO extends SSOBase {
   private String errorView = null;
   /** The request attribute that holds the error message for the error view */
   private String errorViewDisplayVar = null;
+  /** Whether to encrypt attributes in the response */
+  private boolean encryptAttributes;
 
   /**
    * Handles processing of an AuthnRequest message. If the request attribute:
@@ -176,10 +178,17 @@ public class WebBrowserSSO extends SSOBase {
       }
     }
 
-    // Get the SP's encryption key. We'll use this to encrypt the secret key for encrypting the attributes
-    X509Certificate encryptionCert = getX509CertFromMetadata(getSPMetadata(spEntityID), ENTITY_SP, ENCRYPTION_CERT);
-    if (encryptionCert != null) {
-      addEncryptedAssertionsToResponse(encryptionCert, assertionDoc, responseDoc);
+    if (encryptAttributes) {
+      // Get the SP's encryption key. We'll use this to encrypt the secret key for encrypting the attributes
+      X509Certificate encryptionCert = getX509CertFromMetadata(getSPMetadata(spEntityID), ENTITY_SP, ENCRYPTION_CERT);
+      if (encryptionCert != null) {
+        addEncryptedAssertionsToResponse(encryptionCert, assertionDoc, responseDoc);
+      }
+      else {
+        logger.warn("Attribute encryption is on but " + spEntityID + " has no encryption key");
+        responseDoc.getResponse().addNewAssertion();
+        responseDoc.getResponse().setAssertionArray(0, assertionDoc.getAssertion());
+      }
     }
     else {
       responseDoc.getResponse().addNewAssertion();
@@ -229,4 +238,5 @@ public class WebBrowserSSO extends SSOBase {
   public void setHttpRedirectView(String httpRedirectView) { this.httpRedirectView = httpRedirectView; }
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
+  public void setEncryptAttributes(boolean encryptAttributes) { this.encryptAttributes = encryptAttributes; }
 }
