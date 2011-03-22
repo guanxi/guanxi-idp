@@ -16,6 +16,7 @@
 
 package org.guanxi.idp.service.saml2;
 
+import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.definitions.SAML;
 import org.guanxi.idp.service.GenericAuthHandler;
 import org.guanxi.common.Utils;
@@ -33,7 +34,9 @@ import org.apache.log4j.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 
 /**
  * Handles authenticating SAML2 Web Browser SSO connections
@@ -101,11 +104,39 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
       entityID = requestDoc.getAuthnRequest().getIssuer().getStringValue();
       
       logger.info(requestBinding + " " + entityID);
-      
+
+      // Debug syphoning?
+      if (idpConfig.getDebug() != null) {
+        if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
+          HashMap<String, String> saml2Namespaces = new HashMap<String, String>();
+          saml2Namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
+          saml2Namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
+          XmlOptions xmlOptions = new XmlOptions();
+          xmlOptions.setSavePrettyPrint();
+          xmlOptions.setSavePrettyPrintIndent(2);
+          xmlOptions.setUseDefaultNamespace();
+          xmlOptions.setSaveAggressiveNamespaces();
+          xmlOptions.setSaveNamespacesFirst();
+
+          if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
+            logger.info("=======================================================");
+            logger.info("Request from " + entityID);
+            logger.info("");
+            StringWriter sw = new StringWriter();
+            requestDoc.save(sw, xmlOptions);
+            requestDoc.save(sw, xmlOptions);
+            logger.info(sw.toString());
+            logger.info("");
+            logger.info("=======================================================");
+          }
+        }
+      }
+
       // Pass the entityID to the service via the login page if required
       request.setAttribute("requestBinding", requestBinding);
       request.setAttribute("entityID", entityID);
       request.setAttribute("requestID", requestDoc.getAuthnRequest().getID());
+      request.setAttribute("NameIDPolicy", requestDoc.getAuthnRequest().getNameIDPolicy().getFormat());
 
       EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
       manager = farm.getEntityManagerForID(entityID);
@@ -175,6 +206,11 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
         request.setAttribute("acsURL", acsURL);
         request.setAttribute("responseBinding", requestBinding);
       }
+    }
+
+    // We don't support passive authentication
+    if (requestDoc.getAuthnRequest().getIsPassive()) {
+      request.setAttribute("wbsso-handler-error-message", SAML.SAML2_STATUS_NO_PASSIVE);
     }
 
     // Display the error without going through user authentication
