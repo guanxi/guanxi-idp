@@ -78,11 +78,74 @@ public class WebBrowserSSO extends SSOBase {
 
     // Display an error message if it exists and go no further
     if (request.getAttribute("wbsso-handler-error-message") != null) {
-      logger.error("Displaying auth handler error");
-      mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, request.getAttribute("wbsso-handler-error-message"));
-      return mAndV;
-    }
+      if (request.getAttribute("wbsso-handler-error-message").equals(SAML.SAML2_STATUS_NO_PASSIVE)) {
+        // Return SAML2 Response as we don't do passive
+        ResponseDocument errorDoc = buidErrorResponse(idpEntityID,
+                                                      (String)request.getAttribute("requestID"),
+                                                      (String)request.getAttribute("acsURL"),
+                                                      SAML.SAML2_STATUS_NO_PASSIVE);
+
+        xmlOptions.setSaveSuggestedPrefixes(saml2Namespaces);
+
+        Document signedDoc = null;
+        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+          try {
+            // Need to use newDomNode to preserve namespace information
+            signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
+                                                         (Document)errorDoc.newDomNode(xmlOptions),
+                                                          errorDoc.getResponse().getID());
+          }
+          catch(GuanxiException ge) {
+            logger.error("Could not sign Response", ge);
+            mAndV.setViewName(errorView);
+            mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+                                                                          null, request.getLocale()));
+            return mAndV;
+          }
+        }
+
+        // Do the binding quickstep
+        String b64SAMLResponse = null;
+        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+          b64SAMLResponse = Utils.base64(signedDoc);
+          mAndV.setViewName(httpPOSTView);
+        }
+        else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
+          String deflatedResponse = Utils.deflate(errorDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
+          b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
+          b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
+          b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
+          mAndV.setViewName(httpRedirectView);
+        }
+
+        // Debug syphoning?
+        if (idpConfig.getDebug() != null) {
+          if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
+            if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
+              logger.info("=======================================================");
+              logger.info("Error Response to SAML2 WBSSO request by " + spEntityID);
+              logger.info("");
+              StringWriter sw = new StringWriter();
+              errorDoc.save(sw, xmlOptions);
+              logger.info(sw.toString());
+              logger.info("");
+              logger.info("=======================================================");
+            }
+          }
+        }
+
+        request.setAttribute("SAMLResponse", b64SAMLResponse);
+        request.setAttribute("RelayState", request.getParameter("RelayState"));
+        mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
+        return mAndV;
+      }
+      else {
+        logger.error("Displaying auth handler error");
+        mAndV.setViewName(errorView);
+        mAndV.getModel().put(errorViewDisplayVar, request.getAttribute("wbsso-handler-error-message"));
+        return mAndV;
+      }
+    } // if (request.getAttribute("wbsso-handler-error-message") != null)
 
     // We need this for reference in the Response
     String requestID = (String)request.getAttribute("requestID");
@@ -90,10 +153,11 @@ public class WebBrowserSSO extends SSOBase {
     // Response
     ResponseDocument responseDoc = ResponseDocument.Factory.newInstance();
     ResponseType wbssoResponse = responseDoc.addNewResponse();
-    wbssoResponse.setID(Utils.getUniqueID());
+    wbssoResponse.setID(generateStringID());
     wbssoResponse.setVersion("2.0");
     wbssoResponse.setDestination((String)request.getAttribute("acsURL"));
     wbssoResponse.setIssueInstant(Calendar.getInstance());
+    wbssoResponse.setInResponseTo(requestID);
     Utils.zuluXmlObject(wbssoResponse, 0);
 
     // Response/Issuer
@@ -200,7 +264,9 @@ public class WebBrowserSSO extends SSOBase {
     if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
       try {
         // Need to use newDomNode to preserve namespace information
-        signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)responseDoc.newDomNode(xmlOptions), "");
+        signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
+                                                     (Document)responseDoc.newDomNode(xmlOptions),
+                                                      responseDoc.getResponse().getID());
       }
       catch(GuanxiException ge) {
         logger.error("Could not sign Response", ge);
@@ -210,7 +276,7 @@ public class WebBrowserSSO extends SSOBase {
         return mAndV;
       }
     }
-
+ 
     // Do the binding quickstep
     String b64SAMLResponse = null;
     if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
