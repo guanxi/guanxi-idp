@@ -22,6 +22,7 @@ import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
 import org.apache.xml.security.keys.KeyInfo;
 import org.bouncycastle.openssl.PEMWriter;
+import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
 import org.guanxi.xal.idp.*;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
@@ -268,14 +269,15 @@ public abstract class SSOBase extends AbstractController implements ServletConte
    * @param entityID the entityID of the relying party that wants the attributes
    * @return AttributeStatementDocument containing the AttributeStatement
    */
-  protected AttributeStatementDocument getSAML2AttributeStatementFromFarm(UserAttributesDocument guanxiAttrFarmOutput, String entityID) {
+  protected AttributeStatementDocument getSAML2AttributeStatementFromFarm(UserAttributesDocument guanxiAttrFarmOutput,
+                                                                          String entityID,
+                                                                          SubjectType subject,
+                                                                          GuanxiPrincipal gxPrincipal) {
     AttributeStatementDocument attrStatementDoc = AttributeStatementDocument.Factory.newInstance();
     AttributeStatementType attrStatement = attrStatementDoc.addNewAttributeStatement();
 
     boolean hasAttrs = false;
     for (int c=0; c < guanxiAttrFarmOutput.getUserAttributes().getAttributeArray().length; c++) {
-      hasAttrs = true;
-
       AttributorAttribute attributorAttr = guanxiAttrFarmOutput.getUserAttributes().getAttributeArray(c);
 
       // Has the attribute already been processed? i.e. does it have multiple values?
@@ -290,33 +292,43 @@ public abstract class SSOBase extends AbstractController implements ServletConte
       }
 
       // New attribute, not yet processed
+      XmlObject attrValue = null;
       if (attribute == null) {
-        attribute = attrStatement.addNewAttribute();
-        attribute.setName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + attributorAttr.getName());
-        attribute.setFriendlyName(attributorAttr.getFriendlyName());
-        attribute.setNameFormat(SAML.SAML2_ATTRIBUTE_NAME_FORMAT_URI);
+        if (attributorAttr.getName().equalsIgnoreCase("__NAMEID__")) {
+          NameIDType nameID = subject.addNewNameID();
+          nameID.setFormat(gxPrincipal.getNameIDFormat());
+          nameID.setStringValue(gxPrincipal.getName());
+        }
+        else {
+          hasAttrs = true;
+          attribute = attrStatement.addNewAttribute();
+          attribute.setName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + attributorAttr.getName());
+          attribute.setFriendlyName(attributorAttr.getFriendlyName());
+          attribute.setNameFormat(SAML.SAML2_ATTRIBUTE_NAME_FORMAT_URI);
+          attrValue = attribute.addNewAttributeValue();
+        }
       }
-
-      XmlObject attrValue = attribute.addNewAttributeValue();
 
       // Deal with scoped eduPerson attributes
-      if (attribute.getName().equals(EduPersonOID.ATTRIBUTE_NAME_PREFIX + EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
-        NameIDDocument nameIDDoc = NameIDDocument.Factory.newInstance();
-        NameIDType nameID = nameIDDoc.addNewNameID();
-        nameID.setFormat(SAML.SAML2_ATTRIBUTE_FORMAT_NAMEID_PERSISTENT);
-        nameID.setNameQualifier(nameQualifier);
-        nameID.setSPNameQualifier(entityID);
-        // For SAML2 we need to remove the scope from the value
-        if (attributorAttr.getValue().contains("@")) {
-          attributorAttr.setValue(attributorAttr.getValue().split("@")[0]);
+      if (attribute != null) {
+        if (attribute.getName().equals(EduPersonOID.ATTRIBUTE_NAME_PREFIX + EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
+          NameIDDocument nameIDDoc = NameIDDocument.Factory.newInstance();
+          NameIDType nameID = nameIDDoc.addNewNameID();
+          nameID.setFormat(SAML.SAML2_ATTRIBUTE_FORMAT_NAMEID_PERSISTENT);
+          nameID.setNameQualifier(nameQualifier);
+          nameID.setSPNameQualifier(entityID);
+          // For SAML2 we need to remove the scope from the value
+          if (attributorAttr.getValue().contains("@")) {
+            attributorAttr.setValue(attributorAttr.getValue().split("@")[0]);
+          }
+          nameID.setStringValue(attributorAttr.getValue());
+  
+          attrValue.getDomNode().appendChild(attrValue.getDomNode().getOwnerDocument().importNode(nameID.getDomNode(), true));
         }
-        nameID.setStringValue(attributorAttr.getValue());
-
-        attrValue.getDomNode().appendChild(attrValue.getDomNode().getOwnerDocument().importNode(nameID.getDomNode(), true));
-      }
-      else {
-        Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
-        attrValue.getDomNode().appendChild(valueNode);
+        else {
+          Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
+          attrValue.getDomNode().appendChild(valueNode);
+        }
       }
     } // for (int c=0; c < guanxiAttrFarmOutput.getUserAttributes().getAttributeArray().length; c++)
 
