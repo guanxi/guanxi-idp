@@ -72,8 +72,6 @@ public class WebBrowserSSO extends SSOBase {
 
     idpConfig = (IdpDocument.Idp)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_CONFIG);
     loadPersona(request);
-
-    GuanxiPrincipal gxPrincipal = (GuanxiPrincipal)request.getAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL);
     String spEntityID = (String)request.getAttribute("entityID");
 
     // Display an error message if it exists and go no further
@@ -147,6 +145,9 @@ public class WebBrowserSSO extends SSOBase {
       }
     } // if (request.getAttribute("wbsso-handler-error-message") != null)
 
+    GuanxiPrincipal gxPrincipal = (GuanxiPrincipal)request.getAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL);
+    gxPrincipal.setNameIDFormat((String)request.getAttribute("NameIDFormat"));
+
     // We need this for reference in the Response
     String requestID = (String)request.getAttribute("requestID");
 
@@ -175,7 +176,7 @@ public class WebBrowserSSO extends SSOBase {
     // Response/Assertion
     AssertionDocument assertionDoc = AssertionDocument.Factory.newInstance();
     AssertionType assertion = assertionDoc.addNewAssertion();
-    assertion.setID(Utils.createNCNameID());
+    assertion.setID(generateStringID());
     assertion.setIssueInstant(Calendar.getInstance());
     assertion.setIssuer(issuer);
     assertion.setVersion("2.0");
@@ -205,7 +206,8 @@ public class WebBrowserSSO extends SSOBase {
     authnStatement.setAuthnInstant(Calendar.getInstance());
     authnStatement.setSessionIndex("");
     authnStatement.addNewSubjectLocality().setAddress(request.getLocalAddr());
-    authnStatement.addNewAuthnContext().setAuthnContextDeclRef(SAML.URN_SAML2_PASSWORD_PROTECTED_TRANSPORT);
+    authnStatement.addNewAuthnContext().setAuthnContextClassRef(SAML.URN_SAML2_PASSWORD_PROTECTED_TRANSPORT);
+    authnStatement.setSessionIndex("860e1c78883a682e07697c494b0ff1641847b128ec28cc8b597fb");
     Utils.zuluXmlObject(authnStatement, 0);
 
     // Assemble the attributes
@@ -214,7 +216,8 @@ public class WebBrowserSSO extends SSOBase {
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
       attr.getAttributes(gxPrincipal, spEntityID, arpEngine, mapper, attributes);
     }
-    AttributeStatementDocument attrStatementDoc = getSAML2AttributeStatementFromFarm(attributesDoc, spEntityID);
+    AttributeStatementDocument attrStatementDoc = getSAML2AttributeStatementFromFarm(attributesDoc, spEntityID,
+                                                                                     subject, gxPrincipal);
 
     // If a user has no attributes we shouldn't add an Assertion or Subject
     if (attrStatementDoc != null) {
