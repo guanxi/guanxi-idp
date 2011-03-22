@@ -22,6 +22,7 @@ import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
 import org.apache.xml.security.keys.KeyInfo;
 import org.bouncycastle.openssl.PEMWriter;
+import org.guanxi.common.Utils;
 import org.guanxi.xal.idp.*;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.metadata.KeyDescriptorType;
@@ -39,7 +40,7 @@ import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.idp.util.AttributeMap;
 import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.idp.farm.attributors.Attributor;
-import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
+import org.guanxi.xal.saml_2_0.protocol.*;
 import org.guanxi.xal.w3.xmldsig.KeyInfoDocument;
 import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.xal.w3.xmlenc.EncryptedDataDocument;
@@ -59,9 +60,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
@@ -314,7 +318,7 @@ public abstract class SSOBase extends AbstractController implements ServletConte
         Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
         attrValue.getDomNode().appendChild(valueNode);
       }
-    }
+    } // for (int c=0; c < guanxiAttrFarmOutput.getUserAttributes().getAttributeArray().length; c++)
 
     if (hasAttrs)
       return attrStatementDoc;
@@ -406,6 +410,39 @@ public abstract class SSOBase extends AbstractController implements ServletConte
       logger.error("Error encyrpting the assertion");
       throw new GuanxiException(e);
     }
+  }
+
+  protected ResponseDocument buidErrorResponse(String entityID, String requestID, String acsURL, String statusCode) {
+    // Response
+    ResponseDocument responseDoc = ResponseDocument.Factory.newInstance();
+    ResponseType wbssoResponse = responseDoc.addNewResponse();
+    wbssoResponse.setID(generateStringID());
+    wbssoResponse.setVersion("2.0");
+    wbssoResponse.setDestination(acsURL);
+    wbssoResponse.setIssueInstant(Calendar.getInstance());
+    wbssoResponse.setInResponseTo(requestID);
+    Utils.zuluXmlObject(wbssoResponse, 0);
+
+    // Response/Issuer
+    NameIDType issuer = wbssoResponse.addNewIssuer();
+    issuer.setFormat(SAML.URN_SAML2_NAMEID_FORMAT_ENTITY);
+    issuer.setStringValue(entityID);
+
+    // Response/Status
+    StatusDocument statusDoc = StatusDocument.Factory.newInstance();
+    StatusType status = statusDoc.addNewStatus();
+    StatusCodeType topLevelStatusCode = status.addNewStatusCode();
+    topLevelStatusCode.setValue(SAML.SAML2_STATUS_RESPONDER);
+    StatusCodeType secondLevelStatusCode = topLevelStatusCode.addNewStatusCode();
+    secondLevelStatusCode.setValue(statusCode);
+    wbssoResponse.setStatus(status);
+
+    return responseDoc;
+  }
+
+  protected String generateStringID() {
+    SecureRandom random = new SecureRandom();
+    return "gx" + new BigInteger(130, random).toString(32);
   }
 
   /**
