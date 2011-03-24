@@ -143,6 +143,15 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
       EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
       manager = farm.getEntityManagerForID(entityID);
 
+      if (manager == null) {
+        logger.error("no metadata for " + entityID);
+        request.setAttribute("wbsso-handler-error-message",
+                             messageSource.getMessage("sp.not.supported",
+                                                      new Object[] {entityID},
+                                                      request.getLocale()));
+        return true;
+      }
+
       // Verify the signature if there is one
       if (requestDoc.getAuthnRequest().getSignature() != null) {
         if (TrustUtils.verifySignature(requestDoc)) {
