@@ -253,9 +253,14 @@ public abstract class SSOBase extends AbstractController implements ServletConte
       }
 
       /* If we get here there are no keys specifically marked for this type of usage
-       * so use the first one in the list
+       * so use the first one in the list. Or if there are none, give up!
        */
-      return getCertFromKeyDescriptor(keyDescriptors[0]);
+      if ((keyDescriptors == null) || (keyDescriptors.length == 0)) {
+        return null;
+      }
+      else {
+        return getCertFromKeyDescriptor(keyDescriptors[0]);
+      }
     }
     catch(Exception e) {
       throw new GuanxiException(e);
