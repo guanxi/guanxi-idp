@@ -136,7 +136,9 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
       request.setAttribute("requestBinding", requestBinding);
       request.setAttribute("entityID", entityID);
       request.setAttribute("requestID", requestDoc.getAuthnRequest().getID());
-      request.setAttribute("NameIDFormat", requestDoc.getAuthnRequest().getNameIDPolicy().getFormat());
+      if (requestDoc.getAuthnRequest().getNameIDPolicy() != null) {
+        request.setAttribute("NameIDFormat", requestDoc.getAuthnRequest().getNameIDPolicy().getFormat());
+      }
 
       EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
       manager = farm.getEntityManagerForID(entityID);
