@@ -146,7 +146,14 @@ public class WebBrowserSSO extends SSOBase {
     } // if (request.getAttribute("wbsso-handler-error-message") != null)
 
     GuanxiPrincipal gxPrincipal = (GuanxiPrincipal)request.getAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL);
-    gxPrincipal.setNameIDFormat((String)request.getAttribute("NameIDFormat"));
+    if (request.getAttribute("NameIDFormat") != null) {
+      // Use the NameID format supplied in the request...
+      gxPrincipal.setNameIDFormat((String)request.getAttribute("NameIDFormat"));
+    }
+    else {
+      // ...or the default if none is specified
+      gxPrincipal.setNameIDFormat(nameQualifier);
+    }
 
     // We need this for reference in the Response
     String requestID = (String)request.getAttribute("requestID");
