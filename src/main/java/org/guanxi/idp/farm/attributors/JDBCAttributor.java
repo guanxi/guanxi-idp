@@ -63,6 +63,9 @@ public class JDBCAttributor extends SimpleAttributor {
   /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.idp.util.ARPEngine , org.guanxi.idp.util.AttributeMap , org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
   public void getAttributes(GuanxiPrincipal principal, String relyingParty, ARPEngine arpEngine, AttributeMap mapper,
                             UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
+    // Before we do anything, see if we need to release a NameID
+    processNameID(mapper, relyingParty, attributes);
+
     try {
       String userQuery = query.replaceAll("__USERID__", principal.getName());
 
