@@ -95,10 +95,10 @@ public class GuanxiAttribute {
    * Retrieves the attribute friendly name based on index
    *
    * @param index the index
-   * @return the attribute friendly name
+   * @return the attribute friendly name or NULL if index is too large
    */
   public String getFriendlyNameAtIndex(int index) {
-    return friendlyNames.get(index);
+    return (index > (friendlyNames.size() - 1)) ? null : friendlyNames.get(index);
   }
 
   /**
