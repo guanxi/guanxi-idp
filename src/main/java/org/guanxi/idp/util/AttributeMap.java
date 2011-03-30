@@ -27,6 +27,7 @@ import org.springframework.web.context.ServletContextAware;
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Vector;
@@ -53,10 +54,12 @@ public class AttributeMap implements ServletContextAware {
   private AttributeRule[] attributeRules = null;
   /** The engine that handles variable interpolation */
   private VarEngine varEngine = null;
+  private ArrayList<String> providerIDsToGetNameIDs = null;
 
   public void init() {
     maps = new Vector<Map>();
     providers = new Vector<MapProvider>();
+    providerIDsToGetNameIDs = new ArrayList<String>();
 
     try {
       loadMaps(mapFile);
@@ -235,6 +238,17 @@ public class AttributeMap implements ServletContextAware {
   }
 
   /**
+   * Determines whether to release the login userid in the GuanxiPrincipal
+   * as a NameID to the specified provider
+   *
+   * @param providerID This should be the content of a 'providerId' attribute on a map element
+   * @return true if a NameID should be released otherwise false
+   */
+  public boolean shouldReleaseNameID(String providerID) {
+    return providerIDsToGetNameIDs.contains(providerID);
+  }
+
+  /**
    * Loads up the chain of map files to use. The chain will always have at least one in it.
    *
    * @param mapXMLFile The full path and name of the root map file
@@ -261,6 +275,10 @@ public class AttributeMap implements ServletContextAware {
 
       // ...and providers
       for (int c = 0; c < attrMapDoc.getAttributeMap().getProviderArray().length; c++ ) {
+        // Does this provider get a NameID released? This bypasses the ARP
+        if (attrMapDoc.getAttributeMap().getProviderArray(c).getNameid() != null) {
+          providerIDsToGetNameIDs.add(varEngine.interpolate(attrMapDoc.getAttributeMap().getProviderArray(c).getProviderId()));
+        }
         providers.add(attrMapDoc.getAttributeMap().getProviderArray(c));
       }
 
