@@ -308,7 +308,9 @@ public abstract class SSOBase extends AbstractController implements ServletConte
           hasAttrs = true;
           attribute = attrStatement.addNewAttribute();
           attribute.setName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + attributorAttr.getName());
-          attribute.setFriendlyName(attributorAttr.getFriendlyName());
+          if (attributorAttr.getFriendlyName() != null) {
+            attribute.setFriendlyName(attributorAttr.getFriendlyName());
+          }
           attribute.setNameFormat(SAML.SAML2_ATTRIBUTE_NAME_FORMAT_URI);
           attrValue = attribute.addNewAttributeValue();
         }
