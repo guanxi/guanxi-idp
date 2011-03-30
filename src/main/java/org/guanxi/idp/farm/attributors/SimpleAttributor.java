@@ -105,6 +105,23 @@ public abstract class SimpleAttributor implements Attributor, ServletContextAwar
   }
 
   /**
+   * Determines whether to release the login userid of the GuanxiPrincipal as a
+   * Subject/NameID in a SAML Response. If this needs to be done, the method
+   * adds a dummy attribute called "__NAMEID__" which is picked up later and
+   * converted to a Subject/NameID
+   *
+   * @param mapper the profile specific attribute mapper to use
+   * @param relyingParty the entityID of the entity looking for attributes
+   * @param attributes the attributes document that will hold the released attribute
+   */
+  protected void processNameID(AttributeMap mapper, String relyingParty, UserAttributesDocument.UserAttributes attributes) {
+    if (mapper.shouldReleaseNameID(relyingParty)) {
+      AttributorAttribute attribute = attributes.addNewAttribute();
+      attribute.setName("__NAMEID__");
+    }
+  }
+
+  /**
    * Initialises the subclass
    */
   public void init() {
