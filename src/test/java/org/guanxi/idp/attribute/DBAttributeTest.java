@@ -20,12 +20,19 @@ import java.io.File;
 public class DBAttributeTest extends AttributeTest {
   @Test
   public void test() {
+    /** The directory Derby creates */
     File derbyDir = null;
+    /** The Derby log file that gets created during the test */
+    File derbyLogfile = null;
+    /** The directory the persistence engine creates */
+    File persistenceDir = null;
     Connection derbyConnection = null;
     Statement derbyStatement = null;
 
     try {
       derbyDir = new File(new File(".").getCanonicalPath() + System.getProperty("file.separator") + "dbattrtest");
+      derbyLogfile = new File(new File(".").getCanonicalPath() + System.getProperty("file.separator") + "derby.log");
+      persistenceDir = new File(new File(".").getCanonicalPath() + System.getProperty("file.separator") + "guanxiidp");
       Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
       derbyConnection = DriverManager.getConnection("jdbc:derby:dbattrtest;create=true;user=user;password=passwd");
       derbyStatement = derbyConnection.createStatement();
@@ -84,6 +91,8 @@ public class DBAttributeTest extends AttributeTest {
     finally {
       try {
         deleteDir(derbyDir);
+        derbyLogfile.delete();
+        deleteDir(persistenceDir);
       }
       catch(Exception e) {
         fail(e.getMessage());
