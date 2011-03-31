@@ -11,11 +11,13 @@ import static org.junit.Assert.fail;
  */
 public class Paths {
   private static String ROOT = null;
+  private static String DERBY_HOME = null;
   private static HashMap<String, String> paths = null;
 
   static {
     try {
       ROOT = new File(".").getCanonicalPath() + "/src/main/webapp";
+      DERBY_HOME = new File(".").getCanonicalPath();
     }
     catch(IOException ioe) {
       fail(ioe.getMessage());
@@ -39,6 +41,8 @@ public class Paths {
     paths.put("arp.xml", ROOT + "/WEB-INF/guanxi_idp/config/shared/arp.xml");
     paths.put("flatfile.xml", ROOT + "/WEB-INF/guanxi_idp/config/shared/flatfile.xml");
     paths.put("saml2map.xml", ROOT + "/WEB-INF/guanxi_idp/config/shared/saml2map.xml");
+
+    paths.put("derby.system.home", DERBY_HOME);
   }
 
   public static String path(String fileName) {
