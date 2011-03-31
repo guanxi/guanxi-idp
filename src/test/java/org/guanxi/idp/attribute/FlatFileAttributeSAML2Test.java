@@ -12,7 +12,6 @@ import org.guanxi.idp.util.ARPEngine;
 import org.guanxi.idp.Paths;
 import org.guanxi.idp.farm.attributors.Attributor;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.definitions.EduPersonOID;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
 /**
@@ -50,8 +49,6 @@ public class FlatFileAttributeSAML2Test extends AttributeTest {
       boolean protectedApp_FirstName = false;
       boolean protectedApp_Surname = false;
       boolean protectedApp_Email = false;
-      boolean mail = false;
-      boolean eduPersonScopedAffiliation = false;
 
       AttributorAttribute[] attrs = attributes.getAttributeArray();
       for (AttributorAttribute attr : attrs) {
@@ -71,14 +68,6 @@ public class FlatFileAttributeSAML2Test extends AttributeTest {
           assertEquals(attr.getValue(), "HarryMcD@jumpingupanddown.net");
           protectedApp_Email = true;
         }
-        if (attr.getName().equals(EduPersonOID.OID_MAIL)) {
-          assertEquals(attr.getValue(), "alternative email");
-          mail = true;
-        }
-        if (attr.getName().equals(EduPersonOID.OID_EDUPERSON_SCOPED_AFFILIATION)) {
-          assertEquals(attr.getValue(), "staff@uni.ac.uk");
-          eduPersonScopedAffiliation = true;
-        }
         if (attr.getName().equals("function")) {
           fail("Found the attribute known as 'function' - it shouldn't be there!");
         }
@@ -89,8 +78,6 @@ public class FlatFileAttributeSAML2Test extends AttributeTest {
       assertTrue(protectedApp_FirstName);
       assertTrue(protectedApp_Surname);
       assertTrue(protectedApp_Email);
-      assertTrue(mail);
-      assertTrue(eduPersonScopedAffiliation);
     }
     catch(GuanxiException ge) {
       fail(ge.getMessage());
