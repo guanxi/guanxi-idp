@@ -29,6 +29,8 @@ public class DBAttributeTest extends AttributeTest {
     Connection derbyConnection = null;
     Statement derbyStatement = null;
 
+    System.setProperty("derby.system.home", Paths.path("derby.system.home"));
+
     try {
       derbyDir = new File(new File(".").getCanonicalPath() + System.getProperty("file.separator") + "dbattrtest");
       derbyLogfile = new File(new File(".").getCanonicalPath() + System.getProperty("file.separator") + "derby.log");
