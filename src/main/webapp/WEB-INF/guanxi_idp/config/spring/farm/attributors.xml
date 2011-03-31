@@ -26,7 +26,7 @@
   <!-- Derby Database attributor -->
   <bean id="dbAttributor" class="org.guanxi.idp.farm.attributors.JDBCAttributor" init-method="init">
     <property name="driverClass"><value>org.apache.derby.jdbc.EmbeddedDriver</value></property>
-    <property name="connectionString"><value>jdbc:derby:dbattrtest</value></property>
+    <property name="connectionString"><value>jdbc:derby:dbattrtest;create=true</value></property>
     <property name="dbUsername"><value>user</value></property>
     <property name="dbPassword"><value>passwd</value></property>
     <property name="query"><value>SELECT * FROM attrs where userid = '__USERID__'</value></property>
