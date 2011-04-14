@@ -96,7 +96,7 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
       }
       else {
         // HTTP-Redirect binding means a base64 encoded deflated SAML Request
-        String decodedRequest = Utils.decodeBase64(request.getParameter("SAMLRequest"));
+        byte[] decodedRequest = Utils.decodeBase64b(request.getParameter("SAMLRequest"));
         requestDoc = AuthnRequestDocument.Factory.parse(Utils.inflate(decodedRequest, Utils.RFC1951_NO_WRAP));
         requestBinding = SAML.SAML2_BINDING_HTTP_REDIRECT;
       }
