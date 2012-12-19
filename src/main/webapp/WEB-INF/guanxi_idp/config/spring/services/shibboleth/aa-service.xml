@@ -14,5 +14,10 @@
         <ref bean="flatFileAttributor" />
       </list>
     </property>
+    <property name="saml2EduPersonTargetedIDSPEntityIDs">
+      <list>
+        <value>protectedapp-guard</value>
+      </list>
+    </property>
   </bean>
 </beans>
