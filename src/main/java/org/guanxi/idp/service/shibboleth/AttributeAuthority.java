@@ -19,6 +19,7 @@ package org.guanxi.idp.service.shibboleth;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 
@@ -35,11 +36,9 @@ import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.GuanxiPrincipal;
 import org.guanxi.common.Utils;
+import org.guanxi.common.definitions.*;
 import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.entity.EntityManager;
-import org.guanxi.common.definitions.EduPerson;
-import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.xal.idp.AttributorAttribute;
@@ -62,6 +61,8 @@ import org.guanxi.xal.saml_1_0.protocol.ResponseType;
 import org.guanxi.xal.saml_1_0.protocol.StatusCodeType;
 import org.guanxi.xal.saml_1_0.protocol.StatusDocument;
 import org.guanxi.xal.saml_1_0.protocol.StatusType;
+import org.guanxi.xal.saml_2_0.assertion.NameIDDocument;
+import org.guanxi.xal.saml_2_0.assertion.NameIDType;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.soap.Body;
 import org.guanxi.xal.soap.Envelope;
@@ -90,6 +91,8 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
   protected AttributeMap mapper = null;
   /** Our ARP engine */
   protected ARPEngine arpEngine = null;
+  /** These SPs get the new format for eduPersonTargetedID */
+  private ArrayList<String> saml2EduPersonTargetedIDSPEntityIDs = null;
 
   public void init() throws ServletException {
   }
@@ -273,13 +276,15 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     assertion.setConditions(conditions);
 
     // Add the attributes if there are any
-    AttributeStatementDocument attrStatementDoc = addAttributesFromFarm(attributesDoc);
+    AttributeStatementDocument attrStatementDoc = addAttributesFromFarm(attributesDoc,
+            samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getNameQualifier(),
+            spProviderId);
 
     // If a user has no attributes we shouldn't add an Assertion or Subject
     if (attrStatementDoc != null) {
       SubjectType subject = attrStatementDoc.getAttributeStatement().addNewSubject();
       NameIdentifierType nameID = subject.addNewNameIdentifier();
-        nameID.setFormat(samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getFormat());
+      nameID.setFormat(samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getFormat());
       nameID.setNameQualifier(samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getNameQualifier());
       nameID.setStringValue(samlRequest.getAttributeQuery().getSubject().getNameIdentifier().getStringValue());
 
@@ -356,7 +361,8 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
     return false;
   }
 
-  private AttributeStatementDocument addAttributesFromFarm(UserAttributesDocument guanxiAttrFarmOutput) {
+  private AttributeStatementDocument addAttributesFromFarm(UserAttributesDocument guanxiAttrFarmOutput,
+                                                           String nameQualifier, String spProviderId) {
     AttributeStatementDocument attrStatementDoc = AttributeStatementDocument.Factory.newInstance();
     AttributeStatementType attrStatement = attrStatementDoc.addNewAttributeStatement();
 
@@ -387,8 +393,8 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
       XmlObject attrValue = attribute.addNewAttributeValue();
 
       // Deal with scoped eduPerson attributes
-      if  ((attribute.getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
-           (attribute.getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID))) {
+      if ((attribute.getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
+          (attribute.getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID))) {
         // Check if the scope is present...
         if (!attributorAttr.getValue().contains(EduPerson.EDUPERSON_SCOPED_DELIMITER)) {
           // ...if not, add the error scope
@@ -406,13 +412,59 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
         Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
         attrValue.getDomNode().appendChild(valueNode);
       }
-      
+
+      // Release the newer eduPersonTargetedID format to specific SPs
+      // internet2-mace-dir-saml-attributes-200804a : 2.3.2.1.1 Recommended Name and Syntax
+      if (attribute.getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID)) {
+        if (getsNewEPTID(spProviderId)) {
+          NameIDDocument nameIDDoc = NameIDDocument.Factory.newInstance();
+          NameIDType nameID = nameIDDoc.addNewNameID();
+          nameID.setFormat(SAML.SAML2_ATTRIBUTE_FORMAT_NAMEID_PERSISTENT);
+          nameID.setNameQualifier(nameQualifier);
+          nameID.setSPNameQualifier(spProviderId);
+          if (attributorAttr.getValue().contains("@")) {
+            attributorAttr.setValue(attributorAttr.getValue().split("@")[0]);
+          }
+          nameID.setStringValue(attributorAttr.getValue());
+
+          AttributeType saml2Attribute = attrStatement.addNewAttribute();
+          saml2Attribute.setAttributeName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + EduPersonOID.OID_EDUPERSON_TARGETED_ID);
+          saml2Attribute.setAttributeNamespace(Shibboleth.NS_ATTRIBUTES);
+
+          XmlObject saml2AttrValue = saml2Attribute.addNewAttributeValue();
+          saml2AttrValue.getDomNode().appendChild(saml2AttrValue.getDomNode().getOwnerDocument().importNode(nameID.getDomNode(), true));
+
+          // Don't release the legacy format of eduPersonTargetedID
+          int count = 0;
+          AttributeType[] existingAttributes = attrStatement.getAttributeArray();
+          for (AttributeType existingAttribute : existingAttributes) {
+            if (existingAttribute.getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID)) {
+              attrStatement.removeAttribute(count);
+            }
+            count++;
+          }
+        }
+      }
     }
 
     if (hasAttrs)
       return attrStatementDoc;
     else
       return null;
+  }
+
+  private boolean getsNewEPTID(String spEntityID) {
+    if (saml2EduPersonTargetedIDSPEntityIDs == null) {
+      return false;
+    }
+
+    for (String entityID : saml2EduPersonTargetedIDSPEntityIDs) {
+      if (entityID.equals(spEntityID)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   // Getters
@@ -424,4 +476,5 @@ public class AttributeAuthority extends HandlerInterceptorAdapter implements Ser
   public void setAttributor(org.guanxi.idp.farm.attributors.Attributor[] attributor) { this.attributor = attributor; }
   public void setMapper(AttributeMap mapper) { this.mapper = mapper; }
   public void setArpEngine(ARPEngine arpEngine) { this.arpEngine = arpEngine; }
+  public void setSaml2EduPersonTargetedIDSPEntityIDs(ArrayList<String> saml2EduPersonTargetedIDSPEntityIDs) { this.saml2EduPersonTargetedIDSPEntityIDs = saml2EduPersonTargetedIDSPEntityIDs; }
 }
