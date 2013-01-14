@@ -18,7 +18,7 @@
   </description>
   <groupId>org.guanxi</groupId>
   <artifactId>guanxi-idp</artifactId>
-  <version>2.2.5-SNAPSHOT</version>
+  <version>2.2.5</version>
 
   <organization>
     <name>UHI Millennium Institute</name>
@@ -36,7 +36,7 @@
     <dependency>
       <groupId>org.guanxi</groupId>
       <artifactId>guanxi-common</artifactId>
-      <version>2.0.11-SNAPSHOT</version>
+      <version>2.0.11</version>
     </dependency>
 
     <dependency>
