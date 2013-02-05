@@ -1,0 +1,27 @@
+Guanxi IdP Releases
+===================
+
+o Latest Release
+o Previous releases
+
+Latest Release
+--------------
+v2.2.6
+This release addresses a SAML2 vulnerability in:
+org.guanxi.idp.service.saml2.WebBrowserSSOAuthHandler
+discovered and reported by:
+Andreas Mayer (Adolf Würth GmbH & Co. KG),
+Vladislav Mladenov,
+Marcus Niemietz
+and Joerg Schwenk from Horst Görtz Institute for IT Security (Ruhr-University Bochum)
+More details:
+
+
+Previous releases
+-----------------
+v2.2.5 http://codebrane.com/blog/?p=2868
+
+Earlier releases can be found on the release page:
+http://codebrane.com/brane/node/13
+
+
