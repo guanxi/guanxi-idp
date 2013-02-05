@@ -182,41 +182,34 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
       return true;
     }
 
+    // Sanity check. Get the ACS from the definitive source, the SP's metadata
+    ACS acsFromMetadata = getACSForBinding(manager, entityID, requestBinding, defaultResponseBinding);
+
     // Entity verification was successful. Now get its attribute consumer URL
     // First, try to get the URL and binding from the SAML Request...
     if ((requestDoc.getAuthnRequest().getAssertionConsumerServiceURL() != null) &&
         (!requestDoc.getAuthnRequest().getAssertionConsumerServiceURL().equals("")) &&
         (requestDoc.getAuthnRequest().getProtocolBinding() != null) &&
         (!requestDoc.getAuthnRequest().getProtocolBinding().equals(""))) {
-      request.setAttribute("acsURL", requestDoc.getAuthnRequest().getAssertionConsumerServiceURL());
-      request.setAttribute("responseBinding", requestDoc.getAuthnRequest().getProtocolBinding());
-    }
-    else {
-      // ...or if the information is missing, try to work it out from the metadata
-      SPMetadata metadata = (SPMetadata)manager.getMetadata(entityID);
-      String acsURL = null;
-      EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
-      IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
-      String defaultAcsURL = null;
-      for (IndexedEndpointType acs : acss) {
-        if (acs.getBinding().equalsIgnoreCase(requestBinding)) {
-          acsURL = acs.getLocation();
-        }
-        // Find the default binding endpoint in case we need it
-        if (acs.getBinding().equalsIgnoreCase(defaultResponseBinding)) {
-          defaultAcsURL = acs.getLocation();
-        }
-      }
+      String acsURLFromRequest = requestDoc.getAuthnRequest().getAssertionConsumerServiceURL();
+      String bindingFromRequest = requestDoc.getAuthnRequest().getProtocolBinding();
 
-      // If there's no Response endpoint binding to match the binding used for the Request, use the default
-      if (acsURL == null) {
-        request.setAttribute("acsURL", defaultAcsURL);
-        request.setAttribute("responseBinding", defaultResponseBinding);
+      // ...but validate it from metadata before using it
+      ACS requestedACSFromMetadata = getACSForBinding(manager, entityID, bindingFromRequest, defaultResponseBinding);
+      if ((acsURLFromRequest.equals(requestedACSFromMetadata.acsURL)) &&
+          (bindingFromRequest.equals(requestedACSFromMetadata.binding))) {
+        request.setAttribute("acsURL", acsURLFromRequest);
+        request.setAttribute("responseBinding", bindingFromRequest);
       }
       else {
-        request.setAttribute("acsURL", acsURL);
-        request.setAttribute("responseBinding", requestBinding);
+        // The SP has requested we send the response to a particular ACS but we have no record
+        // of it in the metadata, so refuse the request.
+        request.setAttribute("wbsso-handler-error-message", "Invalid Attribute Consumer Service URL specified in request");
       }
+    }
+    else {
+      request.setAttribute("acsURL", acsFromMetadata.acsURL);
+      request.setAttribute("responseBinding", acsFromMetadata.binding);
     }
 
     // We don't support passive authentication
@@ -233,6 +226,58 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
      * We'll end up back here after the user has logged in.
      */
     return auth(entityID, request, response);
+  }
+
+  /**
+   * Retrieves the Attribute Consumer Service URL for a particular binding by looking
+   * in the metadata for a Service Provider.
+   *
+   * @param manager EntityManager instance that can get at the metadata
+   * @param entityID the identifier of the Service Provider
+   * @param requestBinding either SAML.SAML2_BINDING_HTTP_POST or SAML.SAML2_BINDING_HTTP_REDIRECT
+   * @param defaultResponseBinding whatever is set in web-browser-ss-auth-server.xml
+   * @return The ACS url and binding for the specified binding. If the the binding isn't registered in the
+   * metadata the ACS url for the default binding is returned.
+   */
+  private ACS getACSForBinding(EntityManager manager, String entityID,
+                               String requestBinding, String defaultResponseBinding) {
+    SPMetadata metadata = (SPMetadata)manager.getMetadata(entityID);
+    String acsURL = null;
+    EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
+    IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
+    String defaultAcsURL = null;
+    for (IndexedEndpointType acs : acss) {
+      if (acs.getBinding().equalsIgnoreCase(requestBinding)) {
+        acsURL = acs.getLocation();
+      }
+      // Find the default binding endpoint in case we need it
+      if (acs.getBinding().equalsIgnoreCase(defaultResponseBinding)) {
+        defaultAcsURL = acs.getLocation();
+      }
+    }
+
+    // If there's no Response endpoint binding to match the binding used for the Request, use the default
+    ACS acs = new ACS();
+    if (acsURL == null) {
+      acs.acsURL = defaultAcsURL;
+      acs.binding = defaultResponseBinding;
+    }
+    else {
+      acs.acsURL = acsURL;
+      acs.binding = requestBinding;
+    }
+
+    return acs;
+  }
+
+  /**
+   * For use with getACSForBinding
+   */
+  private class ACS {
+    /** The Attribute Consumer URL */
+    public String acsURL = null;
+    /** The SAML2 protocol binding to be used with acsURL */
+    public String binding = null;
   }
 
   // Setters
