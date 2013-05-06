@@ -65,6 +65,12 @@ public class LDAPAuthenticator extends SimpleAuthenticator {
   public boolean authenticate(GuanxiPrincipal principal, String username, String password) {
     LDAPConnection lc = new LDAPConnection();
 
+    if ((password == null) || (password.length() == 0) || (password.equals(""))) {
+      errorMessage = "Please supply your password";
+      logger.error("No password for " + username);
+      return false;
+    }
+
     // Try to authenticate the user against all the available servers
     Server[] servers = ldapConfig.getServerArray();
     for (int c=0; c < servers.length; c++) {
