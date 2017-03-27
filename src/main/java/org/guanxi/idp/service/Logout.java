@@ -58,6 +58,8 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
   private GuanxiPrincipalFactory gxPrincipalFactory = null;
   /** The localised messages */
   private MessageSource messageSource = null;
+  /** If this URL parameter is present, where to redirect after logout */
+  private String redirectParamName;
 
   /**
    * Initialise the interceptor
@@ -163,7 +165,13 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
         request.setAttribute("LOGOUT_MESSAGE", messageSource.getMessage("idp.logout.unsuccessful",
                                                                         null, request.getLocale()));
 
-      request.getRequestDispatcher(logoutPage).forward(request, response);
+      if ((request.getParameter(redirectParamName) != null)
+          && (request.getParameter(redirectParamName).length() > 0)) {
+        response.sendRedirect(request.getParameter(redirectParamName));
+      }
+      else {
+        request.getRequestDispatcher(logoutPage).forward(request, response);
+      }
     }
   }
 
@@ -196,5 +204,9 @@ public class Logout extends HandlerInterceptorAdapter implements ServletContextA
 
   public void setMessageSource(MessageSource messageSource) {
     this.messageSource = messageSource;
+  }
+
+  public void setRedirectParamName(String redirectParamName) {
+    this.redirectParamName = redirectParamName;
   }
 }
