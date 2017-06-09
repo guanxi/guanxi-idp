@@ -145,7 +145,7 @@ public abstract class GenericAuthHandler extends HandlerInterceptorAdapter imple
       }
 
       // Customised auth page for this service provider
-      if (authPages[c].getProviderId().equals(request.getParameter(spEntityID))) {
+      if (authPages[c].getProviderId().equals(spEntityID)) {
         authPage = authPages[c].getUrl();
       }
     }
