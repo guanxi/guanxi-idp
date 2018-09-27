@@ -16,6 +16,7 @@
 
 package org.guanxi.idp.service.saml2;
 
+import org.guanxi.idp.util.VarEngine;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.context.MessageSource;
 import org.guanxi.xal.saml_2_0.protocol.*;
@@ -34,6 +35,8 @@ import org.w3c.dom.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.security.cert.X509Certificate;
 import java.net.URLEncoder;
@@ -56,6 +59,18 @@ public class WebBrowserSSO extends SSOBase {
   private String errorViewDisplayVar = null;
   /** Whether to encrypt attributes in the response */
   private boolean encryptAttributes;
+  /** If encryptAttributes is true, don't encrypt for these SPs */
+  private ArrayList<String> doNotEncryptAttributesFor;
+  /** The engine that handles variable interpolation */
+  private VarEngine varEngine = null;
+
+  /**
+   * Called by Spring to initialise the service
+   */
+  public void init() {
+    super.init();
+    interpolateEncryptionIgnores();
+  }
 
   /**
    * Handles processing of an AuthnRequest message. If the request attribute:
@@ -85,57 +100,89 @@ public class WebBrowserSSO extends SSOBase {
 
         xmlOptions.setSaveSuggestedPrefixes(saml2Namespaces);
 
-        Document signedDoc = null;
-        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-          try {
-            // Need to use newDomNode to preserve namespace information
-            signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
-                                                         (Document)errorDoc.newDomNode(xmlOptions),
-                                                          errorDoc.getResponse().getID());
-          }
-          catch(GuanxiException ge) {
-            logger.error("Could not sign Response", ge);
-            mAndV.setViewName(errorView);
-            mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
-                                                                          null, request.getLocale()));
-            return mAndV;
-          }
-        }
+        try {
+          String b64SAMLResponse = signAndEncodeResponse(request, errorDoc, mAndV);
 
-        // Do the binding quickstep
-        String b64SAMLResponse = null;
-        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-          b64SAMLResponse = Utils.base64(signedDoc);
-          mAndV.setViewName(httpPOSTView);
-        }
-        else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
-          String deflatedResponse = Utils.deflate(errorDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
-          b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
-          b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
-          b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
-          mAndV.setViewName(httpRedirectView);
-        }
-
-        // Debug syphoning?
-        if (idpConfig.getDebug() != null) {
-          if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
-            if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
-              logger.info("=======================================================");
-              logger.info("Error Response to SAML2 WBSSO request by " + spEntityID);
-              logger.info("");
-              StringWriter sw = new StringWriter();
-              errorDoc.save(sw, xmlOptions);
-              logger.info(sw.toString());
-              logger.info("");
-              logger.info("=======================================================");
+          // Debug syphoning?
+          if (idpConfig.getDebug() != null) {
+            if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
+              if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
+                logger.info("=======================================================");
+                logger.info("Error Response to SAML2 WBSSO request by " + spEntityID);
+                logger.info("");
+                StringWriter sw = new StringWriter();
+                errorDoc.save(sw, xmlOptions);
+                logger.info(sw.toString());
+                logger.info("");
+                logger.info("=======================================================");
+              }
             }
           }
+
+          request.setAttribute("SAMLResponse", b64SAMLResponse);
+          request.setAttribute("RelayState", request.getParameter("RelayState"));
+          mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
+        }
+        catch(GuanxiException ge) {
+          logger.error("Could not sign Response", ge);
+          mAndV.setViewName(errorView);
+          mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+                                                                        null, request.getLocale()));
         }
 
-        request.setAttribute("SAMLResponse", b64SAMLResponse);
-        request.setAttribute("RelayState", request.getParameter("RelayState"));
-        mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
         return mAndV;
+
+//        Document signedDoc = null;
+//        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+//          try {
+//            // Need to use newDomNode to preserve namespace information
+//            signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
+//                                                         (Document)errorDoc.newDomNode(xmlOptions),
+//                                                          errorDoc.getResponse().getID());
+//          }
+//          catch(GuanxiException ge) {
+//            logger.error("Could not sign Response", ge);
+//            mAndV.setViewName(errorView);
+//            mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+//                                                                          null, request.getLocale()));
+//            return mAndV;
+//          }
+//        }
+//
+//        // Do the binding quickstep
+//        String b64SAMLResponse = null;
+//        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+//          b64SAMLResponse = Utils.base64(signedDoc);
+//          mAndV.setViewName(httpPOSTView);
+//        }
+//        else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
+//          String deflatedResponse = Utils.deflate(errorDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
+//          b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
+//          b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
+//          b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
+//          mAndV.setViewName(httpRedirectView);
+//        }
+
+//        // Debug syphoning?
+//        if (idpConfig.getDebug() != null) {
+//          if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
+//            if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
+//              logger.info("=======================================================");
+//              logger.info("Error Response to SAML2 WBSSO request by " + spEntityID);
+//              logger.info("");
+//              StringWriter sw = new StringWriter();
+//              errorDoc.save(sw, xmlOptions);
+//              logger.info(sw.toString());
+//              logger.info("");
+//              logger.info("=======================================================");
+//            }
+//          }
+//        }
+//
+//        request.setAttribute("SAMLResponse", b64SAMLResponse);
+//        request.setAttribute("RelayState", request.getParameter("RelayState"));
+//        mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
+//        return mAndV;
       }
       else {
         logger.error("Displaying auth handler error");
@@ -252,7 +299,8 @@ public class WebBrowserSSO extends SSOBase {
       }
     }
 
-    if (encryptAttributes) {
+    // Encrypt the attributes if required but ignore any SP that doesn't want encryption
+    if ((encryptAttributes) && (!doNotEncryptAttributesFor.contains(spEntityID))) {
       // Get the SP's encryption key. We'll use this to encrypt the secret key for encrypting the attributes
       X509Certificate encryptionCert = getX509CertFromMetadata(getSPMetadata(spEntityID), ENTITY_SP, ENCRYPTION_CERT);
       if (encryptionCert != null) {
@@ -269,43 +317,94 @@ public class WebBrowserSSO extends SSOBase {
       responseDoc.getResponse().setAssertionArray(0, assertionDoc.getAssertion());
     }
 
-    // Break out to DOM land to get the SAML Response signed...
-    Document signedDoc = null;
-    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-      try {
-        // Need to use newDomNode to preserve namespace information
-        signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
-                                                     (Document)responseDoc.newDomNode(xmlOptions),
-                                                      responseDoc.getResponse().getID());
-      }
-      catch(GuanxiException ge) {
-        logger.error("Could not sign Response", ge);
-        mAndV.setViewName(errorView);
-        mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
-                                                                      null, request.getLocale()));
-        return mAndV;
-      }
+    try {
+      String b64SAMLResponse = signAndEncodeResponse(request, responseDoc, mAndV);
+      // Send the Response to the SP
+      request.setAttribute("SAMLResponse", b64SAMLResponse);
+      request.setAttribute("RelayState", request.getParameter("RelayState"));
+      mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
     }
- 
-    // Do the binding quickstep
-    String b64SAMLResponse = null;
-    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-      b64SAMLResponse = Utils.base64(signedDoc);
-      mAndV.setViewName(httpPOSTView);
-    }
-    else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
-      String deflatedResponse = Utils.deflate(responseDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
-      b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
-      b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
-      b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
-      mAndV.setViewName(httpRedirectView);
+    catch(GuanxiException ge) {
+      logger.error("Could not sign Response", ge);
+      mAndV.setViewName(errorView);
+      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+                                                                    null, request.getLocale()));
     }
 
-    // Send the Response to the SP
-    request.setAttribute("SAMLResponse", b64SAMLResponse);
-    request.setAttribute("RelayState", request.getParameter("RelayState"));
-    mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
     return mAndV;
+
+    // Break out to DOM land to get the SAML Response signed...
+//    Document signedDoc = null;
+//    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+//      try {
+//        // Need to use newDomNode to preserve namespace information
+//        signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
+//                                                     (Document)responseDoc.newDomNode(xmlOptions),
+//                                                      responseDoc.getResponse().getID());
+//      }
+//      catch(GuanxiException ge) {
+//        logger.error("Could not sign Response", ge);
+//        mAndV.setViewName(errorView);
+//        mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
+//                                                                      null, request.getLocale()));
+//        return mAndV;
+//      }
+//    }
+//
+//    // Do the binding quickstep
+//    String b64SAMLResponse = null;
+//    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+//      b64SAMLResponse = Utils.base64(signedDoc);
+//      mAndV.setViewName(httpPOSTView);
+//    }
+//    else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
+//      String deflatedResponse = Utils.deflate(responseDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
+//      b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
+//      b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
+//      b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
+//      mAndV.setViewName(httpRedirectView);
+//    }
+
+//    // Send the Response to the SP
+//    request.setAttribute("SAMLResponse", b64SAMLResponse);
+//    request.setAttribute("RelayState", request.getParameter("RelayState"));
+//    mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
+//    return mAndV;
+  }
+
+  private void interpolateEncryptionIgnores() {
+    for (String spVar : doNotEncryptAttributesFor) {
+      doNotEncryptAttributesFor.add(varEngine.interpolate(spVar));
+      doNotEncryptAttributesFor.remove(spVar);
+    }
+  }
+
+  private String signAndEncodeResponse(HttpServletRequest request, ResponseDocument responseDocument,
+                                       ModelAndView mAndV) throws GuanxiException {
+
+    // Do the binding quickstep
+    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
+      mAndV.setViewName(httpPOSTView);
+      // Need to use newDomNode to preserve namespace information
+      Document signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
+              (Document)responseDocument.newDomNode(xmlOptions),
+              responseDocument.getResponse().getID());
+      return Utils.base64(signedDoc);
+    }
+    else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
+      mAndV.setViewName(httpRedirectView);
+      String deflatedResponse = Utils.deflate(responseDocument.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
+      String b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
+      b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
+      try {
+        b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
+        return b64SAMLResponse;
+      }
+      catch(UnsupportedEncodingException uee) {
+        throw new GuanxiException(uee);
+      }
+    }
+    else throw new GuanxiException("responseBinding " + request.getAttribute("responseBinding") + "not supported");
   }
 
   // Setters
@@ -315,4 +414,7 @@ public class WebBrowserSSO extends SSOBase {
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
   public void setEncryptAttributes(boolean encryptAttributes) { this.encryptAttributes = encryptAttributes; }
+  public void setDoNotEncryptAttributesFor(ArrayList<String> doNotEncryptAttributesFor) { this.doNotEncryptAttributesFor = doNotEncryptAttributesFor; }
+  public void setVarEngine(VarEngine varEngine) { this.varEngine = varEngine; }
+
 }
