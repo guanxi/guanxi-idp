@@ -67,6 +67,10 @@ public class JDBCAttributor extends SimpleAttributor {
     processNameID(mapper, relyingParty, attributes);
 
     try {
+      if (dbConnection.isClosed()) {
+        dbConnection = DriverManager.getConnection(connectionString, dbUsername, dbPassword);
+      }
+      
       String userQuery = query.replaceAll("__USERID__", principal.getName());
 
       Statement statement = dbConnection.createStatement();
