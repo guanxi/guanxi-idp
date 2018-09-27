@@ -111,6 +111,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
                                   configDoc.getIdp().getID());
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_DOMAIN, cookieDomain);
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE, new Integer(cookieAge));
+			
+			servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, entityFarm);
 
       setup();
 
