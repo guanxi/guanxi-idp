@@ -73,6 +73,10 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
 
     loadAndCacheEntities();
 
+		if (config == null) {
+			logger.info("ABOUT TO loadEntityManager BUT CONFIG IS NULL");
+		}
+		
     EntityManager manager = loadEntityManager(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
 
     if (!loadCAListFromMetadata(manager)) {
