@@ -307,7 +307,14 @@ public abstract class SSOBase extends AbstractController implements ServletConte
         else {
           hasAttrs = true;
           attribute = attrStatement.addNewAttribute();
-          attribute.setName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + attributorAttr.getName());
+
+          // Only add the prefix if the attribute starts with a number
+          if (Character.isDigit(attributorAttr.getName().charAt(0))) {
+            attribute.setName(EduPersonOID.ATTRIBUTE_NAME_PREFIX + attributorAttr.getName());
+          } else {
+            attribute.setName(attributorAttr.getName());
+          }
+
           if (attributorAttr.getFriendlyName() != null) {
             attribute.setFriendlyName(attributorAttr.getFriendlyName());
           }
