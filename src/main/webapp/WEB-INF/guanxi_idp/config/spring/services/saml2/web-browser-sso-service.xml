@@ -17,10 +17,16 @@
     <property name="assertionTimeLimit"><value>60</value></property>
     <property name="mapper"><ref bean="saml2AttributeMapper"/></property>
     <property name="arpEngine"><ref bean="idpARPEngine"/></property>
-    <property name="encryptAttributes"><value>true</value></property>
+    <property name="encryptAttributes"><value>yes</value></property>
+    <property name="varEngine"><ref bean="idpVarEngine"/></property>
     <property name="attributor">
       <list>
         <ref bean="flatFileAttributor" />
+      </list>
+    </property>
+    <property name="doNotEncryptAttributesFor">
+      <list>
+        <value>${lynda}</value>
       </list>
     </property>
   </bean>
