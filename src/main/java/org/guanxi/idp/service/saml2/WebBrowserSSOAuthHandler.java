@@ -99,8 +99,14 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
         // HTTP-Redirect binding means a base64 encoded deflated SAML Request
         if (request.getParameter("SAMLRequest") != null) {
           byte[] decodedRequest = Utils.decodeBase64b(request.getParameter("SAMLRequest"));
-          requestDoc = AuthnRequestDocument.Factory.parse(Utils.inflate(decodedRequest, Utils.RFC1951_NO_WRAP));
-          requestBinding = SAML.SAML2_BINDING_HTTP_REDIRECT;
+          if (decodedRequest != null) {
+            requestDoc = AuthnRequestDocument.Factory.parse(Utils.inflate(decodedRequest, Utils.RFC1951_NO_WRAP));
+            requestBinding = SAML.SAML2_BINDING_HTTP_REDIRECT;
+          }
+          else {
+            logger.error("cannot decode SAMLRequest " + request.getParameter("SAMLRequest"));
+            throw new GuanxiException("got an invalid SAMLRequest from " + request.getHeader("referer"));
+          }
         }
         else {
           logger.error("got a get request with no SAMLRequest from " + request.getHeader("referer"));
@@ -189,12 +195,9 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
 
     // Entity verification was successful. Now get its attribute consumer URL
     // First, try to get the URL and binding from the SAML Request...
-//    if ((requestDoc.getAuthnRequest().getAssertionConsumerServiceURL() != null) &&
-//        (!requestDoc.getAuthnRequest().getAssertionConsumerServiceURL().equals("")) &&
-//        (requestDoc.getAuthnRequest().getProtocolBinding() != null) &&
-//        (!requestDoc.getAuthnRequest().getProtocolBinding().equals(""))) {
-    if ((requestDoc.getAuthnRequest().getAssertionConsumerServiceURL() != null) &&
-        (!requestDoc.getAuthnRequest().getAssertionConsumerServiceURL().equals(""))) {
+    if (((requestDoc.getAuthnRequest().getAssertionConsumerServiceURL() != null) &&
+        (!requestDoc.getAuthnRequest().getAssertionConsumerServiceURL().equals(""))) ||
+            (requestDoc.getAuthnRequest().getAssertionConsumerServiceIndex() > 0)) {
       String acsURLFromRequest = requestDoc.getAuthnRequest().getAssertionConsumerServiceURL();
 
       String bindingFromRequest;
@@ -206,7 +209,12 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
         bindingFromRequest = requestDoc.getAuthnRequest().getProtocolBinding();
       }
 
-      if (validateACSAndBinding(manager, entityID, acsURLFromRequest, bindingFromRequest)) {
+      if ((requestDoc.getAuthnRequest().getAssertionConsumerServiceIndex() > 0)) {
+        request.setAttribute("acsURL", getACSUrlFromMetadata(manager, entityID,
+                requestDoc.getAuthnRequest().getAssertionConsumerServiceIndex()));
+        request.setAttribute("responseBinding", bindingFromRequest);
+      }
+      else if (validateACSAndBinding(manager, entityID, acsURLFromRequest, bindingFromRequest)) {
         request.setAttribute("acsURL", acsURLFromRequest);
         request.setAttribute("responseBinding", bindingFromRequest);
       }
@@ -233,7 +241,8 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     return auth(entityID, request, response);
   }
 
-  private boolean validateACSAndBinding(EntityManager manager, String entityID, String acsURLFromRequest, String bindingFromRequest) {
+  private boolean validateACSAndBinding(EntityManager manager, String entityID,
+                                        String acsURLFromRequest, String bindingFromRequest) {
     SPMetadata metadata = (SPMetadata)manager.getMetadata(entityID);
     EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
     IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
@@ -249,60 +258,18 @@ public class WebBrowserSSOAuthHandler extends GenericAuthHandler {
     return false;
   }
 
-  /**
-   * Retrieves the Attribute Consumer Service URL for a particular binding by looking
-   * in the metadata for a Service Provider.
-   *
-   * @param manager EntityManager instance that can get at the metadata
-   * @param entityID the identifier of the Service Provider
-   * @param requestBinding either SAML.SAML2_BINDING_HTTP_POST or SAML.SAML2_BINDING_HTTP_REDIRECT
-   * @param defaultResponseBinding whatever is set in web-browser-ss-auth-server.xml
-   * @return The ACS url and binding for the specified binding. If the the binding isn't registered in the
-   * metadata the ACS url for the default binding is returned.
-   */
-  /*
-  private ACS getACSForBinding(EntityManager manager, String entityID,
-                               String requestBinding, String defaultResponseBinding) {
+  private String getACSUrlFromMetadata(EntityManager manager, String entityID, int index) {
     SPMetadata metadata = (SPMetadata)manager.getMetadata(entityID);
-    String acsURL = null;
     EntityDescriptorType saml2Metadata = (EntityDescriptorType)metadata.getPrivateData();
     IndexedEndpointType[] acss = saml2Metadata.getSPSSODescriptorArray(0).getAssertionConsumerServiceArray();
-    String defaultAcsURL = null;
-
     for (IndexedEndpointType acs : acss) {
-      if (acs.getBinding().equalsIgnoreCase(requestBinding)) {
-        acsURL = acs.getLocation();
-      }
-      // Find the default binding endpoint in case we need it
-      if (acs.getBinding().equalsIgnoreCase(defaultResponseBinding)) {
-        defaultAcsURL = acs.getLocation();
+      if (acs.getIndex() == index) {
+        return acs.getLocation();
       }
     }
 
-    // If there's no Response endpoint binding to match the binding used for the Request, use the default
-    ACS acs = new ACS();
-    if (acsURL == null) {
-      acs.acsURL = defaultAcsURL;
-      acs.binding = defaultResponseBinding;
-    }
-    else {
-      acs.acsURL = acsURL;
-      acs.binding = requestBinding;
-    }
-
-    return acs;
+    return null;
   }
-  */
-
-  /**
-   * For use with getACSForBinding
-   */
-//  private class ACS {
-//    /** The Attribute Consumer URL */
-//    public String acsURL = null;
-//    /** The SAML2 protocol binding to be used with acsURL */
-//    public String binding = null;
-//  }
 
   // Setters
   public void setDefaultResponseBinding(String defaultResponseBinding) { this.defaultResponseBinding = defaultResponseBinding; }
