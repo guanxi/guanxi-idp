@@ -131,58 +131,6 @@ public class WebBrowserSSO extends SSOBase {
         }
 
         return mAndV;
-
-//        Document signedDoc = null;
-//        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-//          try {
-//            // Need to use newDomNode to preserve namespace information
-//            signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
-//                                                         (Document)errorDoc.newDomNode(xmlOptions),
-//                                                          errorDoc.getResponse().getID());
-//          }
-//          catch(GuanxiException ge) {
-//            logger.error("Could not sign Response", ge);
-//            mAndV.setViewName(errorView);
-//            mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
-//                                                                          null, request.getLocale()));
-//            return mAndV;
-//          }
-//        }
-//
-//        // Do the binding quickstep
-//        String b64SAMLResponse = null;
-//        if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-//          b64SAMLResponse = Utils.base64(signedDoc);
-//          mAndV.setViewName(httpPOSTView);
-//        }
-//        else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
-//          String deflatedResponse = Utils.deflate(errorDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
-//          b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
-//          b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
-//          b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
-//          mAndV.setViewName(httpRedirectView);
-//        }
-
-//        // Debug syphoning?
-//        if (idpConfig.getDebug() != null) {
-//          if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
-//            if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
-//              logger.info("=======================================================");
-//              logger.info("Error Response to SAML2 WBSSO request by " + spEntityID);
-//              logger.info("");
-//              StringWriter sw = new StringWriter();
-//              errorDoc.save(sw, xmlOptions);
-//              logger.info(sw.toString());
-//              logger.info("");
-//              logger.info("=======================================================");
-//            }
-//          }
-//        }
-//
-//        request.setAttribute("SAMLResponse", b64SAMLResponse);
-//        request.setAttribute("RelayState", request.getParameter("RelayState"));
-//        mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
-//        return mAndV;
       }
       else {
         logger.error("Displaying auth handler error");
@@ -332,44 +280,6 @@ public class WebBrowserSSO extends SSOBase {
     }
 
     return mAndV;
-
-    // Break out to DOM land to get the SAML Response signed...
-//    Document signedDoc = null;
-//    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-//      try {
-//        // Need to use newDomNode to preserve namespace information
-//        signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
-//                                                     (Document)responseDoc.newDomNode(xmlOptions),
-//                                                      responseDoc.getResponse().getID());
-//      }
-//      catch(GuanxiException ge) {
-//        logger.error("Could not sign Response", ge);
-//        mAndV.setViewName(errorView);
-//        mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("error.could.not.sign.message",
-//                                                                      null, request.getLocale()));
-//        return mAndV;
-//      }
-//    }
-//
-//    // Do the binding quickstep
-//    String b64SAMLResponse = null;
-//    if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_POST)) {
-//      b64SAMLResponse = Utils.base64(signedDoc);
-//      mAndV.setViewName(httpPOSTView);
-//    }
-//    else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
-//      String deflatedResponse = Utils.deflate(responseDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
-//      b64SAMLResponse = Utils.base64(deflatedResponse.getBytes());
-//      b64SAMLResponse = b64SAMLResponse.replaceAll(System.getProperty("line.separator"), "");
-//      b64SAMLResponse = URLEncoder.encode(b64SAMLResponse, "UTF-8");
-//      mAndV.setViewName(httpRedirectView);
-//    }
-
-//    // Send the Response to the SP
-//    request.setAttribute("SAMLResponse", b64SAMLResponse);
-//    request.setAttribute("RelayState", request.getParameter("RelayState"));
-//    mAndV.getModel().put("wbsso_acs_endpoint", request.getAttribute("acsURL"));
-//    return mAndV;
   }
 
   private void interpolateEncryptionIgnores() {
