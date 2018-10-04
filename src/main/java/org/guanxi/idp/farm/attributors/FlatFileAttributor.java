@@ -54,9 +54,6 @@ public class FlatFileAttributor extends SimpleAttributor {
   /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, org.guanxi.idp.util.ARPEngine , org.guanxi.idp.util.AttributeMap , org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
   public void getAttributes(GuanxiPrincipal principal, String relyingParty, ARPEngine arpEngine, AttributeMap mapper,
                             UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
-    // Before we do anything, see if we need to release a NameID
-    processNameID(mapper, relyingParty, attributes);
-
     // GuanxiPrincipal is storing their username, put there by the authenticator
     String username = (String)principal.getPrivateProfileDataEntry("username");
 
