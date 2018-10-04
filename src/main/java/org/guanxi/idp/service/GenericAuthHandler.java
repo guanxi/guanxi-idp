@@ -86,7 +86,7 @@ public abstract class GenericAuthHandler extends HandlerInterceptorAdapter imple
             else {
               // Found the principal from a previously established authentication
               request.setAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL,
-                                   (GuanxiPrincipal)servletContext.getAttribute(cookies[c].getValue()));
+                                   servletContext.getAttribute(cookies[c].getValue()));
               return true;
             }
           }
@@ -98,11 +98,15 @@ public abstract class GenericAuthHandler extends HandlerInterceptorAdapter imple
       if (request.getParameter("guanxi:mode").equalsIgnoreCase("authenticate")) {
         // Get a new GuanxiPrincipal...
         GuanxiPrincipal principal = gxPrincipalFactory.createNewGuanxiPrincipal(request);
-        if (authenticator.authenticate(principal, request.getParameter("userid"), request.getParameter("password"))) {
+
+        // deal with any confused oauth users
+        String username = request.getParameter("userid").split("@")[0];
+
+        if (authenticator.authenticate(principal, username, request.getParameter("password"))) {
           // ...associate it with a login name...
           if (principal.getName() == null) {
             //The login name from the authenticator page
-            principal.setName(request.getParameter("userid"));
+            principal.setName(username);
           }
           // ...store it in the request for the SSO to use...
           request.setAttribute(Guanxi.REQUEST_ATTR_IDP_PRINCIPAL, principal);
@@ -113,8 +117,8 @@ public abstract class GenericAuthHandler extends HandlerInterceptorAdapter imple
           Cookie cookie = new Cookie(getCookieName(), principal.getUniqueId());
           cookie.setDomain((String)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_DOMAIN));
           cookie.setPath(idpConfig.getCookie().getPath());
-          if (((Integer)(servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE))).intValue() != -1)
-            cookie.setMaxAge(((Integer)(servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE))).intValue());
+          if ((Integer)(servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE)) != -1)
+            cookie.setMaxAge((Integer)(servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_COOKIE_AGE)));
           response.addCookie(cookie);
 
           return true;
