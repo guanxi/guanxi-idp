@@ -58,9 +58,6 @@ public class LDAPAttributor extends SimpleAttributor {
   /** @see SimpleAttributor#getAttributes(org.guanxi.common.GuanxiPrincipal, String, ARPEngine, AttributeMap, org.guanxi.xal.idp.UserAttributesDocument.UserAttributes) */
   public void getAttributes(GuanxiPrincipal principal, String relyingParty, ARPEngine arpEngine, AttributeMap mapper,
                             UserAttributesDocument.UserAttributes attributes) throws GuanxiException {
-    // Before we do anything, see if we need to release a NameID
-    processNameID(mapper, relyingParty, attributes);
-
     // Try to get the user's attributes from one of the available servers
     LDAPConnection lc = new LDAPConnection();
 
