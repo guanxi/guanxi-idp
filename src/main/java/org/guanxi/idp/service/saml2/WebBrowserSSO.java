@@ -16,7 +16,13 @@
 
 package org.guanxi.idp.service.saml2;
 
+import org.apache.xml.security.signature.XMLSignature;
+import org.apache.xml.security.transforms.Transforms;
+import org.apache.xml.security.transforms.params.InclusiveNamespaces;
+import org.guanxi.common.security.SecUtilsConfig;
+import org.guanxi.idp.util.AttributeMap;
 import org.guanxi.idp.util.VarEngine;
+import org.guanxi.xal.idp.AttributorAttribute;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.context.MessageSource;
 import org.guanxi.xal.saml_2_0.protocol.*;
@@ -34,8 +40,15 @@ import org.w3c.dom.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.security.cert.X509Certificate;
@@ -61,6 +74,8 @@ public class WebBrowserSSO extends SSOBase {
   private boolean encryptAttributes;
   /** If encryptAttributes is true, don't encrypt for these SPs */
   private ArrayList<String> doNotEncryptAttributesFor;
+  /** Sign the Assertion instead of the Response for these SPs */
+  private ArrayList<String> signAssertionFor;
   /** The engine that handles variable interpolation */
   private VarEngine varEngine = null;
 
@@ -70,6 +85,7 @@ public class WebBrowserSSO extends SSOBase {
   public void init() {
     super.init();
     interpolateEncryptionIgnores();
+    interpolateAssertionSigns();
   }
 
   /**
@@ -147,7 +163,8 @@ public class WebBrowserSSO extends SSOBase {
     }
     else {
       // ...or the default if none is specified
-      gxPrincipal.setNameIDFormat(nameQualifier);
+      //gxPrincipal.setNameIDFormat(nameQualifier);
+      gxPrincipal.setNameIDFormat(nameQualifierFormat);
     }
 
     // We need this for reference in the Response
@@ -215,6 +232,8 @@ public class WebBrowserSSO extends SSOBase {
     // Assemble the attributes
     UserAttributesDocument attributesDoc = UserAttributesDocument.Factory.newInstance();
     UserAttributesDocument.UserAttributes attributes = attributesDoc.addNewUserAttributes();
+    // Before we do anything, see if we need to release a NameID
+    processNameID(mapper, spEntityID, attributes);
     for (org.guanxi.idp.farm.attributors.Attributor attr : attributor) {
       attr.getAttributes(gxPrincipal, spEntityID, arpEngine, mapper, attributes);
     }
@@ -266,7 +285,17 @@ public class WebBrowserSSO extends SSOBase {
     }
 
     try {
-      String b64SAMLResponse = signAndEncodeResponse(request, responseDoc, mAndV);
+      // Sign the Response of the Assertion
+      String b64SAMLResponse;
+      if (signAssertionFor.contains(spEntityID)) {
+        mAndV.setViewName(httpPOSTView);
+        b64SAMLResponse = signAndEncodeAssertion(secUtilsConfig,
+                (Document)responseDoc.newDomNode(xmlOptions),
+                assertionDoc.getAssertion().getID());
+      } else {
+        b64SAMLResponse = signAndEncodeResponse(request, responseDoc, mAndV);
+      }
+
       // Send the Response to the SP
       request.setAttribute("SAMLResponse", b64SAMLResponse);
       request.setAttribute("RelayState", request.getParameter("RelayState"));
@@ -289,6 +318,13 @@ public class WebBrowserSSO extends SSOBase {
     }
   }
 
+  private void interpolateAssertionSigns() {
+    for (String spVar : signAssertionFor) {
+      signAssertionFor.add(varEngine.interpolate(spVar));
+      signAssertionFor.remove(spVar);
+    }
+  }
+
   private String signAndEncodeResponse(HttpServletRequest request, ResponseDocument responseDocument,
                                        ModelAndView mAndV) throws GuanxiException {
 
@@ -299,6 +335,21 @@ public class WebBrowserSSO extends SSOBase {
       Document signedDoc = SecUtils.getInstance().saml2Sign(secUtilsConfig,
               (Document)responseDocument.newDomNode(xmlOptions),
               responseDocument.getResponse().getID());
+
+      if (idpConfig.getDebug() != null) {
+        if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
+          if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
+
+            logger.info("=======================================================");
+            logger.info("Signed SAML2 Response");
+            logger.info("");
+            logger.info(printDocument(signedDoc));
+            logger.info("");
+            logger.info("=======================================================");
+          }
+        }
+      }
+
       return Utils.base64(signedDoc);
     }
     else if (request.getAttribute("responseBinding").equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
@@ -317,6 +368,144 @@ public class WebBrowserSSO extends SSOBase {
     else throw new GuanxiException("responseBinding " + request.getAttribute("responseBinding") + "not supported");
   }
 
+  private String signAndEncodeAssertion(SecUtilsConfig config, Document inDocToSign, String elementIDToSign) throws GuanxiException {
+
+    String keystoreType = config.getKeystoreType();
+    String keystoreFile = config.getKeystoreFile();
+    String keystorePass = config.getKeystorePass();
+    String privateKeyAlias = config.getPrivateKeyAlias();
+    String privateKeyPass = config.getPrivateKeyPass();
+    String certificateAlias = config.getCertificateAlias();
+
+    try {
+      KeyStore ks = KeyStore.getInstance(keystoreType);
+      FileInputStream fis = new FileInputStream(keystoreFile);
+      ks.load(fis, keystorePass.toCharArray());
+      fis.close();
+      PrivateKey privateKey = (PrivateKey) ks.getKey(privateKeyAlias, privateKeyPass.toCharArray());
+      String keyType = privateKey.getAlgorithm();
+      if (keyType.equalsIgnoreCase("dsa")) {
+        keyType = "http://www.w3.org/2000/09/xmldsig#dsa-sha1";
+      }
+
+      if (keyType.equalsIgnoreCase("rsa")) {
+        keyType = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
+      }
+
+      XMLSignature sig = new XMLSignature(inDocToSign, "", keyType, "http://www.w3.org/2001/10/xml-exc-c14n#");
+      NodeList nodes = inDocToSign.getDocumentElement().getChildNodes();
+
+      Node assertionNode = null;
+      for (int c = 0; c < nodes.getLength(); ++c) {
+        assertionNode = nodes.item(c);
+        if (assertionNode.getLocalName() != null && assertionNode.getLocalName().equals("Assertion")) {
+          NamedNodeMap attrs = assertionNode.getAttributes();
+          Node attr = attrs.getNamedItem("ID");
+          if ((attr.getNodeValue() != null) && attr.getNodeValue().equals(elementIDToSign)) {
+            break;
+          }
+        }
+      }
+
+      if (assertionNode == null) {
+        throw new GuanxiException("cannot sign assertion as no Assertion node");
+      }
+
+      Node assertionSubjectNode;
+      if (assertionNode.getChildNodes() != null) {
+        NodeList childNodes = assertionNode.getChildNodes();
+        assertionSubjectNode = childNodes.item(3); // 0:Assertion/1:Text/2:Issuer/3:Subject
+      } else {
+        throw new GuanxiException("cannot sign assertion as no Assertion child nodes");
+      }
+
+      assertionNode.insertBefore(sig.getElement(), assertionSubjectNode);
+      Transforms transforms = new Transforms(sig.getDocument());
+      transforms.addTransform("http://www.w3.org/2000/09/xmldsig#enveloped-signature");
+      transforms.addTransform("http://www.w3.org/2001/10/xml-exc-c14n#");
+      transforms.item(1).getElement().appendChild((new InclusiveNamespaces(inDocToSign, "#default saml samlp ds code kind rw typens")).getElement());
+      if (elementIDToSign != null && !elementIDToSign.equals("")) {
+        sig.addDocument("#" + elementIDToSign, transforms);
+      } else {
+        sig.addDocument("", transforms);
+      }
+
+      X509Certificate cert = (X509Certificate) ks.getCertificate(certificateAlias);
+      sig.addKeyInfo(cert);
+      sig.addKeyInfo(cert.getPublicKey());
+      sig.sign(privateKey);
+
+      if (idpConfig.getDebug() != null) {
+        if (idpConfig.getDebug().getSypthonAttributeAssertions() != null) {
+          if (idpConfig.getDebug().getSypthonAttributeAssertions().equals("yes")) {
+
+            logger.info("=======================================================");
+            logger.info("Signed SAML2 Assertion");
+            logger.info("");
+            logger.info(printDocument(inDocToSign));
+            logger.info("");
+            logger.info("=======================================================");
+          }
+        }
+      }
+
+      return Utils.base64(inDocToSign);
+    } catch (Exception e) {
+      throw new GuanxiException(e);
+    }
+
+  }
+
+  /**
+   * Determines whether to release the login userid of the GuanxiPrincipal as a
+   * Subject/NameID in a SAML Response. If this needs to be done, the method
+   * adds a dummy attribute called "__NAMEID__" which is picked up later and
+   * converted to a Subject/NameID
+   *
+   * @param mapper the profile specific attribute mapper to use
+   * @param relyingParty the entityID of the entity looking for attributes
+   * @param attributes the attributes document that will hold the released attribute
+   */
+  private void processNameID(AttributeMap mapper, String relyingParty, UserAttributesDocument.UserAttributes attributes) {
+    if (mapper.shouldReleaseNameID(relyingParty)) {
+      AttributorAttribute attribute = attributes.addNewAttribute();
+      attribute.setName("__NAMEID__");
+    }
+  }
+
+  // https://stackoverflow.com/questions/2325388/what-is-the-shortest-way-to-pretty-print-a-org-w3c-dom-document-to-stdout
+  private String printDocument(Document doc) throws GuanxiException  {
+    ByteArrayOutputStream bos = null;
+    try {
+      bos = new ByteArrayOutputStream();
+      TransformerFactory tf = TransformerFactory.newInstance();
+      Transformer transformer = tf.newTransformer();
+      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+      transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+      transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+      transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+      transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+      transformer.transform(new DOMSource(doc), new StreamResult(new OutputStreamWriter(bos, "UTF-8")));
+      return new String(bos.toByteArray());
+    }
+    catch(IOException ioe) {
+      throw new GuanxiException(ioe);
+    }
+    catch(TransformerException te) {
+      throw new GuanxiException(te);
+    }
+    finally {
+      try {
+        if (bos != null) {
+          bos.close();
+        }
+      }
+      catch(IOException ioe) {
+        logger.error("printDocument can't close stream");
+      }
+    }
+  }
+
   // Setters
   public void setMessages(MessageSource messages) { this.messages = messages; }
   public void setHttpPOSTView(String httpPOSTView) { this.httpPOSTView = httpPOSTView; }
@@ -325,6 +514,6 @@ public class WebBrowserSSO extends SSOBase {
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
   public void setEncryptAttributes(boolean encryptAttributes) { this.encryptAttributes = encryptAttributes; }
   public void setDoNotEncryptAttributesFor(ArrayList<String> doNotEncryptAttributesFor) { this.doNotEncryptAttributesFor = doNotEncryptAttributesFor; }
+  public void setSignAssertionFor(ArrayList<String> signAssertionFor) { this.signAssertionFor = signAssertionFor; }
   public void setVarEngine(VarEngine varEngine) { this.varEngine = varEngine; }
-
 }
