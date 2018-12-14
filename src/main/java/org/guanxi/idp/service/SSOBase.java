@@ -325,23 +325,27 @@ public abstract class SSOBase extends AbstractController implements ServletConte
 
       // Deal with scoped eduPerson attributes
       if (attribute != null) {
-        if (attribute.getName().equals(EduPersonOID.ATTRIBUTE_NAME_PREFIX + EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
-          NameIDDocument nameIDDoc = NameIDDocument.Factory.newInstance();
-          NameIDType nameID = nameIDDoc.addNewNameID();
-          nameID.setFormat(SAML.SAML2_ATTRIBUTE_FORMAT_NAMEID_PERSISTENT);
-          nameID.setNameQualifier(nameQualifier);
-          nameID.setSPNameQualifier(entityID);
-          // For SAML2 we need to remove the scope from the value
-          if (attributorAttr.getValue().contains("@")) {
-            attributorAttr.setValue(attributorAttr.getValue().split("@")[0]);
+        if (attrValue != null) {
+          if (attribute.getName().equals(EduPersonOID.ATTRIBUTE_NAME_PREFIX + EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
+            NameIDDocument nameIDDoc = NameIDDocument.Factory.newInstance();
+            NameIDType nameID = nameIDDoc.addNewNameID();
+            nameID.setFormat(SAML.SAML2_ATTRIBUTE_FORMAT_NAMEID_PERSISTENT);
+            nameID.setNameQualifier(nameQualifier);
+            nameID.setSPNameQualifier(entityID);
+            // For SAML2 we need to remove the scope from the value
+            if (attributorAttr.getValue().contains("@")) {
+              attributorAttr.setValue(attributorAttr.getValue().split("@")[0]);
+            }
+            nameID.setStringValue(attributorAttr.getValue());
+
+            attrValue.getDomNode().appendChild(attrValue.getDomNode().getOwnerDocument().importNode(nameID.getDomNode(), true));
+          } else {
+            Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
+            attrValue.getDomNode().appendChild(valueNode);
           }
-          nameID.setStringValue(attributorAttr.getValue());
-  
-          attrValue.getDomNode().appendChild(attrValue.getDomNode().getOwnerDocument().importNode(nameID.getDomNode(), true));
         }
         else {
-          Text valueNode = attrValue.getDomNode().getOwnerDocument().createTextNode(attributorAttr.getValue());
-          attrValue.getDomNode().appendChild(valueNode);
+          logger.error("attrValue null for " + attribute.getName() + " >> " + attribute.getFriendlyName());
         }
       }
     } // for (int c=0; c < guanxiAttrFarmOutput.getUserAttributes().getAttributeArray().length; c++)
