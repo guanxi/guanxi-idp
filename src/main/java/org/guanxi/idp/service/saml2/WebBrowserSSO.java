@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.security.cert.X509Certificate;
 import java.net.URLEncoder;
+import java.util.Iterator;
 
 /**
  * SAML2 Web Browser SSO Single Sign-On Service.
@@ -312,17 +313,25 @@ public class WebBrowserSSO extends SSOBase {
   }
 
   private void interpolateEncryptionIgnores() {
-    for (String spVar : doNotEncryptAttributesFor) {
-      doNotEncryptAttributesFor.add(varEngine.interpolate(spVar));
-      doNotEncryptAttributesFor.remove(spVar);
+    ArrayList<String> spVarsToAdd = new ArrayList<String>();
+    Iterator<String> doNotEncryptAttributesForIterator = doNotEncryptAttributesFor.iterator();
+    while(doNotEncryptAttributesForIterator.hasNext()) {
+      String spVar = doNotEncryptAttributesForIterator.next();
+      doNotEncryptAttributesForIterator.remove();
+      spVarsToAdd.add(varEngine.interpolate(spVar));
     }
+    doNotEncryptAttributesFor.addAll(spVarsToAdd);
   }
 
   private void interpolateAssertionSigns() {
-    for (String spVar : signAssertionFor) {
-      signAssertionFor.add(varEngine.interpolate(spVar));
-      signAssertionFor.remove(spVar);
+    ArrayList<String> spVarsToAdd = new ArrayList<String>();
+    Iterator<String> signAssertionForIterator = signAssertionFor.iterator();
+    while(signAssertionForIterator.hasNext()) {
+      String spVar = signAssertionForIterator.next();
+      signAssertionForIterator.remove();
+      spVarsToAdd.add(varEngine.interpolate(spVar));
     }
+    signAssertionFor.addAll(spVarsToAdd);
   }
 
   private String signAndEncodeResponse(HttpServletRequest request, ResponseDocument responseDocument,
